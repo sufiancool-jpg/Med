@@ -3,8 +3,8 @@ title: "Nam Quam Nunc Blandit Vel"
 pubDate: "2026-01-13"
 description: "Short, punchy, and direct to the point."
 author: "Lorem"
-category: "General"
-tags: ["news", "tutorial"]
+category: "Policy Brief"
+tags: ["regional-security", "capacity-building"]
 image: "/blog/blog_post_6_1768848765056.webp"
 ---
 

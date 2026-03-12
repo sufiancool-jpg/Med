@@ -1,49 +1,87 @@
 ---
 import { siteConfig } from "../../config/site";
-import ThemeToggle from "../ui/ThemeToggle.astro";
+import { Icon } from "astro-icon/components";
+
+const mainMenuLinks = [
+  {
+    text: "About",
+    children: [{ text: "Mission" }, { text: "Team" }, { text: "Founders" }],
+  },
+  { text: "Activities" },
+  {
+    text: "Resources",
+    children: [{ text: "Members area" }, { text: "Join" }],
+  },
+  { text: "Media" },
+  { text: "Publications" },
+  { text: "Contact" },
+];
+
+const socialLinks = {
+  linkedin: "/contact",
+  youtube: "/contact",
+};
 ---
 
 <nav
-  class="fixed top-0 z-50 w-full border-b border-border bg-background md:bg-background/50 md:backdrop-blur"
+  class="fixed top-0 z-50 w-full overflow-visible border-b border-black bg-white"
 >
   <div
-    class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
+    class="relative flex w-full items-center justify-between overflow-visible px-4 py-2 sm:px-6 lg:px-8"
   >
-    <div class="flex items-center gap-2">
-      <a
-        href="/"
-        class="text-xl font-bold tracking-tight text-foreground transition-colors hover:text-primary"
-      >
-        {siteConfig.name}
-      </a>
-    </div>
-
-    <!-- Desktop Menu -->
-    <div class="hidden md:block">
-      <div class="ml-10 flex items-baseline space-x-8">
+    <div class="flex items-center">
+      <div class="hidden items-center gap-5 md:flex">
         {
-          siteConfig.navLinks.map((link) => (
-            <a
-              href={link.href}
-              class="text-sm font-medium text-foreground transition-colors hover:text-primary"
-            >
-              {link.text}
-            </a>
+          mainMenuLinks.map((link) => (
+            <div class="group relative">
+              <a
+                href="#"
+                data-mainmenu-stub
+                class="inline-flex cursor-pointer items-center px-3 py-2 text-[0.98rem] font-light uppercase tracking-[0.08em] leading-none text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+              >
+                {link.text}
+              </a>
+              {
+                link.children && (
+                  <div class="pointer-events-none absolute left-0 top-full z-[70] min-w-[12rem] translate-y-1 border border-black bg-white opacity-0 transition-[opacity,transform] duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    {link.children.map((child) => (
+                      <a
+                        href="#"
+                        data-mainmenu-stub
+                        class="block cursor-pointer px-3 py-2 text-sm font-light tracking-[0.04em] text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+                      >
+                        {child.text}
+                      </a>
+                    ))}
+                  </div>
+                )
+              }
+            </div>
           ))
         }
       </div>
     </div>
 
-    <div class="hidden md:flex items-center gap-4">
-      <a
-        href={siteConfig.socialLinks.github}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="rounded-full bg-foreground/10 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:bg-foreground/20"
-      >
-        GitHub
-      </a>
-      <ThemeToggle />
+    <div class="hidden items-center md:flex">
+      <div class="flex items-center text-[0.98rem] font-light uppercase leading-none tracking-[0.08em] text-black">
+        AR <span class="mx-1 text-black/60">|</span> FR
+      </div>
+      <div class="ml-4 flex items-center gap-2 border-l border-black/20 pl-4">
+        <a
+          href={socialLinks.linkedin}
+          aria-label="LinkedIn"
+          class="inline-flex cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+        >
+          <Icon name="lucide:linkedin" class="h-4 w-4" />
+        </a>
+        <a
+          href={socialLinks.youtube}
+          aria-label="YouTube"
+          class="inline-flex cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+        >
+          <Icon name="lucide:youtube" class="h-4 w-4 translate-y-px" />
+        </a>
+      </div>
     </div>
 
     <!-- Mobile Menu Button -->
@@ -51,7 +89,7 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
       <button
         id="mobile-menu-button"
         type="button"
-        class="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-white hover:bg-white/10 focus:outline-none transition-colors"
+        class="inline-flex items-center justify-center p-2 text-black transition-colors hover:bg-black/5 focus:outline-none"
         aria-controls="mobile-menu"
         aria-expanded="false"
       >
@@ -87,32 +125,60 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
             d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
-      <div class="ml-2">
-        <ThemeToggle />
-      </div>
     </div>
   </div>
 
   <div class="hidden md:hidden" id="mobile-menu">
     <div
-      class="space-y-1 border-b border-border bg-background/90 px-2 pb-3 pt-2 sm:px-3"
+      class="space-y-1 border-b border-black bg-white px-2 pb-3 pt-2 sm:px-3"
     >
       {
-        siteConfig.navLinks.map((link) => (
-          <a
-            href={link.href}
-            class="block rounded-md px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-white/10 hover:text-primary"
-          >
-            {link.text}
-          </a>
+        mainMenuLinks.map((link) => (
+          <div>
+            <a
+              href="#"
+              data-mainmenu-stub
+              class="block w-full cursor-pointer px-3 py-2 text-left text-base font-light uppercase tracking-[0.08em] text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+            >
+              {link.text}
+            </a>
+            {
+              link.children && (
+                <div class="pb-1 pl-6">
+                  {link.children.map((child) => (
+                    <a
+                      href="#"
+                      data-mainmenu-stub
+                      class="block w-full cursor-pointer px-3 py-1.5 text-left text-sm font-light tracking-[0.04em] text-black/85 transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+                    >
+                      {child.text}
+                    </a>
+                  ))}
+                </div>
+              )
+            }
+          </div>
         ))
       }
-      <a
-        href={siteConfig.socialLinks.github}
-        target="_blank"
-        class="block rounded-md px-3 py-2 text-base font-medium text-blue-400 transition-colors hover:cursor-pointer hover:bg-blue-500/10 hover:text-blue-300"
-        >GitHub</a
-      >
+      <div class="px-3 py-2 text-base font-medium text-black">
+        AR <span class="mx-1 text-black/60">|</span> FR
+      </div>
+      <div class="flex h-8 items-center gap-2 px-3 py-2">
+        <a
+          href={socialLinks.linkedin}
+          aria-label="LinkedIn"
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+        >
+          <Icon name="lucide:linkedin" class="h-[18px] w-[18px]" />
+        </a>
+        <a
+          href={socialLinks.youtube}
+          aria-label="YouTube"
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+        >
+          <Icon name="lucide:youtube" class="h-[18px] w-[18px] translate-y-px" />
+        </a>
+      </div>
     </div>
   </div>
 </nav>
@@ -130,5 +196,14 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
     menu?.classList.toggle("hidden");
     iconClosed?.classList.toggle("hidden");
     iconOpen?.classList.toggle("hidden");
+  });
+
+  document.querySelectorAll("[data-mainmenu-stub]").forEach((link) => {
+    if (!(link instanceof HTMLElement)) return;
+    if (link.dataset.stubBound === "true") return;
+    link.dataset.stubBound = "true";
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+    });
   });
 </script>

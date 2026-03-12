@@ -3,8 +3,8 @@ title: "Vivamus Elementum Semper"
 pubDate: "2026-01-07"
 description: "Next-gen interfaces and the future of dashboard design."
 author: "Lorem"
-category: "Tech"
-tags: ["tutorial", "news"]
+category: "Policy Paper"
+tags: ["capacity-building", "regional-security"]
 image: "/blog/blog_post_12_1768850610966.webp"
 ---
 

@@ -3,8 +3,8 @@ title: "Fusce Vulputate Eleifend"
 pubDate: "2026-01-11"
 description: "Exploring the retro wave aesthetic in modern web interfaces."
 author: "Lorem"
-category: "Design"
-tags: ["web-design", "news"]
+category: "Research Report"
+tags: ["sustainable-development", "regional-security"]
 image: "/blog/blog_post_8_1768850554501.webp"
 ---
 

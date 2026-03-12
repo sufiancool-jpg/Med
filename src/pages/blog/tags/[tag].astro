@@ -25,10 +25,11 @@ export async function getStaticPaths() {
 }
 
 const { tag, posts } = Astro.props;
+const label = String(tag).replace(/-/g, " ");
 
 const metadata = {
-  title: `Posts tagged with '${tag}'`,
-  description: `Explore our articles about ${tag}.`,
+  title: `Publications tagged '${label}'`,
+  description: `Explore publications related to ${label}.`,
 };
 ---
 
@@ -37,8 +38,8 @@ const metadata = {
     <div class="relative mx-auto max-w-5xl">
       <Headline
         tagline="Tag"
-        title={`#${tag}`}
-        subtitle={`Showing ${posts.length} article${posts.length === 1 ? "" : "s"}.`}
+        title={`#${label}`}
+        subtitle={`Showing ${posts.length} publication${posts.length === 1 ? "" : "s"}.`}
         classes={{
           container: "mb-12 text-center",
           title:
@@ -48,7 +49,7 @@ const metadata = {
       />
 
       <div class="mb-8 text-center">
-        <a href="/blog" class="text-primary hover:underline">← Back to blog</a>
+        <a href="/blog" class="text-primary hover:underline">← Back to publications</a>
       </div>
 
       <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

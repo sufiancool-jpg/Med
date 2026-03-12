@@ -1,5 +1,11 @@
 ---
 import { siteConfig } from "../../config/site";
+
+const footerLinks = {
+  linkedin: "/contact",
+  youtube: "/contact",
+  contact: "/contact",
+};
 ---
 
 <footer class="mt-20 border-t border-border bg-card">
@@ -13,25 +19,19 @@ import { siteConfig } from "../../config/site";
       </div>
       <div class="flex items-center gap-6">
         <a
-          href={siteConfig.socialLinks.twitter}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-muted-foreground transition-colors hover:text-primary"
-          >Twitter</a
+          href={footerLinks.linkedin}
+          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+          >LinkedIn</a
         >
         <a
-          href={siteConfig.socialLinks.github}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-muted-foreground transition-colors hover:text-primary"
-          >GitHub</a
+          href={footerLinks.youtube}
+          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+          >YouTube</a
         >
         <a
-          href={siteConfig.socialLinks.discord}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="text-muted-foreground transition-colors hover:text-primary"
-          >Discord</a
+          href={footerLinks.contact}
+          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+          >Contact</a
         >
       </div>
     </div>

@@ -5,6 +5,7 @@ export interface Props {
 }
 
 const { tags, class: className = "text-sm" } = Astro.props;
+const toLabel = (tag: string) => tag.replace(/-/g, " ");
 ---
 
 {
@@ -13,10 +14,10 @@ const { tags, class: className = "text-sm" } = Astro.props;
       {tags.map((tag) => (
         <li class="inline-block relative">
           <a
-            href={`/blog/tags/${tag}`}
-            class="inline-block bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground px-3 py-1 rounded-full border border-border transition-colors duration-200"
+            href={`/blog/tags/${encodeURIComponent(tag)}`}
+            class="inline-block rounded-full border border-accent bg-accent/15 px-3 py-1 text-foreground transition-colors duration-200 hover:bg-accent/30"
           >
-            #{tag}
+            #{toLabel(tag)}
           </a>
         </li>
       ))}

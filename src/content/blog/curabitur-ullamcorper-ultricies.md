@@ -3,8 +3,8 @@ title: "Curabitur Ullamcorper Ultricies Nisi"
 pubDate: "2026-01-15"
 description: "Extensive reading on the topic of automated content generation."
 author: "Lorem"
-category: "Tech"
-tags: ["tutorial", "testing"]
+category: "Policy Paper"
+tags: ["capacity-building", "scenario-making"]
 image: "/blog/blog_post_4_1768848735398.webp"
 ---
 

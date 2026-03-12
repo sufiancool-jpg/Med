@@ -3,8 +3,8 @@ title: "Suspendisse Potenti Nullam"
 pubDate: "2026-01-12"
 description: "Minimalist architecture and its influence on digital design patterns."
 author: "Lorem"
-category: "Design"
-tags: ["web-design"]
+category: "Research Report"
+tags: ["sustainable-development"]
 image: "/blog/blog_post_7_1768850538178.webp"
 ---
 

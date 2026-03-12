@@ -5,6 +5,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-hover: var(--hover);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -13,22 +16,28 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0a0a0a;
-  --primary: #0254d8;
-  --border: #e5e7eb;
-  --muted: #f4f4f5;
-  --muted-foreground: #52525b;
+  --foreground: #000000;
+  --primary: #000000;
+  --hover: #000000;
+  --accent: #000000;
+  --accent-foreground: #000000;
+  --border: #daa650;
+  --muted: #ffffff;
+  --muted-foreground: #000000;
   --card: #ffffff;
 }
 
 :root[data-theme="dark"] {
-  --background: #030303;
-  --foreground: #e5e7eb;
-  --primary: #8bbcff;
-  --border: #262626;
-  --muted: #171717;
-  --muted-foreground: #a1a1aa;
-  --card: #0a0a0a;
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #000000;
+  --hover: #000000;
+  --accent: #000000;
+  --accent-foreground: #000000;
+  --border: #daa650;
+  --muted: #ffffff;
+  --muted-foreground: #000000;
+  --card: #ffffff;
 }
 
 /* Base styles using variables */
@@ -36,6 +45,27 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
+      Arial, sans-serif;
+    line-height: 1.65;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--foreground);
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  p,
+  li {
+    line-height: 1.75;
   }
 
   :focus-visible {
@@ -57,4 +87,28 @@
 .reveal.active {
   opacity: 1;
   transform: translateY(0) scale(1);
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  }
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+html.section-lock-active,
+html.section-lock-active body {
+  overscroll-behavior: none;
 }

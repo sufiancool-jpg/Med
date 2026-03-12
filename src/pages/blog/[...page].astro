@@ -19,24 +19,22 @@ const { page } = Astro.props;
 const blog = page.data;
 
 const metadata = {
-  title: "Blog",
-  description: "Latest news and updates from our team.",
+  title: "Publications",
+  description: "Policy-relevant publications, briefs, reports, and editorial analysis.",
 };
 ---
 
 <BaseLayout metadata={metadata}>
   <section class="relative px-4 py-8 sm:px-6 lg:px-8 md:py-12">
     <div class="absolute inset-0 z-0">
-      <div
-        class="absolute inset-0 bg-linear-to-br from-blue-500/5 via-transparent to-pink-500/5"
-      >
+      <div class="absolute inset-0 bg-accent/10">
       </div>
     </div>
     <div class="relative mx-auto max-w-5xl">
       <Headline
-        tagline="Blog"
+        tagline="Publications"
         title="Our Publications"
-        subtitle="Explore the latest news, tutorials, and articles from our team."
+        subtitle="Explore policy papers, briefs, reports, and current regional analysis."
         classes={{
           container: "reveal mb-12 text-center",
           title:

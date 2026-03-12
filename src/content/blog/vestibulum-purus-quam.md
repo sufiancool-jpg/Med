@@ -1,10 +1,10 @@
 ---
 title: "Vestibulum Purus Quam"
 pubDate: "2026-01-10"
-description: "The art of macro photography and its relation to detail-oriented coding."
+description: "The value of detail-oriented analysis in policy research and dialogue."
 author: "Lorem"
-category: "General"
-tags: ["features"]
+category: "Policy Brief"
+tags: ["policy-relevant"]
 image: "/blog/blog_post_9_1768850568154.webp"
 ---
 

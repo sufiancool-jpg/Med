@@ -8,39 +8,39 @@ import aboutImage from "../assets/images/about-office.webp";
 const metadata = {
   title: "About us",
   description:
-    "Learn more about our vision, values, and the team behind Astro Starter Pro.",
+    "Research, dialogue, and educational programme offering collective reflection and informed policymaking at national and transnational levels.",
 };
 
 const values = [
   {
-    title: "Innovation",
+    title: "Collective Reflection",
     description:
-      "Curabitur dignissim, felis non sollicitudin molestie, urna mauris pellentesque velit, ut eleifend.",
+      "The platform offers a space for collective reflection on governance, diplomacy, and regional transformations.",
   },
   {
-    title: "Commitment",
+    title: "Policy-Relevant Research",
     description:
-      "Aenean condimentum finibus mauris, a fermentum justo pan eget. Sed ultricies, neque quis.",
+      "Multi-disciplinary and policy-relevant outputs support informed policymaking and advocacy.",
   },
   {
-    title: "Quality",
+    title: "Dialogue Support",
     description:
-      "Donec sed orci tincidunt, aliquam nisl a, condimentum nunc. Nulla varius ex nec ante feugiat.",
+      "Dialogue support and track-two engagement connect experts, stakeholders, and decision-makers.",
   },
   {
-    title: "Transparency",
+    title: "Capacity Building",
     description:
-      "Phasellus tristique, elit dapibus cursus facilisis, lorem augue fringilla nunc, vitae fermentum.",
+      "Mentorship and knowledge exchange strengthen local research capabilities and policy participation.",
   },
   {
-    title: "Teamwork",
+    title: "Regional Cooperation",
     description:
-      "In hac habitasse platea dictumst. Vivamus adipiscing fermentum quam volutpat aliquam. Integer et.",
+      "Workstreams foster cooperation across the Mediterranean, Africa, and Gulf policy spaces.",
   },
   {
-    title: "Excellence",
+    title: "Scenario-Making",
     description:
-      "Fusce at massa nec sapien auctor gravida in in tellus. Vivamus a tristique metus, et molestie.",
+      "Future studies and scenario-making help shape long-term strategic policy discussions.",
   },
 ];
 
@@ -53,24 +53,24 @@ const optimizedImage = await getImage({
 <BaseLayout {metadata}>
   <link slot="head" rel="preload" href={optimizedImage.src} as="image" />
   <Content2
-    title="Our Vision"
+    title="About the Platform"
     description={[
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      "The Mediterranean Platform is a research, dialogue, and educational programme focused on informed policymaking and advocacy.",
+      "It addresses political, socio-economic and security transformations, MENA geopolitics, regional security and diplomacy, and future studies for the broader Mediterranean.",
     ]}
-    tagline="About"
+    tagline="About us"
     image={aboutImage}
-    imageAlt="Modern web development office"
+    imageAlt="Mediterranean policy dialogue and research"
     actions={[
       {
-        text: "Contact Us",
+        text: "Contact",
         href: "/contact",
         variant: "primary",
         icon: "lucide:mail",
       },
       {
-        text: "View Details",
-        href: "#",
+        text: "Publications",
+        href: "/blog",
         variant: "secondary",
         icon: "lucide:arrow-right",
       },
@@ -79,8 +79,8 @@ const optimizedImage = await getImage({
   <Values
     items={values}
     columns={3}
-    tagline="Our Values"
-    title="What Defines Us"
-    subtitle="Principles that guide our daily work"
+    tagline="Approach"
+    title="What Defines Our Work"
+    subtitle="Principles guiding research, dialogue, and policy engagement"
   />
 </BaseLayout>

@@ -3,8 +3,8 @@ title: "Integer Tincidunt Cras"
 pubDate: "2026-01-08"
 description: "Building tiny worlds: Component-based architecture explained."
 author: "Lorem"
-category: "Tech"
-tags: ["coding", "astro"]
+category: "Policy Paper"
+tags: ["policy-dialogue", "mediterranean-connectivity"]
 image: "/blog/blog_post_11_1768850597259.webp"
 ---
 

@@ -33,7 +33,7 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
 ---
 
 <!doctype html>
-<html lang={siteConfig.lang} class="scroll-smooth">
+<html lang={siteConfig.lang}>
   <head>
     <Seo
       title={finalTitle}
@@ -68,34 +68,319 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
     </script>
   </head>
   <body
-    class="bg-background text-foreground antialiased selection:bg-blue-500/30 dark:selection:text-blue-200"
+    class="bg-background text-foreground antialiased selection:bg-accent/30 selection:text-foreground"
   >
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md bg-primary px-4 py-2 text-white shadow-lg ring-2 ring-white"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md border border-black bg-white px-4 py-2 text-black shadow-lg ring-2 ring-black"
     >
       Skip to content
     </a>
 
     <div class="relative flex min-h-screen flex-col overflow-x-hidden">
-      <!-- Background Glow -->
-      <div class="pointer-events-none fixed inset-0 z-0 hidden md:block">
-        <div
-          class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.15)_0%,transparent_50%)]"
-        >
-        </div>
-        <div
-          class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.15)_0%,transparent_50%)]"
-        >
-        </div>
-      </div>
-
       <Navbar />
-      <main id="main-content" class="relative z-10 grow pt-[72px]">
+      <main id="main-content" class="relative z-10 grow pt-[var(--nav-h,72px)]">
         <slot />
       </main>
       <Footer />
     </div>
+    <script>
+      import Lenis from "lenis";
+
+      const runtime = window as Window & { __lenis?: Lenis };
+      let lenisInstance: Lenis | undefined;
+      let sectionLockCleanup: (() => void) | undefined;
+
+      const syncFixedOffsets = () => {
+        const nav = document.querySelector("nav.fixed.top-0");
+        const announcement = document.querySelector("[data-announcement-bar]");
+        const navHeight = nav instanceof HTMLElement ? nav.offsetHeight : 72;
+        const announcementHeight =
+          announcement instanceof HTMLElement ? announcement.offsetHeight : 40;
+
+        document.documentElement.style.setProperty("--nav-h", `${navHeight}px`);
+        document.documentElement.style.setProperty(
+          "--announce-h",
+          `${announcementHeight}px`,
+        );
+        document.documentElement.style.setProperty(
+          "--section-h",
+          `calc(100svh - ${navHeight}px - ${announcementHeight}px)`,
+        );
+      };
+
+      const setupSectionLock = () => {
+        sectionLockCleanup?.();
+        sectionLockCleanup = undefined;
+        document.documentElement.classList.remove("section-lock-active");
+        syncFixedOffsets();
+
+        if (!lenisInstance) return;
+
+        const snapSections = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll-lock-section]"));
+        if (snapSections.length < 2) return;
+        document.documentElement.classList.add("section-lock-active");
+
+        const getTopOffset = () => {
+          const raw = document.documentElement.style.getPropertyValue("--nav-h");
+          const parsed = Number.parseFloat(raw);
+          return Number.isFinite(parsed) ? parsed : 0;
+        };
+
+        const getTargets = () => {
+          const topOffset = getTopOffset();
+          return snapSections.map((section) => {
+            const sectionTop = window.scrollY + section.getBoundingClientRect().top;
+            return Math.max(0, Math.round(sectionTop - topOffset));
+          });
+        };
+
+        let targets = getTargets();
+        let isAnimating = false;
+        let inputCooldownUntil = 0;
+        let touchStartY = 0;
+        let correctionRaf = 0;
+
+        const clamp = (value: number) =>
+          Math.max(0, Math.min(value, snapSections.length - 1));
+
+        const getNearestIndex = () => {
+          const current = window.scrollY;
+          let nearestIndex = 0;
+          let nearestDistance = Number.POSITIVE_INFINITY;
+
+          targets.forEach((target, index) => {
+            const distance = Math.abs(current - target);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              nearestIndex = index;
+            }
+          });
+
+          return nearestIndex;
+        };
+
+        const getFirstTarget = () => targets[0] ?? 0;
+        const getLastTarget = () => targets[targets.length - 1] ?? 0;
+        const isBelowLockZone = () => window.scrollY > getLastTarget() + 2;
+        const isAboveLockZone = () => window.scrollY < getFirstTarget() - 2;
+
+        const goToIndex = (index: number, force = false) => {
+          if (!lenisInstance) return;
+
+          targets = getTargets();
+          const nextIndex = clamp(index);
+          const nearestIndex = getNearestIndex();
+          if (!force && nextIndex === nearestIndex) return;
+
+          isAnimating = true;
+          inputCooldownUntil = performance.now() + 720;
+
+          lenisInstance.scrollTo(targets[nextIndex], {
+            duration: 1.05,
+            lock: true,
+            force: true,
+            onComplete: () => {
+              isAnimating = false;
+            },
+          });
+        };
+
+        const onWheel = (event: WheelEvent) => {
+          if (Math.abs(event.deltaY) < 5) return;
+          targets = getTargets();
+          if (isBelowLockZone() || isAboveLockZone()) return;
+
+          const currentIndex = getNearestIndex();
+          const direction = event.deltaY > 0 ? 1 : -1;
+          const isAtFirst = currentIndex === 0;
+          const isAtLast = currentIndex === snapSections.length - 1;
+
+          if ((direction > 0 && isAtLast) || (direction < 0 && isAtFirst && window.scrollY <= getFirstTarget() + 2)) {
+            return;
+          }
+
+          if (event.cancelable) event.preventDefault();
+          event.stopImmediatePropagation();
+          if (isAnimating || performance.now() < inputCooldownUntil) return;
+          goToIndex(currentIndex + direction);
+        };
+
+        const onKeyDown = (event: KeyboardEvent) => {
+          const target = event.target as HTMLElement | null;
+          const isTypingTarget =
+            target?.tagName === "INPUT" ||
+            target?.tagName === "TEXTAREA" ||
+            target?.isContentEditable;
+          if (isTypingTarget) return;
+
+          targets = getTargets();
+          if (isBelowLockZone() || isAboveLockZone()) return;
+
+          const currentIndex = getNearestIndex();
+          const isAtFirst = currentIndex === 0;
+          const isAtLast = currentIndex === snapSections.length - 1;
+          const isDownKey =
+            event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ";
+          const isUpKey = event.key === "ArrowUp" || event.key === "PageUp";
+
+          if ((isDownKey && isAtLast) || (isUpKey && isAtFirst && window.scrollY <= getFirstTarget() + 2)) {
+            return;
+          }
+
+          if (isDownKey) {
+            event.preventDefault();
+            goToIndex(currentIndex + 1);
+          } else if (isUpKey) {
+            event.preventDefault();
+            goToIndex(currentIndex - 1);
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            goToIndex(0, true);
+          } else if (event.key === "End") {
+            event.preventDefault();
+            goToIndex(snapSections.length - 1, true);
+          }
+        };
+
+        const onTouchStart = (event: TouchEvent) => {
+          touchStartY = event.changedTouches[0]?.clientY ?? 0;
+        };
+
+        const onTouchMove = (event: TouchEvent) => {
+          const touchY = event.changedTouches[0]?.clientY ?? touchStartY;
+          const direction = touchStartY - touchY > 0 ? 1 : -1;
+          targets = getTargets();
+          if (isBelowLockZone() || isAboveLockZone()) return;
+
+          const currentIndex = getNearestIndex();
+          const isAtFirst = currentIndex === 0;
+          const isAtLast = currentIndex === snapSections.length - 1;
+
+          if ((direction > 0 && isAtLast) || (direction < 0 && isAtFirst && window.scrollY <= getFirstTarget() + 2)) {
+            return;
+          }
+
+          if (event.cancelable) event.preventDefault();
+          event.stopImmediatePropagation();
+        };
+
+        const onTouchEnd = (event: TouchEvent) => {
+          targets = getTargets();
+          if (isBelowLockZone() || isAboveLockZone()) return;
+          if (isAnimating || performance.now() < inputCooldownUntil) return;
+
+          const touchEndY = event.changedTouches[0]?.clientY ?? 0;
+          const deltaY = touchStartY - touchEndY;
+          if (Math.abs(deltaY) < 40) return;
+
+          const currentIndex = getNearestIndex();
+          const direction = deltaY > 0 ? 1 : -1;
+          const isAtFirst = currentIndex === 0;
+          const isAtLast = currentIndex === snapSections.length - 1;
+
+          if ((direction > 0 && isAtLast) || (direction < 0 && isAtFirst && window.scrollY <= getFirstTarget() + 2)) {
+            return;
+          }
+
+          goToIndex(currentIndex + direction);
+        };
+
+        const onResize = () => {
+          syncFixedOffsets();
+          targets = getTargets();
+        };
+
+        const onNativeScroll = () => {
+          targets = getTargets();
+          if (isBelowLockZone() || isAboveLockZone()) return;
+          if (isAnimating || performance.now() < inputCooldownUntil || correctionRaf) return;
+          correctionRaf = window.requestAnimationFrame(() => {
+            correctionRaf = 0;
+            const nearestIndex = getNearestIndex();
+            const nearest = targets[nearestIndex];
+            const isAtLastLockBoundary =
+              nearestIndex === snapSections.length - 1 &&
+              window.scrollY >= nearest - 2;
+            if (isAtLastLockBoundary) return;
+            if (Math.abs(window.scrollY - nearest) < 2) return;
+            isAnimating = true;
+            lenisInstance?.scrollTo(nearest, {
+              duration: 0.45,
+              lock: true,
+              force: true,
+              onComplete: () => {
+                isAnimating = false;
+              },
+            });
+          });
+        };
+
+        const onClick = (event: MouseEvent) => {
+          const clicked = event.target as HTMLElement | null;
+          const trigger = clicked?.closest?.("[data-scroll-to-section]");
+          if (!(trigger instanceof HTMLElement)) return;
+
+          const targetSelector = trigger.dataset.scrollToSection;
+          if (!targetSelector) return;
+
+          const targetSection = document.querySelector<HTMLElement>(targetSelector);
+          if (!targetSection) return;
+
+          const targetIndex = snapSections.indexOf(targetSection);
+          if (targetIndex < 0) return;
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          goToIndex(targetIndex, true);
+        };
+
+        window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+        window.addEventListener("keydown", onKeyDown, { capture: true });
+        window.addEventListener("touchstart", onTouchStart, { passive: true, capture: true });
+        window.addEventListener("touchmove", onTouchMove, { passive: false, capture: true });
+        window.addEventListener("touchend", onTouchEnd, { passive: true, capture: true });
+        window.addEventListener("resize", onResize);
+        window.addEventListener("scroll", onNativeScroll, { passive: true });
+        document.addEventListener("click", onClick, { capture: true });
+
+        sectionLockCleanup = () => {
+          document.documentElement.classList.remove("section-lock-active");
+          if (correctionRaf) {
+            window.cancelAnimationFrame(correctionRaf);
+            correctionRaf = 0;
+          }
+          window.removeEventListener("wheel", onWheel, true);
+          window.removeEventListener("keydown", onKeyDown, true);
+          window.removeEventListener("touchstart", onTouchStart, true);
+          window.removeEventListener("touchmove", onTouchMove, true);
+          window.removeEventListener("touchend", onTouchEnd, true);
+          window.removeEventListener("resize", onResize);
+          window.removeEventListener("scroll", onNativeScroll);
+          document.removeEventListener("click", onClick, true);
+        };
+      };
+
+      lenisInstance = new Lenis({
+        duration: 1.05,
+        smoothWheel: true,
+        wheelMultiplier: 0.95,
+        touchMultiplier: 1,
+      });
+
+      runtime.__lenis = lenisInstance;
+      setupSectionLock();
+
+      const raf = (time: number) => {
+        lenisInstance?.raf(time);
+        window.requestAnimationFrame(raf);
+      };
+
+      window.requestAnimationFrame(raf);
+      syncFixedOffsets();
+      document.addEventListener("astro:page-load", setupSectionLock);
+      document.addEventListener("astro:after-swap", setupSectionLock);
+    </script>
     <SpeedInsights />
     <Analytics />
     <script>

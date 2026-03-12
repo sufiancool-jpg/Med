@@ -1,26 +1,25 @@
 import ogImage from "../assets/og-image.png";
 
 export const siteConfig = {
-  name: "Astro Starter Pro",
+  name: "Mediterranean Platform",
   description:
-    "Starter template optimized for SEO and performance. A solid foundation to start your projects with best practices.",
-  url: "https://astrostarterpro.com",
+    "Research, dialogue, and educational programme promoting informed policymaking and advocacy across the Mediterranean space.",
+  url: "https://mediterranean-platform.org",
   lang: "en",
   locale: "en_US",
-  author: "Devgelo",
-  twitter: "@Devgelo",
+  author: "Mediterranean Platform",
+  twitter: "@medplatform",
   ogImage: ogImage,
   socialLinks: {
-    twitter: "https://twitter.com",
-    github: "https://github.com/devgelo-labs/astro-starter-pro",
-    discord: "https://discord.com",
+    linkedin: "https://www.linkedin.com/",
+    youtube: "https://www.youtube.com/",
+    contact: "/contact",
   },
   navLinks: [
-    { text: "Home", href: "/" },
     { text: "About", href: "/about" },
-    { text: "Services", href: "/services" },
-    { text: "Blog", href: "/blog" },
+    { text: "Activities", href: "/services" },
+    { text: "Publications", href: "/blog" },
+    { text: "Events", href: "/widgets" },
     { text: "Contact", href: "/contact" },
-    { text: "Widgets", href: "/widgets" },
   ],
 };

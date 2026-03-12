@@ -6,60 +6,63 @@ import Form from "../components/ui/Form.astro";
 
 const metadata = {
   title: "Contact",
-  description: "Get in touch with us to discuss your next project.",
+  description:
+    "Get in touch regarding publications, activity platforms, policy dialogue, and events.",
 };
 
-const visionText = ["Get in touch with us to discuss your next project."];
+const contactText = [
+  "Contact the team for publications, policy dialogue, activity platforms, and event participation.",
+];
 ---
 
 <BaseLayout {metadata}>
-  <Content tagline="Contact" title="Contact" description={visionText} />
+  <Content tagline="Contact" title="Contact" description={contactText} />
   <div
-    class="reveal mx-auto max-w-xl bg-card border border-border rounded-3xl p-8 shadow-sm mb-12 md:mb-16"
+    class="reveal mx-auto mb-12 max-w-xl border border-border bg-card p-8 shadow-sm md:mb-16"
   >
     <Form />
   </div>
   <Features
-    tagline="Contact Means"
-    title="We are here to help you"
-    subtitle="Choose the communication channel you prefer. We respond in less than 24 hours."
+    tagline="Contact Information"
+    title="How to Reach the Team"
+    subtitle="Direct channels for events, publications, and policy engagement."
     classes={{ container: "pt-0 md:pt-0" }}
     features={[
       {
-        title: "Phone",
-        description: "+123 456 7890",
-        icon: "lucide:phone",
-        iconClass: "bg-green-500/10 text-green-400",
-      },
-      {
-        title: "Email",
-        description: "contact@company.com",
-        icon: "lucide:mail",
-        iconClass: "bg-yellow-500/10 text-yellow-400",
-      },
-      {
-        title: "Location",
-        description: "City, Country",
+        title: "Address",
+        description: "Via di Villa Emiliani 14, 00197 Rome, Italy",
         icon: "lucide:map-pin",
-        iconClass: "bg-red-500/10 text-red-400",
+        iconClass: "bg-primary/10 text-primary",
       },
       {
-        title: "Personalized Attention",
-        description: "We understand your needs to offer tailored solutions.",
-        icon: "lucide:user-check",
-        iconClass: "bg-blue-500/10 text-blue-400",
+        title: "Telephone",
+        description: "(+39) 06 8522 5052",
+        icon: "lucide:phone",
+        iconClass: "bg-accent/20 text-primary",
       },
       {
-        title: "Technical Support",
-        description: "We resolve any doubt or technical incident quickly.",
-        icon: "lucide:wrench",
-        iconClass: "bg-purple-500/10 text-purple-400",
+        title: "Mailing List",
+        description: "Subscription available for publications and event updates",
+        icon: "lucide:mail",
+        iconClass: "bg-primary/10 text-primary",
       },
       {
-        title: "Strategic Consulting",
-        description: "We advise you to ensure the success of your project.",
-        icon: "lucide:briefcase",
-        iconClass: "bg-pink-500/10 text-pink-400",
+        title: "Publications",
+        description: "Policy Paper, Policy Brief, Research Report, E-Book, Series, and Take-Aways",
+        icon: "lucide:file-text",
+        iconClass: "bg-accent/20 text-primary",
+      },
+      {
+        title: "Events",
+        description: "Events, Mediterranean Talks, African Talks, Roundtable, and Public Lecture",
+        icon: "lucide:calendar-days",
+        iconClass: "bg-primary/10 text-primary",
+      },
+      {
+        title: "Activities",
+        description: "Libya Platform, Africa Nexus, Mediterranean Connectivity Platform, and Gulf Platform",
+        icon: "lucide:network",
+        iconClass: "bg-accent/20 text-primary",
       },
     ]}
   />

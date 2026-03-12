@@ -1,10 +1,10 @@
 ---
 title: "Phasellus Viverra Nulla Ut Metus"
 pubDate: "2026-01-16"
-description: "Analyzing code blocks and italicized text in modern web design."
+description: "Analyzing policy briefs and research notes for stronger regional dialogue."
 author: "Lorem"
-category: "Design"
-tags: ["coding", "astro"]
+category: "Research Report"
+tags: ["policy-dialogue", "mediterranean-connectivity"]
 image: "/blog/blog_post_3_1768848720552.webp"
 ---
 

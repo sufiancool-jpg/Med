@@ -1,17 +1,17 @@
 ---
-title: "Welcome to the New Blog"
+title: "Mediterranean Talks: In Conversation"
 pubDate: "2026-01-19"
-description: "This is the first post on our new Astro-powered blog."
-author: "Angelo Pescetto"
-category: "General"
-tags: ["welcome", "community", "astro"]
+description: "An editorial update on talks, events, and policy dialogue priorities."
+author: "Mediterranean Platform Editorial Team"
+category: "Series"
+tags: ["collective-reflection", "knowledge-exchange", "mediterranean-connectivity"]
 image: "/blog/welcome.webp"
 ---
 
-# Welcome!
+# Mediterranean Talks
 
-We are excited to launch our new blog. Here we will share updates, tutorials, and more.
+This editorial stream shares updates on events, publications, and policy dialogue across the broader Mediterranean.
 
-## Why Astro?
+## Current Focus
 
-Astro is fast, flexible, and perfect for content-driven websites like this blog.
+Work concentrates on governance transitions, regional security, diplomacy, and scenario-making for informed policymaking.

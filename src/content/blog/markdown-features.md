@@ -1,25 +1,23 @@
 ---
-title: "Markdown Features"
+title: "Policy Brief: Regional Security and Diplomacy"
 pubDate: "2026-01-19"
-description: "Exploring the capabilities of Markdown in our blog."
-author: "Angelo Pescetto"
-category: "Tech"
-tags: ["markdown", "features", "astro"]
+description: "A short policy brief format for dialogue support and informed policymaking."
+author: "Mediterranean Platform Editorial Team"
+category: "Policy Brief"
+tags: ["policy-brief", "policy-relevant", "regional-security"]
 image: "/blog/markdown.webp"
 ---
 
-# Markdown is Great
+# Policy Brief Format
 
-You can write **bold** text, _italic_ text, and even lists:
+This brief highlights current regional security and diplomacy priorities across the Mediterranean space.
 
-- Item 1
-- Item 2
-- Item 3
+- Policy-relevant framing
+- Dialogue support orientation
+- National and transnational perspective
 
-## Code Blocks
+## Key Notes
 
-```javascript
-console.log("Hello, world!");
-```
-
-Enjoy writing!
+1. Support informed policymaking.
+2. Strengthen collective reflection.
+3. Advance practical cooperation pathways.

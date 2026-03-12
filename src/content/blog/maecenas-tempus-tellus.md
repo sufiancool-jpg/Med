@@ -3,8 +3,8 @@ title: "Maecenas Tempus Tellus Eget"
 pubDate: "2026-01-14"
 description: "Structured chaos: Ordering the random words."
 author: "Lorem"
-category: "Tech"
-tags: ["coding", "news"]
+category: "Policy Paper"
+tags: ["policy-dialogue", "regional-security"]
 image: "/blog/blog_post_5_1768848750922.webp"
 ---
 

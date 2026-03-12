@@ -5,6 +5,8 @@ import Headline from "../ui/Headline.astro";
 import Button from "../ui/Button.astro";
 import { Icon } from "astro-icon/components";
 
+type HeroLayout = "centered" | "editorial";
+
 const {
   title = await Astro.slots.render("title"),
   tagline,
@@ -15,66 +17,174 @@ const {
   classes = {},
   bg = await Astro.slots.render("bg"),
   animate = false,
-} = Astro.props as HeroProps;
+  image,
+  layout = "centered",
+} = Astro.props as HeroProps & { layout?: HeroLayout };
 
 const { container: containerClassProp = "" } = classes;
+const hasFeaturedSlot = Astro.slots.has("default");
+const heroImageUrl = typeof image === "string" ? image : image?.src;
+const hasLeadContent = Boolean(
+  tagline ||
+    title ||
+    description ||
+    (Array.isArray(actions) && actions.length > 0),
+);
+const isSliderOnly = layout === "editorial" && hasFeaturedSlot && !hasLeadContent;
 ---
 
 <WidgetWrapper
   id={id}
   isDark={isDark}
-  containerClass={`min-h-[calc(100vh-72px)] flex flex-col justify-center ${containerClassProp}`}
+  containerClass={`${layout === "editorial"
+    ? `!max-w-none !px-0 md:!px-0 !py-0 md:!py-0 ${containerClassProp}`
+    : `min-h-[calc(100vh-72px)] md:min-h-[calc(100vh-82px)] flex flex-col justify-center ${containerClassProp}`}`}
   bg={bg}
   animate={animate}
 >
-  <div class="text-center">
-    {
-      tagline && (
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
-          <span class="relative flex h-2 w-2" aria-hidden="true">
-            <span class="absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75 animate-ping motion-reduce:animate-none" />
-            <span class="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-          </span>
-          {tagline}
-        </div>
-      )
-    }
-    {
-      (title || description) && (
-        <Headline
-          title={title}
-          subtitle={description}
-          titleAs="h1"
-          classes={{
-            container: "mb-0 max-w-none",
-            title:
-              "text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6",
-            subtitle: "max-w-2xl mx-auto text-xl text-muted-foreground mb-10",
-          }}
-        />
-      )
-    }
+  {
+    layout === "editorial" ? (
+      <section class:list={["relative bg-card", { "border-y border-border": !isSliderOnly }]}>
+        {heroImageUrl && (
+          <div
+            class="absolute inset-0 bg-cover bg-center opacity-10"
+            style={`background-image: url('${heroImageUrl}')`}
+          />
+        )}
+        {heroImageUrl && <div class="absolute inset-0 bg-background/90" />}
 
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-      {
-        Array.isArray(actions) &&
-          actions.length > 0 &&
-          actions.map((action) => (
-            <Button
-              href={action.href}
-              variant={action.variant as "primary" | "secondary"}
-              size="lg"
-              aria-label={action.ariaLabel}
-              class="w-full sm:w-auto"
+        <div
+          class:list={[
+            isSliderOnly
+              ? "relative w-full"
+              : "relative mx-auto max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:px-8 lg:py-20",
+            { "grid lg:grid-cols-12": hasLeadContent || hasFeaturedSlot },
+          ]}
+        >
+          {hasLeadContent && (
+            <div
+              class:list={[
+                "text-left",
+                hasFeaturedSlot ? "lg:col-span-7" : "lg:col-span-12",
+              ]}
             >
-              {action.icon && (
-                <Icon name={action.icon} class="w-5 h-5 mr-2 -ml-1" />
+              {tagline && (
+                <p class="mb-6 inline-block border-b border-accent pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+                  {tagline}
+                </p>
               )}
-              {action.text}
-            </Button>
-          ))
-      }
-    </div>
-  </div>
-  <slot />
+
+              {(title || description) && (
+                <Headline
+                  title={title}
+                  subtitle={description}
+                  titleAs="h1"
+                  classes={{
+                    container: "mb-0 max-w-none",
+                    title:
+                      "font-heading text-5xl font-semibold leading-tight text-foreground md:text-7xl",
+                    subtitle:
+                      "mt-6 max-w-2xl text-base text-muted-foreground md:text-lg",
+                  }}
+                />
+              )}
+
+              {Array.isArray(actions) && actions.length > 0 && (
+                <div class="mt-10 flex flex-wrap items-center gap-6">
+                  {actions.map((action, index) =>
+                    index === 0 || action.variant === "primary" ? (
+                      <Button
+                        href={action.href}
+                        variant="primary"
+                        size="md"
+                        aria-label={action.ariaLabel}
+                        class="w-auto px-6 py-3"
+                      >
+                        {action.icon && (
+                          <Icon name={action.icon} class="mr-2 h-5 w-5" />
+                        )}
+                        {action.text}
+                      </Button>
+                    ) : (
+                      <a
+                        href={action.href}
+                        aria-label={action.ariaLabel}
+                        class="inline-flex items-center gap-2 text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
+                      >
+                        {action.icon && (
+                          <Icon name={action.icon} class="h-5 w-5" />
+                        )}
+                        {action.text}
+                      </a>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {hasFeaturedSlot && (
+            <aside
+              class:list={[
+                isSliderOnly
+                  ? "w-full"
+                  : "self-start border border-border bg-background/95 p-6 md:p-8",
+                hasLeadContent ? "lg:col-span-5" : "lg:col-span-12",
+              ]}
+            >
+              <slot />
+            </aside>
+          )}
+        </div>
+      </section>
+    ) : (
+      <div class="text-center">
+        {
+          tagline && (
+            <div class="mb-6 inline-flex items-center gap-2 border border-border px-3 py-1 text-xs font-semibold text-primary">
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              {tagline}
+            </div>
+          )
+        }
+        {
+          (title || description) && (
+            <Headline
+              title={title}
+              subtitle={description}
+              titleAs="h1"
+              classes={{
+                container: "mb-0 max-w-none",
+                title:
+                  "font-heading text-5xl font-semibold leading-tight text-foreground md:text-7xl",
+                subtitle:
+                  "mx-auto mb-10 mt-6 max-w-2xl text-xl text-muted-foreground",
+              }}
+            />
+          )
+        }
+
+        <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {
+            Array.isArray(actions) &&
+              actions.length > 0 &&
+              actions.map((action) => (
+                <Button
+                  href={action.href}
+                  variant={action.variant as "primary" | "secondary"}
+                  size="lg"
+                  aria-label={action.ariaLabel}
+                  class="w-full sm:w-auto"
+                >
+                  {action.icon && (
+                    <Icon name={action.icon} class="mr-2 h-5 w-5 -ml-1" />
+                  )}
+                  {action.text}
+                </Button>
+              ))
+          }
+        </div>
+      </div>
+    )
+  }
 </WidgetWrapper>

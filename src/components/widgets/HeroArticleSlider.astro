@@ -1,0 +1,319 @@
+---
+export interface HeroSliderItem {
+  title: string;
+  href: string;
+  image: string;
+  excerpt?: string;
+  author: string;
+  date?: string;
+  category?: string;
+  hashtags?: string;
+}
+
+interface Props {
+  items?: HeroSliderItem[];
+  class?: string;
+  autoplayMs?: number;
+}
+
+const {
+  items = [],
+  class: className = "",
+  autoplayMs = 0,
+} = Astro.props as Props;
+
+const isSingleItem = items.length === 1;
+const baseItems =
+  isSingleItem
+    ? items
+    : items.length >= 3
+      ? items
+      : items.length === 2
+        ? [items[0], items[1], items[0]]
+        : [];
+
+const cloneCount = baseItems.length > 1 ? 3 : 0;
+const trackItems =
+  cloneCount > 0
+    ? [
+        ...baseItems.slice(-cloneCount),
+        ...baseItems,
+        ...baseItems.slice(0, cloneCount),
+      ]
+    : baseItems;
+
+const getTitleSizeClass = (title: string) => {
+  const length = title.trim().length;
+
+  if (length > 130) return "text-[13px] sm:text-sm md:text-base lg:text-lg";
+  if (length > 95) return "text-sm sm:text-base md:text-lg lg:text-xl";
+  return "text-base sm:text-lg md:text-xl lg:text-2xl";
+};
+---
+
+{
+  trackItems.length > 0 ? (
+    <section
+      class:list={[
+        "relative w-full overflow-hidden bg-background [--slide-h:242px] h-[var(--slide-h)]",
+        className,
+      ]}
+      data-hero-slider
+      data-base-count={baseItems.length}
+      data-clone-count={cloneCount}
+      data-autoplay-ms={autoplayMs}
+      aria-roledescription="carousel"
+      aria-label="Featured blog articles"
+      tabindex="0"
+    >
+      <div class="h-full w-full overflow-hidden bg-background">
+        <div
+          class="flex h-full gap-0 will-change-transform transition-transform duration-500 ease-linear"
+          data-slider-track
+        >
+          {trackItems.map((item) => (
+            <article class="relative h-full shrink-0 overflow-hidden opacity-50" data-slide>
+              <img
+                src={item.image}
+                alt={item.title}
+                class="absolute inset-0 h-full w-full scale-110 object-cover object-center"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-foreground/35"></div>
+              <div class="absolute inset-0 z-10 flex items-center justify-start px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5">
+                <div class="max-w-[86%] text-left">
+                  <div class="flex flex-wrap items-center gap-2">
+                    {item.category && (
+                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-light uppercase tracking-[0.08em] leading-none text-white sm:px-2.5 sm:py-1 sm:text-[11px]">
+                        {item.category}
+                      </span>
+                    )}
+                    {item.hashtags && (
+                      <p class="line-clamp-1 text-[10px] font-sans font-light uppercase tracking-[0.08em] text-white sm:text-[11px] md:text-[13px]">
+                        {item.hashtags}
+                      </p>
+                    )}
+                  </div>
+                  <p class="mt-2 text-[13px] font-sans font-light uppercase tracking-[0.08em] leading-none text-white sm:text-sm">
+                    By {item.author}
+                  </p>
+                  <h3
+                    class:list={[
+                      "mt-2 font-sans font-bold uppercase tracking-[0.08em] leading-tight text-white [overflow-wrap:anywhere]",
+                      getTitleSizeClass(item.title),
+                    ]}
+                  >
+                    <a href={item.href} class="cursor-pointer transition-colors hover:text-white/80">
+                      {item.title}
+                    </a>
+                  </h3>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      {
+        baseItems.length > 1 && (
+          <>
+            <button
+              type="button"
+              data-slider-prev
+              class="absolute left-1 top-1/2 z-40 inline-flex h-16 w-16 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:left-2 sm:h-20 sm:w-20"
+              aria-label="Previous highlighted article"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-10 w-10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-slider-next
+              class="absolute right-1 top-1/2 z-40 inline-flex h-16 w-16 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:right-2 sm:h-20 sm:w-20"
+              aria-label="Next highlighted article"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-10 w-10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </button>
+          </>
+        )
+      }
+    </section>
+  ) : (
+    <p class="p-5 text-sm text-muted-foreground">
+      No featured articles available.
+    </p>
+  )
+}
+
+<script is:inline>
+  const initHeroSliders = () => {
+    document.querySelectorAll("[data-hero-slider]").forEach((slider) => {
+      if (slider.dataset.sliderReady === "true") return;
+      slider.dataset.sliderReady = "true";
+
+      const track = slider.querySelector("[data-slider-track]");
+      const slides = Array.from(slider.querySelectorAll("[data-slide]"));
+      const prevButton = slider.querySelector("[data-slider-prev]");
+      const nextButton = slider.querySelector("[data-slider-next]");
+      if (!track || slides.length === 0) return;
+
+      const baseCount = Number(slider.getAttribute("data-base-count") || "0");
+      const cloneCount = Number(slider.getAttribute("data-clone-count") || "0");
+      const autoplayMs = Number(slider.getAttribute("data-autoplay-ms") || "0");
+
+      let index = cloneCount > 0 ? cloneCount : 0;
+      let slideWidth = 0;
+      let slideStep = 0;
+      let centerOffset = 0;
+      let timerId = 0;
+      let isTransitioning = false;
+
+      const setHighlight = () => {
+        const centerIndex = baseCount <= 1 ? index : index + 1;
+        slides.forEach((slide, currentIndex) => {
+          const isCenter = currentIndex === centerIndex;
+          slide.dataset.active = isCenter ? "true" : "false";
+          slide.style.opacity = isCenter ? "1" : "0.5";
+        });
+      };
+
+      const setDimensions = () => {
+        const styles = window.getComputedStyle(track);
+        const gap =
+          Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
+        const baseSlideWidth = ((slider.clientWidth - gap * 2) / 3) * 1.1;
+
+        if (baseCount <= 1) {
+          slideWidth = slider.clientWidth;
+          slideStep = slideWidth;
+          centerOffset = 0;
+        } else {
+          slideWidth = baseSlideWidth;
+          slideStep = slideWidth + gap;
+          const visibleTrackWidth = slideWidth * 3 + gap * 2;
+          centerOffset = (visibleTrackWidth - slider.clientWidth) / 2;
+        }
+
+        const slideHeight = (slideWidth * 9) / 16;
+        slider.style.setProperty("--slide-h", `${slideHeight}px`);
+        slides.forEach((slide) => {
+          slide.style.width = `${slideWidth}px`;
+        });
+      };
+
+      const render = (animate = true) => {
+        track.style.transitionDuration = animate ? "500ms" : "0ms";
+        track.style.transform = `translateX(-${index * slideStep + centerOffset}px)`;
+      };
+
+      const stopAutoplay = () => {
+        if (timerId) {
+          window.clearInterval(timerId);
+          timerId = 0;
+        }
+      };
+
+      const startAutoplay = () => {
+        if (autoplayMs < 2000 || baseCount <= 1) return;
+        stopAutoplay();
+        timerId = window.setInterval(() => {
+          goTo(index + 1);
+        }, autoplayMs);
+      };
+
+      const normalizeIndexAfterTransition = () => {
+        if (baseCount <= 1 || cloneCount === 0) return;
+
+        const maxReal = cloneCount + baseCount - 1;
+        if (index > maxReal) {
+          index = cloneCount;
+          render(false);
+        } else if (index < cloneCount) {
+          index = cloneCount + baseCount - 1;
+          render(false);
+        }
+      };
+
+      const goTo = (nextIndex) => {
+        if (isTransitioning || baseCount <= 1) return;
+        isTransitioning = true;
+        index = nextIndex;
+        render(true);
+      };
+
+      track.addEventListener("transitionend", () => {
+        normalizeIndexAfterTransition();
+        setHighlight();
+        isTransitioning = false;
+      });
+
+      prevButton?.addEventListener("click", () => {
+        goTo(index - 1);
+        startAutoplay();
+      });
+
+      nextButton?.addEventListener("click", () => {
+        goTo(index + 1);
+        startAutoplay();
+      });
+
+      slider.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          goTo(index - 1);
+          startAutoplay();
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          goTo(index + 1);
+          startAutoplay();
+        }
+      });
+
+      slider.addEventListener("focusin", stopAutoplay);
+      slider.addEventListener("focusout", startAutoplay);
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          stopAutoplay();
+        } else {
+          startAutoplay();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        setDimensions();
+        render(false);
+        setHighlight();
+      });
+
+      setDimensions();
+      render(false);
+      setHighlight();
+      startAutoplay();
+    });
+  };
+
+  initHeroSliders();
+  document.addEventListener("astro:after-swap", initHeroSliders);
+</script>

@@ -3,8 +3,8 @@ title: "Aenean Commodo Ligula Eget Dolor"
 pubDate: "2026-01-18"
 description: "Exploring the depths of layout variations with standard dummy text."
 author: "Lorem"
-category: "Tech"
-tags: ["testing", "coding"]
+category: "Policy Paper"
+tags: ["scenario-making", "policy-dialogue"]
 image: "/blog/blog_post_1_1768848683359.webp"
 ---
 

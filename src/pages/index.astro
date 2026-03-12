@@ -1,134 +1,1047 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { siteConfig } from "../config/site";
-import Hero from "../components/widgets/Hero.astro";
-import Features from "../components/widgets/Features.astro";
-import devImg from "../assets/images/dev_balanced.png";
-import openSourceImg from "../assets/images/open-source.png";
-import Content2 from "../components/widgets/Content2.astro";
-const metadata = {
-  title: `${siteConfig.name} — The next step for your project`,
+import HeroArticleSlider from "../components/widgets/HeroArticleSlider.astro";
+
+const toHashtag = (value: string) =>
+  `#${value
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "")}`;
+
+const sliderNarratives = [
+  {
+    title: "The Red Sea: Divided by Water, United by Opportunities",
+    href: "#",
+    excerpt:
+      "Policy-relevant analysis on regional integration, cooperation, and shared opportunities across the Mediterranean and Red Sea space.",
+    author: "Ghanem, Narbone, Palleschi, and Maru (ed.)",
+    date: "Feb 25, 2026",
+    category: "E-book",
+    image:
+      "https://mp.luiss.it/wp-content/uploads/2026/02/Screenshot-2026-02-25-at-11.55.33.jpg",
+    hashtags: `${toHashtag("Policy relevant")} ${toHashtag("Red Sea")} ${toHashtag("Mediterranean")}`,
+  },
+  {
+    title: "Distribution of Powers in Libya’s Future Local Governance System",
+    href: "#",
+    excerpt:
+      "A policy-oriented assessment of local governance design and pathways for effective institutional balance.",
+    author: "Intissar Kherigi",
+    date: "Feb 5, 2026",
+    category: "Policy paper",
+    image:
+      "https://mp.luiss.it/wp-content/uploads/2026/02/jpeg-optimizer_P9300014b.jpg",
+    hashtags: `${toHashtag("Policy Paper")} ${toHashtag("Libya Platform")} ${toHashtag("Governance")}`,
+  },
+  {
+    title:
+      "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya’s Peace Process",
+    href: "#",
+    excerpt:
+      "Comparative lessons for inclusive dialogue support and local governance in conflict-affected environments.",
+    author: "Mohamed Aziz Mrad",
+    date: "Jan 8, 2026",
+    category: "Policy paper",
+    image:
+      "https://mp.luiss.it/wp-content/uploads/2026/01/thomas-foertsch-BGPVQ_ISkU-unsplash1.jpg",
+    hashtags: `${toHashtag("Dialogue Support")} ${toHashtag("Policy Analysis")} ${toHashtag("Libya Platform")}`,
+  },
+  {
+    title:
+      "Youth as Catalysts for Shaping Libya’s Future Pathways for Inclusion in National Dialogue and Vision-Making",
+    href: "#",
+    excerpt:
+      "An inclusion-focused paper on youth participation, skills and knowledge building, and national dialogue processes.",
+    author: "Abdelkarim Skouri",
+    date: "Dec 2, 2025",
+    category: "Policy Paper",
+    hashtags: `${toHashtag("Youth Platform")} ${toHashtag("Capacity Building")} ${toHashtag("National Dialogue")}`,
+  },
+  {
+    title:
+      "Hydrogen Valleys and Sustainable Development in Algeria: Pivoting from Hydrocarbons to an Inclusive Euro Mediterranean Hydrogen Economy",
+    href: "#",
+    excerpt:
+      "Research on natural resources governance, energy transition, and climate-linked development in the region.",
+    author: "Leon Stille",
+    date: "Nov 21, 2025",
+    category: "Policy Paper",
+    hashtags: `${toHashtag("Energy Transition")} ${toHashtag("Climate Change")} ${toHashtag("Sustainable Development")}`,
+  },
+  {
+    title:
+      "Mediterranean Connectivity Platform: Energy, Transport, Logistics, and Digital Shifts",
+    href: "#",
+    excerpt:
+      "Dialogue and research on how connectivity initiatives shape integration opportunities and policy choices.",
+    author: "Mediterranean Connectivity Team",
+    date: "Latest update",
+    category: "Research Report",
+    hashtags: `${toHashtag("Mediterranean Connectivity Platform")} ${toHashtag("Policy Dialogue")} ${toHashtag("Research")}`,
+  },
+  {
+    title: "Africa Nexus: Building an African-European Knowledge Ecosystem",
+    href: "#",
+    excerpt:
+      "A platform connecting experts, young scholars, and policymakers through policy analyses and knowledge exchange.",
+    author: "Africa Nexus Team",
+    date: "Latest update",
+    category: "Policy Brief",
+    hashtags: `${toHashtag("Africa Nexus")} ${toHashtag("Crossroads exchanges")} ${toHashtag("Knowledge Exchange")}`,
+  },
+  {
+    title:
+      "Gulf Platform: Europe–Gulf Dialogue on Geopolitical, Economic, and Societal Trends",
+    href: "#",
+    excerpt:
+      "Policy-relevant research and dialogue support for decision-makers and regional security discussions.",
+    author: "Gulf Platform Team",
+    date: "Latest update",
+    category: "Series",
+    hashtags: `${toHashtag("Gulf Platform")} ${toHashtag("Regional Security")} ${toHashtag("Policy Relevant")}`,
+  },
+];
+
+const featuredPublications = [
+  {
+    type: "E-Book",
+    title: "The Red Sea: Divided by Water, United by Opportunities",
+    authors: "Ghanem, Narbone, Palleschi, and Maru (ed.)",
+    date: "Feb 25, 2026",
+    excerpt:
+      "A multi-disciplinary publication on regional opportunity structures, cooperation pathways, and strategic dialogue.",
+    href: "#",
+  },
+  {
+    type: "Policy Paper",
+    title: "Distribution of Powers in Libya’s Future Local Governance System",
+    authors: "Intissar Kherigi",
+    date: "Feb 5, 2026",
+    excerpt:
+      "Policy paper on governance architecture and local institutional design for stability and inclusive policymaking.",
+    href: "#",
+  },
+  {
+    type: "Policy Paper",
+    title:
+      "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya’s Peace Process",
+    authors: "Mohamed Aziz Mrad",
+    date: "Jan 8, 2026",
+    excerpt:
+      "Comparative insights connecting local governance, peace process design, and practical dialogue support.",
+    href: "#",
+  },
+  {
+    type: "Policy Paper",
+    title:
+      "Youth as Catalysts for Shaping Libya’s Future Pathways for Inclusion in National Dialogue and Vision-Making",
+    authors: "Abdelkarim Skouri",
+    date: "Dec 2, 2025",
+    excerpt:
+      "Evidence-led paper on youth inclusion, national dialogue, and long-term vision-making processes.",
+    href: "#",
+  },
+];
+
+const activityThemes = [
+  {
+    title: "Libya Platform",
+    summary:
+      "Multi-track initiative combining field-based research, capacity building, and dialogue support.",
+    meta: "Activity platform",
+  },
+  {
+    title: "Africa Nexus",
+    summary:
+      "Policy analyses and crossroads exchanges to strengthen African-European knowledge ecosystems.",
+    meta: "Activity platform",
+  },
+  {
+    title: "Mediterranean Connectivity Platform",
+    summary:
+      "Research and policy dialogue on energy, transport, logistics, and digital shifts in the region.",
+    meta: "Activity platform",
+  },
+  {
+    title: "Gulf Platform",
+    summary:
+      "Research and dialogue on Europe-Gulf relations, societal trends, and sectoral cooperation.",
+    meta: "Activity platform",
+  },
+  {
+    title: "Youth Dynamics and Policies",
+    summary:
+      "Further project stream focused on youth pathways, participation, and policy impact.",
+    meta: "Further project",
+  },
+  {
+    title: "EU Inclusive Open Strategic Autonomy Centre",
+    summary:
+      "Further project supporting policy reflection on strategic autonomy and inclusive cooperation.",
+    meta: "Further project",
+  },
+];
+
+const decodeEntities = (value: string) =>
+  value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+
+const stripCdata = (value: string) =>
+  value.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
+
+const extractTag = (input: string, tagName: string) => {
+  const match = input.match(
+    new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`),
+  );
+  return match?.[1] ?? "";
+};
+
+const extractAttr = (input: string, tagName: string, attrName: string) => {
+  const match = input.match(
+    new RegExp(`<${tagName}[^>]*\\s${attrName}="([^"]+)"[^>]*\\/?>`),
+  );
+  return match?.[1] ?? "";
+};
+
+const normalizeLink = (value: string) =>
+  decodeEntities(stripCdata(value)).replace(/\?at_medium=RSS&at_campaign=rss$/, "");
+
+const upscaleBbcImage = (url: string) =>
+  url.includes("/standard/240/")
+    ? url.replace("/standard/240/", "/standard/1024/")
+    : url;
+
+const fillerImages = [
+  "/blog/blog_post_1_1768848683359.webp",
+  "/blog/blog_post_5_1768848750922.webp",
+  "/blog/blog_post_8_1768850554501.webp",
+  "/blog/blog_post_11_1768850597259.webp",
+  "/blog/blog_post_12_1768850610966.webp",
+];
+
+let heroSliderItems = sliderNarratives.map((item, index) => ({
+  ...item,
+  category: item.category,
+  image: item.image || fillerImages[index % fillerImages.length],
+}));
+
+try {
+  const bbcFeedResponse = await fetch("https://feeds.bbci.co.uk/news/rss.xml");
+  if (bbcFeedResponse.ok) {
+    const bbcFeedXml = await bbcFeedResponse.text();
+    const feedAssets = Array.from(bbcFeedXml.matchAll(/<item>([\s\S]*?)<\/item>/g))
+      .map((match) => match[1])
+      .map((itemXml) => {
+        const href = normalizeLink(extractTag(itemXml, "link"));
+        const image =
+          extractAttr(itemXml, "media:thumbnail", "url") ||
+          extractAttr(itemXml, "media:content", "url");
+        return { href, image: image ? upscaleBbcImage(image) : "" };
+      })
+      .filter((item) => item.image);
+
+    if (feedAssets.length > 0) {
+      heroSliderItems = sliderNarratives.map((item, index) => {
+        const asset = feedAssets[index % feedAssets.length];
+        return {
+          ...item,
+          href: item.href,
+          category: item.category,
+          image: item.image || asset.image || fillerImages[index % fillerImages.length],
+        };
+      });
+    }
+  }
+} catch (error) {
+  console.error("Failed to load RSS imagery for hero slider:", error);
+}
+
+const announcement = {
+  label: "Next talk",
+  date: "May 20",
+  title: "African Talks: South African Foreign Policy",
+  ctaText: "Register",
+  ctaHref: "#",
+};
+const landingIntro = {
+  firstRest:
+    "is a research, dialogue, and educational initiative dedicated to examining the region's evolving political, socio-economic, and security dynamics. We provide a space for collective reflection on Mediterranean transformations, foster informed debate, and support evidence-based policymaking across national and transnational levels.",
+  second:
+    "Our work spans regional geopolitics and diplomacy, the political economy of natural resources, energy transition, climate change, and long-term scenario building.",
+};
+const joinNetworkText = "Join the network";
+const sliderStats = {
   description:
-    "A modern and professional template for your web projects with Astro and Tailwind CSS. Boost your development with a solid foundation.",
+    "The Mediterranean Platform draws on the work of leading specialists and academic experts to organise public events and provide in-depth multidisciplinary analysis of socio-political, security and economic transformations in the Mediterranean and in the Middle East and North Africa (MENA).",
+  items: [
+    { value: 73, label: "Publications" },
+    { value: 30, label: "Collaborators" },
+    { value: 29, label: "Public Events" },
+  ],
+};
+const featuredArticle = {
+  title: "The Red Sea: Divided by Water, United by Opportunities",
+  editors:
+    "Edited by Dr. Dalia Ghanem, Luigi Narbone, Mehari Taddele Maru & Carlo Palleschi.",
+  paragraphs: [
+    "The recent maritime crisis in the Red Sea has brought this vital global waterway back to the fore. But the region’s destiny is no longer being decided by the distant chess moves of great powers; it is being shaped, right now, by the assertive and competing interests of regional middle powers. Middle Eastern countries (MECs), such as the United Arab Emirates, Saudi Arabia, Qatar and Türkiye, actively rewriting the security and political map of the Red Sea and the Horn of Africa (HoA) with a mix of money, diplomacy, and direct military and other forms of intervention. At the same time, the HoA is no longer a passive recipient of MECs’ engagement. Its governments, elites, and local actors have learned to navigate and exploit MECs’ ambitions, using external competition to bolster domestic legitimacy, attract investment, and diversify partnerships.",
+    "To understand this critical corridor this book provides the first comprehensive analysis that breaks down the silos between MECs and the HoA. This volume critically examines the interactions between the MECs and the HoA and seeks to align visions and identify concrete steps toward realizing the vision of a Red Sea that, though divided by waters, is united by opportunities.",
+    "Co-published by the Middle East Council on Global Affairs, the Mediterranean Platform, and the Pan-African Agenda Institute, this eBook provides the first comprehensive analysis that breaks down the silos between Middle Eastern countries (MECs) and the Horn of Africa (HoA). By bringing perspectives from the Gulf into direct conversation with those from the Horn, it critically examines the interactions between the MECs and the HoA.",
+  ],
+};
+
+const metadata = {
+  title: `${siteConfig.name} — Research, Dialogue, and Policy Analysis`,
+  description:
+    "Editorial homepage focused on policy-relevant publications, activity platforms, and current regional analysis.",
   ignoreTitleTemplate: true,
 };
+const midPageSliderItems = heroSliderItems.slice(0, 3);
 ---
 
 <BaseLayout {metadata}>
-  <Hero
-    title={`Starter Template for <br class="hidden md:block" /> <span class="bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Web Developers</span>`}
-    tagline="Astro v5 + Tailwind v4"
-    description={`${siteConfig.description}`}
-    actions={[
-      {
-        text: "Get Started",
-        href: "https://github.com/devgelo-labs/astro-starter-pro",
-        variant: "primary",
-        icon: "lucide:github",
-      },
-      {
-        text: "Our Services",
-        href: "/services",
-        variant: "secondary",
-        icon: "lucide:arrow-right",
-        ariaLabel: "Learn more about our services",
-      },
-    ]}
-  />
-  <Features
-    tagline="Features"
-    title="What's Included"
-    subtitle="A selection of tools and configurations to streamline your workflow."
-    features={[
-      {
-        title: "Optimized SEO",
-        description:
-          "Base configuration for Meta tags, Open Graph, and Sitemap generation.",
-        icon: "lucide:scan-search",
-        iconClass: "bg-blue-500/10 text-blue-400",
-      },
-      {
-        title: "High Performance",
-        description: "Lightweight structure for fast load times.",
-        icon: "lucide:zap",
-        iconClass: "bg-purple-500/10 text-purple-400",
-      },
-      {
-        title: "Tailwind v4",
-        description:
-          "Integrated configuration with the latest version of Tailwind CSS.",
-        icon: "lucide:palette",
-        iconClass: "bg-pink-500/10 text-pink-400",
-      },
-    ]}
-  />
-  <Content2
-    items={[
-      {
-        title: "Responsive Design",
-        description:
-          "Base configuration for Meta tags, Open Graph, and Sitemap generation.",
-        icon: "lucide:scan-search",
-        iconClass: "bg-blue-500/10 text-blue-400",
-      },
-      {
-        title: "High Performance",
-        description: "Lightweight structure for fast load times.",
-        icon: "lucide:zap",
-        iconClass: "bg-purple-500/10 text-purple-400",
-      },
-      {
-        title: "Tailwind v4",
-        description:
-          "Integrated configuration with the latest version of Tailwind CSS.",
-        icon: "lucide:palette",
-        iconClass: "bg-pink-500/10 text-pink-400",
-      },
-    ]}
-    image={devImg}
-    imageAlt="Development"
+  <section
+    data-scroll-lock-section
+    data-hero-section
+    class="flex [height:var(--section-h,calc(100svh-112px))] flex-col"
   >
-    <Fragment>
-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
-        Development
-      </h3>
-      We provide a solid foundation to start your projects with best practices.
-    </Fragment>
-  </Content2>
-  <Content2
-    items={[
-      {
-        title: "Open Source",
-        description:
-          "Developed under the MIT license, free for personal and commercial use.",
-        icon: "lucide:github",
-        iconClass: "bg-indigo-500/10 text-indigo-400",
-      },
-      {
-        title: "Community Driven",
-        description:
-          "Built with the feedback and contributions of the developer community.",
-        icon: "lucide:users",
-        iconClass: "bg-orange-500/10 text-orange-400",
-      },
-      {
-        title: "Regular Updates",
-        description:
-          "Continuously improved with the latest technologies and best practices.",
-        icon: "lucide:refresh-cw",
-        iconClass: "bg-teal-500/10 text-teal-400",
-      },
-    ]}
-    image={openSourceImg}
-    imageAlt="Community and Open Source"
-    isReversed={true}
+    <div class="flex h-full w-full min-h-0 flex-col overflow-hidden">
+      <div
+        data-hero-intro-panel
+        class="w-full shrink-0 overflow-hidden [transition-property:max-height,transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[max-height,transform,opacity]"
+      >
+        <div class="border-b border-black px-4 pt-8 pb-6 sm:px-6 md:pt-10 lg:px-8">
+          <div class="grid items-start gap-8 md:grid-cols-[62%_38%] md:gap-0">
+            <div class="w-full md:pr-8">
+              <p class="text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+                <span class="italic">The Mediterranean Platform</span> {landingIntro.firstRest}
+              </p>
+              <p class="mt-3 text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+                {landingIntro.second}
+              </p>
+              <a
+                href="#"
+                class="mt-4 inline-flex cursor-pointer items-center gap-2 text-left text-sm font-light tracking-[0.04em] text-black transition-opacity hover:opacity-70"
+              >
+                <svg
+                  viewBox="0 0 20 12"
+                  class="h-3 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M1 6h14"></path>
+                  <path d="m11 2 4 4-4 4"></path>
+                </svg>
+                About us
+              </a>
+            </div>
+            <div class="w-full md:border-l md:border-black md:pl-8">
+              <div class="group relative flex h-full w-full items-center justify-end">
+                <img
+                  src="/Logo3.png"
+                  alt="Mediterranean Platform"
+                  class="h-auto w-[min(100%,720px)] object-contain transition-opacity duration-200 group-hover:opacity-0"
+                />
+                <p class="pointer-events-none absolute right-0 text-right text-4xl font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
+                  {joinNetworkText}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-hero-video-panel class="relative flex-1 min-h-0 overflow-hidden bg-black">
+        <video
+          data-landing-video
+          class="absolute inset-0 h-full w-full object-cover"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+        >
+          <source src="/webbg.mp4" type="video/mp4" />
+        </video>
+        <div class="absolute inset-0 bg-black/10"></div>
+        <button
+          type="button"
+          data-scroll-to-latest
+          data-scroll-to-section="#home-latest-slider"
+          aria-label="Scroll to latest section"
+          class="hero-scroll-trigger is-revealed absolute left-1/2 top-1/2 z-20 inline-flex -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center text-white opacity-0 pointer-events-none transition-opacity duration-700 hover:opacity-80"
+        >
+          <svg
+            viewBox="0 0 12 16"
+            class="hero-arrow-nudge h-[4.8rem] w-[4.8rem] md:h-24 md:w-24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.35"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 1.5v10.5"></path>
+            <path d="m2.9 8.9 3.1 3.1 3.1-3.1"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <section
+      data-announcement-bar
+      class="fixed inset-x-0 bottom-0 z-40 h-10 bg-[#42b09a] text-white/90 md:h-11"
+    >
+      <div class="mx-auto flex h-full max-w-6xl items-center gap-2 px-4 sm:px-6 md:gap-3 lg:px-8">
+        <p class="shrink-0 text-[0.82rem] font-semibold leading-none md:text-[0.86rem]">
+          {announcement.label}
+        </p>
+        <p class="shrink-0 text-[0.82rem] font-semibold leading-none md:text-[0.86rem]">
+          {announcement.date}
+        </p>
+        <p class="min-w-0 truncate text-[0.82rem] font-light leading-none md:text-[0.86rem]">
+          {announcement.title}
+        </p>
+        <a
+          href={announcement.ctaHref}
+          class="shrink-0 inline-flex cursor-pointer border border-white/90 px-2 py-0.5 text-[0.78rem] font-light leading-none transition-colors hover:border-white hover:bg-white/10 hover:text-white/90 md:text-[0.82rem]"
+        >
+          {announcement.ctaText}
+        </a>
+      </div>
+    </section>
+  </section>
+
+  <style is:inline>
+    @keyframes heroArrowNudge {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      25% {
+        transform: translateY(5px);
+      }
+      50% {
+        transform: translateY(1px);
+      }
+      75% {
+        transform: translateY(6px);
+      }
+    }
+
+    .hero-arrow-nudge {
+      animation: heroArrowNudge 1.8s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .hero-scroll-trigger.is-revealed {
+      margin-top: 22px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-arrow-nudge {
+        animation: none;
+      }
+    }
+  </style>
+
+  <script is:inline>
+    const initHeroArrow = () => {
+      const trigger = document.querySelector("[data-scroll-to-latest]");
+      if (!(trigger instanceof HTMLElement)) return;
+      if (trigger.dataset.arrowBound === "true") return;
+      trigger.dataset.arrowBound = "true";
+
+      const revealArrow = () => {
+        trigger.classList.remove("opacity-0", "pointer-events-none");
+      };
+
+      window.setTimeout(revealArrow, 10000);
+    };
+
+    const initLandingVideos = () => {
+      document.querySelectorAll("[data-landing-video]").forEach((video) => {
+        video.muted = true;
+        video.defaultMuted = true;
+        const playPromise = video.play?.();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {});
+        }
+      });
+    };
+
+    const initSliderStatsCounter = () => {
+      const section = document.getElementById("home-latest-slider");
+      const statsBox = document.querySelector("[data-slider-stats]");
+      if (!section || !statsBox || section.dataset.counterBound === "true") return;
+
+      section.dataset.counterBound = "true";
+
+      const countEls = Array.from(statsBox.querySelectorAll("[data-countup]"));
+      const rafIds = new Map();
+      const START_THRESHOLD = 0.55;
+      let runToken = 0;
+      let isActive = false;
+
+      const animateCount = (el, target, duration, token) => {
+        const start = performance.now();
+
+        const tick = (now) => {
+          if (token !== runToken) return;
+          const progress = Math.min(1, (now - start) / duration);
+          const value = Math.round(target * progress);
+          el.textContent = String(value);
+          if (progress < 1) {
+            const rafId = window.requestAnimationFrame(tick);
+            rafIds.set(el, rafId);
+          } else {
+            el.textContent = String(target);
+            const rafId = rafIds.get(el);
+            if (rafId) {
+              window.cancelAnimationFrame(rafId);
+              rafIds.delete(el);
+            }
+          }
+        };
+
+        el.textContent = "0";
+        const rafId = window.requestAnimationFrame(tick);
+        rafIds.set(el, rafId);
+      };
+
+      const resetCountup = () => {
+        runToken += 1;
+        section.dataset.counterDone = "false";
+        countEls.forEach((el) => {
+          const rafId = rafIds.get(el);
+          if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafIds.delete(el);
+          }
+          el.textContent = "0";
+        });
+      };
+
+      const runCountup = () => {
+        if (section.dataset.counterDone === "true") return;
+        section.dataset.counterDone = "true";
+        runToken += 1;
+        const token = runToken;
+
+        countEls.forEach((el, index) => {
+          const target = Number(el.dataset.countupTarget || "0");
+          if (!Number.isFinite(target) || target <= 0) return;
+          animateCount(el, target, 420 + index * 80, token);
+        });
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!entry) return;
+
+          if (entry.intersectionRatio >= START_THRESHOLD) {
+            if (!isActive) {
+              isActive = true;
+              runCountup();
+            }
+            return;
+          }
+
+          if (entry.intersectionRatio < START_THRESHOLD) {
+            if (!isActive) return;
+            isActive = false;
+            resetCountup();
+          }
+        },
+        { threshold: [0, START_THRESHOLD] },
+      );
+
+      observer.observe(section);
+
+      const rect = section.getBoundingClientRect();
+      const inView =
+        rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.4;
+      if (inView) {
+        isActive = true;
+        runCountup();
+      } else {
+        resetCountup();
+      }
+    };
+
+    const initHomeEnhancements = () => {
+      initHeroArrow();
+      initLandingVideos();
+      initSliderStatsCounter();
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initHomeEnhancements, {
+        once: true,
+      });
+    } else {
+      initHomeEnhancements();
+    }
+
+    document.addEventListener("astro:after-swap", initHomeEnhancements);
+  </script>
+  <script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const articleTriggerIdPrefix = "article-section-highlight-";
+    const articleWindow = window as Window & {
+      __lenis?: { on?: (event: string, cb: () => void) => void };
+      __articleLenisBridgeBound?: boolean;
+      __articleHighlightCleanup?: (() => void) | null;
+      __articleHighlightDisabled?: boolean;
+    };
+
+    const clearArticleTriggers = () => {
+      ScrollTrigger.getAll().forEach((trigger) => {
+        const triggerId = trigger.vars.id;
+        if (
+          typeof triggerId === "string" &&
+          triggerId.startsWith(articleTriggerIdPrefix)
+        ) {
+          trigger.kill();
+        }
+      });
+    };
+
+    const ensureLenisScrollBridge = () => {
+      if (articleWindow.__articleLenisBridgeBound) return;
+
+      const tryBind = () => {
+        const lenis = articleWindow.__lenis;
+        if (!lenis || typeof lenis.on !== "function") return false;
+        lenis.on("scroll", () => ScrollTrigger.update());
+        articleWindow.__articleLenisBridgeBound = true;
+        return true;
+      };
+
+      if (tryBind()) return;
+
+      let attempts = 0;
+      const retry = () => {
+        attempts += 1;
+        if (tryBind() || attempts > 180) return;
+        window.requestAnimationFrame(retry);
+      };
+
+      window.requestAnimationFrame(retry);
+    };
+
+    const wrapWordsForHighlight = (paragraph: HTMLElement) => {
+      const rawText = paragraph.textContent?.replace(/\s+/g, " ").trim() ?? "";
+      if (!rawText) return [];
+
+      const words = rawText.split(" ").filter(Boolean);
+      paragraph.textContent = "";
+
+      words.forEach((word, index) => {
+        const span = document.createElement("span");
+        span.dataset.readingWord = "true";
+        span.className = "inline";
+        span.textContent = index === words.length - 1 ? word : `${word} `;
+        paragraph.append(span);
+      });
+
+      paragraph.dataset.wordsWrapped = "true";
+      return Array.from(paragraph.querySelectorAll<HTMLElement>("[data-reading-word]"));
+    };
+
+    const setWordsByProgress = (words: HTMLElement[], progress: number) => {
+      const clampedProgress = Math.max(0, Math.min(1, progress));
+      const easedProgress = gsap.parseEase("power1.out")(clampedProgress);
+      const scaled = easedProgress * words.length;
+
+      words.forEach((word, index) => {
+        const local = Math.max(0, Math.min(1, scaled - index));
+        const textChannel = Math.round(local * 255);
+        word.style.backgroundColor = `rgba(238, 135, 54, ${local.toFixed(3)})`;
+        word.style.color = `rgb(${textChannel}, ${textChannel}, ${textChannel})`;
+      });
+    };
+
+    const calcArticleProgress = (title: HTMLElement, article: HTMLElement) => {
+      const titleTop = title.getBoundingClientRect().top;
+      const articleBottom = article.getBoundingClientRect().bottom;
+      const startPx = window.innerHeight * 0.5;
+      const endPx = window.innerHeight * 0.35;
+      const span = Math.max(1, articleBottom - titleTop + (startPx - endPx));
+      return (startPx - titleTop) / span;
+    };
+
+    const resetArticleHighlightStyles = (article: HTMLElement) => {
+      const words = Array.from(
+        article.querySelectorAll<HTMLElement>("[data-reading-word]"),
+      );
+      words.forEach((word) => {
+        word.style.backgroundColor = "transparent";
+        word.style.color = "#000000";
+        word.style.borderRadius = "0";
+        word.style.paddingLeft = "0";
+        word.style.paddingRight = "0";
+      });
+    };
+
+    const syncArticleToggleUI = () => {
+      const toggle = document.querySelector("[data-highlight-toggle]");
+      const label = document.querySelector("[data-highlight-toggle-label]");
+      if (!(toggle instanceof HTMLButtonElement)) return;
+
+      const isDisabled = articleWindow.__articleHighlightDisabled === true;
+      toggle.setAttribute("aria-pressed", String(isDisabled));
+      toggle.setAttribute(
+        "aria-label",
+        isDisabled ? "Enable scroll text highlight" : "Disable scroll text highlight",
+      );
+      toggle.title = isDisabled
+        ? "Enable scroll text highlight"
+        : "Disable scroll text highlight";
+      toggle.classList.toggle("bg-black", isDisabled);
+      toggle.classList.toggle("text-white", isDisabled);
+
+      if (label instanceof HTMLElement) {
+        label.textContent = isDisabled ? "Highlight off" : "Highlight on";
+      }
+    };
+
+    const initArticleHighlightToggle = () => {
+      const toggle = document.querySelector("[data-highlight-toggle]");
+      if (!(toggle instanceof HTMLButtonElement)) return;
+      if (toggle.dataset.bound === "true") {
+        syncArticleToggleUI();
+        return;
+      }
+      toggle.dataset.bound = "true";
+
+      syncArticleToggleUI();
+
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        const article = document.getElementById("article-section");
+        const isDisabled = articleWindow.__articleHighlightDisabled === true;
+        articleWindow.__articleHighlightDisabled = !isDisabled;
+
+        clearArticleTriggers();
+        articleWindow.__articleHighlightCleanup?.();
+        articleWindow.__articleHighlightCleanup = null;
+
+        if (article instanceof HTMLElement) {
+          resetArticleHighlightStyles(article);
+        }
+
+        syncArticleToggleUI();
+        if (!articleWindow.__articleHighlightDisabled) {
+          initArticleSectionHighlight();
+        }
+      });
+    };
+
+    const initArticleSectionHighlight = () => {
+      const article = document.getElementById("article-section");
+      if (!(article instanceof HTMLElement)) return;
+      const title = article.querySelector("[data-article-title]");
+      const triggerEl = title instanceof HTMLElement ? title : article;
+
+      const paragraphs = Array.from(
+        article.querySelectorAll("[data-reading-paragraph]"),
+      );
+      if (!paragraphs.length) return;
+
+      clearArticleTriggers();
+      articleWindow.__articleHighlightCleanup?.();
+      articleWindow.__articleHighlightCleanup = null;
+
+      if (articleWindow.__articleHighlightDisabled === true) {
+        resetArticleHighlightStyles(article);
+        syncArticleToggleUI();
+        return;
+      }
+
+      ensureLenisScrollBridge();
+
+      const allWords: HTMLElement[] = [];
+
+      paragraphs.forEach((paragraph) => {
+        if (!(paragraph instanceof HTMLElement)) return;
+        const words = wrapWordsForHighlight(paragraph);
+        if (!words.length) return;
+        allWords.push(...words);
+      });
+
+      if (!allWords.length) return;
+
+      gsap.killTweensOf(allWords);
+      gsap.set(allWords, {
+        color: "#000000",
+        backgroundColor: "transparent",
+        borderRadius: "0",
+        paddingLeft: "0",
+        paddingRight: "0",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+      });
+
+      const masterTrigger = ScrollTrigger.create({
+        id: `${articleTriggerIdPrefix}master`,
+        trigger: triggerEl,
+        start: "top 50%",
+        endTrigger: article,
+        end: "bottom 35%",
+        scrub: 1.25,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          setWordsByProgress(allWords, self.progress);
+        },
+        onRefresh: () => {
+          setWordsByProgress(allWords, calcArticleProgress(triggerEl, article));
+        },
+      });
+
+      let rafId = 0;
+      const loopUpdate = () => {
+        setWordsByProgress(allWords, calcArticleProgress(triggerEl, article));
+        rafId = window.requestAnimationFrame(loopUpdate);
+      };
+      loopUpdate();
+
+      articleWindow.__articleHighlightCleanup = () => {
+        masterTrigger.kill();
+        if (rafId) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+      };
+
+      ScrollTrigger.refresh();
+    };
+
+    const bootArticleSectionHighlight = () => {
+      window.requestAnimationFrame(initArticleSectionHighlight);
+    };
+
+    const bootArticleHighlightToggle = () => {
+      window.requestAnimationFrame(initArticleHighlightToggle);
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", bootArticleHighlightToggle, {
+        once: true,
+      });
+      document.addEventListener("DOMContentLoaded", bootArticleSectionHighlight, {
+        once: true,
+      });
+    } else {
+      bootArticleHighlightToggle();
+      bootArticleSectionHighlight();
+    }
+
+    document.addEventListener("astro:after-swap", bootArticleHighlightToggle);
+    document.addEventListener("astro:after-swap", bootArticleSectionHighlight);
+  </script>
+
+  <section
+    id="home-latest-slider"
+    data-scroll-lock-section
+    class="flex [height:var(--section-h,calc(100svh-112px))] flex-col border-b border-black/20 bg-white"
   >
-    <Fragment>
-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
-        Open Source & Community
-      </h3>
-      Join the revolution of modern web development. This project is open for everyone
-      to use, learn from, and contribute to.
-    </Fragment>
-  </Content2>
+    <HeroArticleSlider items={midPageSliderItems} autoplayMs={4000} />
+    <div data-slider-stats class="flex-1 bg-white">
+      <div class="h-full w-full px-4 py-6 sm:px-6 md:py-8 lg:px-8">
+        <div class="h-full grid grid-cols-1 md:grid-cols-[40%_60%] md:gap-0">
+          <div class="w-full md:pr-8">
+            <p class="text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+              {sliderStats.description}
+            </p>
+
+            <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6 md:mt-7 md:gap-6">
+              {sliderStats.items.map((item) => (
+                <div class="text-center">
+                <p
+                  data-countup
+                  data-countup-target={item.value}
+                  class="text-3xl font-semibold leading-none text-black md:text-4xl"
+                >
+                  0
+                </p>
+                <div class="mx-auto mt-3 h-[4px] w-24 bg-black"></div>
+                <p class="mt-3 text-sm font-semibold leading-none text-black md:text-base">
+                  {item.label}
+                </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div class="hidden h-full md:grid md:grid-cols-2 md:border-l md:border-black">
+            <div class="group flex items-center justify-center px-4">
+              <p class="text-center text-4xl font-sans font-bold leading-[0.9] tracking-tight text-black transition-colors duration-200 group-hover:text-[#ee8736] lg:text-5xl">
+                Articles
+              </p>
+            </div>
+            <div class="group flex items-center justify-center border-l border-black px-4">
+              <p class="text-center text-4xl font-sans font-bold leading-[0.9] tracking-tight text-black transition-colors duration-200 group-hover:text-[#70c8e0] lg:text-5xl">
+                Publications
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="article-section" data-article-section class="border-b border-black/20 bg-white">
+    <article class="mx-auto w-full max-w-5xl px-4 py-14 sm:px-6 md:py-20 lg:px-8">
+      <div class="mb-4 flex items-center gap-2">
+        <button
+          type="button"
+          data-highlight-toggle
+          aria-pressed="false"
+          aria-label="Disable scroll text highlight"
+          title="Disable scroll text highlight"
+          class="inline-flex h-8 w-8 cursor-pointer items-center justify-center border border-black text-black transition-colors hover:bg-black hover:text-white"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            class="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 4 20 10 10 20H4v-6z"></path>
+            <path d="M13 5 19 11"></path>
+          </svg>
+        </button>
+        <span
+          data-highlight-toggle-label
+          class="text-[0.72rem] font-light uppercase tracking-[0.08em] text-black/70"
+        >
+          Highlight on
+        </span>
+      </div>
+      <h2
+        data-article-title
+        class="text-left text-3xl font-bold leading-tight tracking-tight text-black md:text-5xl"
+      >
+        {featuredArticle.title}
+      </h2>
+      <p class="mt-4 text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+        {featuredArticle.editors}
+      </p>
+      <div class="mt-8 text-left text-base font-medium leading-relaxed text-black [text-rendering:optimizeLegibility] md:text-lg">
+        <figure class="float-none mx-auto mb-5 w-40 sm:w-48 md:float-right md:ml-6 md:mb-4 md:mt-1 md:w-56 lg:w-60">
+          <img
+            src="/articles/red-sea-ebook.pdf.png"
+            alt="The Red Sea eBook cover"
+            loading="lazy"
+            class="h-auto w-full border border-black/20"
+          />
+        </figure>
+        {featuredArticle.paragraphs.map((paragraph) => (
+          <p data-reading-paragraph class="mb-6 last:mb-0">{paragraph}</p>
+        ))}
+      </div>
+      <a
+        href="#"
+        class="clear-both mt-10 inline-flex cursor-pointer border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-black transition-colors hover:bg-black hover:text-white"
+      >
+        More
+      </a>
+    </article>
+  </section>
+
+  <section class="border-b border-border">
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-12 lg:px-8">
+      <div class="mb-5">
+        <h2 class="text-3xl font-semibold leading-tight md:text-4xl">
+          Publications
+        </h2>
+      </div>
+
+      <div class="overflow-hidden border border-border bg-border">
+        {featuredPublications.slice(0, 3).map((item) => (
+          <article class="border-b border-border bg-background px-4 py-3 last:border-b-0 md:px-5 md:py-3">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p class="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                {item.type} - {item.date}
+              </p>
+              <p class="text-xs font-medium uppercase tracking-[0.08em] text-primary/85">
+                {item.authors}
+              </p>
+            </div>
+            <h3 class="mt-1.5 text-lg font-semibold leading-tight md:text-xl">
+              <a
+                href={item.href}
+                class="line-clamp-2 cursor-pointer transition-colors hover:text-hover"
+              >
+                {item.title}
+              </a>
+            </h3>
+            <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">
+              {item.excerpt}
+            </p>
+            <a
+              href={item.href}
+              class="mt-1.5 inline-flex cursor-pointer text-xs font-semibold uppercase tracking-[0.06em] text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
+            >
+              Open publication
+            </a>
+          </article>
+        ))}
+      </div>
+      <div class="mt-4 flex justify-center">
+        <a
+          href="#"
+          class="inline-flex cursor-pointer text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
+        >
+          View all publications
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="border-b border-border">
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+      <div class="mb-10">
+        <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
+          Projects and Activities
+        </h2>
+        <p class="mt-4 max-w-2xl text-base text-muted-foreground">
+          Core platforms and further projects focused on research, policy dialogue, and capacity building.
+        </p>
+      </div>
+
+      <div class="grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+        {activityThemes.map((item) => (
+          <article class="bg-background p-6">
+            <h3 class="text-2xl font-semibold leading-tight">{item.title}</h3>
+            <p class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85">
+              {item.meta}
+            </p>
+            <p class="mt-4 text-sm text-muted-foreground">
+              {item.summary}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
 </BaseLayout>

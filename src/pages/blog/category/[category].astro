@@ -30,7 +30,7 @@ const { category, posts } = Astro.props;
 
 const metadata = {
   title: `Category: ${category}`,
-  description: `Articles in the ${category} category.`,
+  description: `Publications in the ${category} category.`,
 };
 ---
 
@@ -40,7 +40,7 @@ const metadata = {
       <Headline
         tagline="Category"
         title={category}
-        subtitle={`Showing ${posts.length} article${posts.length === 1 ? "" : "s"}.`}
+        subtitle={`Showing ${posts.length} publication${posts.length === 1 ? "" : "s"}.`}
         classes={{
           container: "mb-12 text-center",
           title:
@@ -50,7 +50,7 @@ const metadata = {
       />
 
       <div class="mb-8 text-center">
-        <a href="/blog" class="text-primary hover:underline">← Back to blog</a>
+        <a href="/blog" class="text-primary hover:underline">← Back to publications</a>
       </div>
 
       <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
