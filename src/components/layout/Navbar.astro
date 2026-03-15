@@ -5,22 +5,28 @@ import { Icon } from "astro-icon/components";
 const mainMenuLinks = [
   {
     text: "About",
-    children: [{ text: "Mission" }, { text: "Team" }, { text: "Founders" }],
+    href: "/about",
+    children: [
+      { text: "Mission", href: "/about" },
+      { text: "Team", href: "/about" },
+      { text: "Founders", href: "/about" },
+    ],
   },
-  { text: "Activities" },
+  { text: "Activities", href: "/services" },
   {
     text: "Resources",
-    children: [{ text: "Members area" }, { text: "Join" }],
+    href: "/blog",
+    children: [
+      { text: "Members area", href: "/contact" },
+      { text: "Join", href: "/contact" },
+    ],
   },
-  { text: "Media" },
-  { text: "Publications" },
-  { text: "Contact" },
+  { text: "Media", href: "/widgets" },
+  { text: "Publications", href: "/blog" },
+  { text: "Contact", href: "/contact" },
 ];
 
-const socialLinks = {
-  linkedin: "/contact",
-  youtube: "/contact",
-};
+const socialLinks = siteConfig.socialLinks;
 ---
 
 <nav
@@ -35,9 +41,8 @@ const socialLinks = {
           mainMenuLinks.map((link) => (
             <div class="group relative">
               <a
-                href="#"
-                data-mainmenu-stub
-                class="inline-flex cursor-pointer items-center px-3 py-2 text-[0.98rem] font-light uppercase tracking-[0.08em] leading-none text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+                href={link.href}
+                class="inline-flex cursor-pointer items-center px-3 py-2 text-[0.98rem] font-light uppercase tracking-[0.08em] leading-none text-primary transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
               >
                 {link.text}
               </a>
@@ -46,9 +51,8 @@ const socialLinks = {
                   <div class="pointer-events-none absolute left-0 top-full z-[70] min-w-[12rem] translate-y-1 border border-black bg-white opacity-0 transition-[opacity,transform] duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
                     {link.children.map((child) => (
                       <a
-                        href="#"
-                        data-mainmenu-stub
-                        class="block cursor-pointer px-3 py-2 text-sm font-light tracking-[0.04em] text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+                        href={child.href}
+                        class="block cursor-pointer px-3 py-2 text-sm font-light tracking-[0.04em] text-primary transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
                       >
                         {child.text}
                       </a>
@@ -63,21 +67,25 @@ const socialLinks = {
     </div>
 
     <div class="hidden items-center md:flex">
-      <div class="flex items-center text-[0.98rem] font-light uppercase leading-none tracking-[0.08em] text-black">
-        AR <span class="mx-1 text-black/60">|</span> FR
+      <div class="flex items-center text-[0.98rem] font-light uppercase leading-none tracking-[0.08em] text-primary">
+        AR <span class="mx-1 text-primary/60">|</span> FR
       </div>
       <div class="ml-4 flex items-center gap-2 border-l border-black/20 pl-4">
         <a
           href={socialLinks.linkedin}
           aria-label="LinkedIn"
-          class="inline-flex cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
         >
           <Icon name="lucide:linkedin" class="h-4 w-4" />
         </a>
         <a
           href={socialLinks.youtube}
           aria-label="YouTube"
-          class="inline-flex cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
         >
           <Icon name="lucide:youtube" class="h-4 w-4 translate-y-px" />
         </a>
@@ -89,7 +97,7 @@ const socialLinks = {
       <button
         id="mobile-menu-button"
         type="button"
-        class="inline-flex items-center justify-center p-2 text-black transition-colors hover:bg-black/5 focus:outline-none"
+        class="inline-flex items-center justify-center p-2 text-primary transition-colors hover:bg-black/5 focus:outline-none"
         aria-controls="mobile-menu"
         aria-expanded="false"
       >
@@ -136,9 +144,8 @@ const socialLinks = {
         mainMenuLinks.map((link) => (
           <div>
             <a
-              href="#"
-              data-mainmenu-stub
-              class="block w-full cursor-pointer px-3 py-2 text-left text-base font-light uppercase tracking-[0.08em] text-black transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+              href={link.href}
+              class="block w-full cursor-pointer px-3 py-2 text-left text-base font-light uppercase tracking-[0.08em] text-primary transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
             >
               {link.text}
             </a>
@@ -147,9 +154,8 @@ const socialLinks = {
                 <div class="pb-1 pl-6">
                   {link.children.map((child) => (
                     <a
-                      href="#"
-                      data-mainmenu-stub
-                      class="block w-full cursor-pointer px-3 py-1.5 text-left text-sm font-light tracking-[0.04em] text-black/85 transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
+                      href={child.href}
+                      class="block w-full cursor-pointer px-3 py-1.5 text-left text-sm font-light tracking-[0.04em] text-primary/85 transition-colors hover:bg-[#ee8736] hover:text-white focus-visible:bg-[#ee8736] focus-visible:text-white"
                     >
                       {child.text}
                     </a>
@@ -160,21 +166,25 @@ const socialLinks = {
           </div>
         ))
       }
-      <div class="px-3 py-2 text-base font-medium text-black">
-        AR <span class="mx-1 text-black/60">|</span> FR
+      <div class="px-3 py-2 text-base font-medium text-primary">
+        AR <span class="mx-1 text-primary/60">|</span> FR
       </div>
       <div class="flex h-8 items-center gap-2 px-3 py-2">
         <a
           href={socialLinks.linkedin}
           aria-label="LinkedIn"
-          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
         >
           <Icon name="lucide:linkedin" class="h-[18px] w-[18px]" />
         </a>
         <a
           href={socialLinks.youtube}
           aria-label="YouTube"
-          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-black transition-colors hover:text-black/70"
+          target="_blank"
+          rel="noreferrer"
+          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
         >
           <Icon name="lucide:youtube" class="h-[18px] w-[18px] translate-y-px" />
         </a>
@@ -196,14 +206,5 @@ const socialLinks = {
     menu?.classList.toggle("hidden");
     iconClosed?.classList.toggle("hidden");
     iconOpen?.classList.toggle("hidden");
-  });
-
-  document.querySelectorAll("[data-mainmenu-stub]").forEach((link) => {
-    if (!(link instanceof HTMLElement)) return;
-    if (link.dataset.stubBound === "true") return;
-    link.dataset.stubBound = "true";
-    link.addEventListener("click", (event) => {
-      event.preventDefault();
-    });
   });
 </script>

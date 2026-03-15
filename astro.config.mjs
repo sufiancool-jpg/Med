@@ -12,6 +12,7 @@ export default defineConfig({
       remarkReadingTime,
       () => {
         return function (tree, file) {
+          void tree;
           file.data.astro.frontmatter.minutesRead =
             file.data.readingTime.minutes;
         };

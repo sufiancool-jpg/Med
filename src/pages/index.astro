@@ -267,7 +267,7 @@ const announcement = {
   date: "May 20",
   title: "African Talks: South African Foreign Policy",
   ctaText: "Register",
-  ctaHref: "#",
+  ctaHref: "/widgets",
 };
 const landingIntro = {
   firstRest:
@@ -276,14 +276,17 @@ const landingIntro = {
     "Our work spans regional geopolitics and diplomacy, the political economy of natural resources, energy transition, climate change, and long-term scenario building.",
 };
 const joinNetworkText = "Join the network";
-const sliderStats = {
-  description:
-    "The Mediterranean Platform draws on the work of leading specialists and academic experts to organise public events and provide in-depth multidisciplinary analysis of socio-political, security and economic transformations in the Mediterranean and in the Middle East and North Africa (MENA).",
-  items: [
-    { value: 73, label: "Publications" },
-    { value: 30, label: "Collaborators" },
-    { value: 29, label: "Public Events" },
-  ],
+const audioRelease = {
+  type: "Audio release",
+  series: "Mediterranean Platform Audio Brief",
+  title: "Red Sea Corridors: Trade, Security, and Regional Power",
+  summary:
+    "A mock preview episode unpacking the strategic significance of the Red Sea and the regional actors shaping its future.",
+  duration: "00:24",
+  date: "New episode",
+  href: "/blog",
+  ctaText: "Open release page",
+  audioSrc: "/audio/mock-red-sea-brief.mp3",
 };
 const featuredArticle = {
   title: "The Red Sea: Divided by Water, United by Opportunities",
@@ -307,7 +310,6 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
 <BaseLayout {metadata}>
   <section
-    data-scroll-lock-section
     data-hero-section
     class="flex [height:var(--section-h,calc(100svh-112px))] flex-col"
   >
@@ -316,19 +318,20 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
         data-hero-intro-panel
         class="w-full shrink-0 overflow-hidden [transition-property:max-height,transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[max-height,transform,opacity]"
       >
-        <div class="border-b border-black px-4 pt-8 pb-6 sm:px-6 md:pt-10 lg:px-8">
-          <div class="grid items-start gap-8 md:grid-cols-[62%_38%] md:gap-0">
-            <div class="w-full md:pr-8">
-              <p class="text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+        <div class="border-b border-black bg-white px-4 pt-3.5 pb-2.5 sm:px-6 md:pt-4 md:pb-2.5 lg:px-8">
+          <div class="grid items-start gap-3.5 md:grid-cols-[62%_38%] md:gap-0">
+            <div class="w-full md:pr-5">
+              <p class="text-left text-[0.86rem] font-semibold leading-[1.55] text-primary md:text-[0.9rem]">
                 <span class="italic">The Mediterranean Platform</span> {landingIntro.firstRest}
               </p>
-              <p class="mt-3 text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+              <p class="mt-1.5 text-left text-[0.86rem] font-semibold leading-[1.55] text-primary md:text-[0.9rem]">
                 {landingIntro.second}
               </p>
               <a
-                href="#"
-                class="mt-4 inline-flex cursor-pointer items-center gap-2 text-left text-sm font-light tracking-[0.04em] text-black transition-opacity hover:opacity-70"
+                href="/about"
+                class="mt-2.5 inline-flex cursor-pointer items-center gap-2 text-left text-[0.92rem] font-semibold tracking-[0.04em] text-primary transition-colors hover:text-hover"
               >
+                <span>About us</span>
                 <svg
                   viewBox="0 0 20 12"
                   class="h-3 w-5"
@@ -342,19 +345,20 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
                   <path d="M1 6h14"></path>
                   <path d="m11 2 4 4-4 4"></path>
                 </svg>
-                About us
               </a>
             </div>
-            <div class="w-full md:border-l md:border-black md:pl-8">
+            <div class="w-full md:border-l md:border-black md:pl-5">
               <div class="group relative flex h-full w-full items-center justify-end">
-                <img
-                  src="/Logo3.png"
-                  alt="Mediterranean Platform"
-                  class="h-auto w-[min(100%,720px)] object-contain transition-opacity duration-200 group-hover:opacity-0"
-                />
-                <p class="pointer-events-none absolute right-0 text-right text-4xl font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
-                  {joinNetworkText}
-                </p>
+                <div class="relative ml-auto w-[85%] max-w-[425px] aspect-[235/76]">
+                  <img
+                    src="/Logo3.png"
+                    alt="Mediterranean Platform"
+                    class="absolute inset-0 h-full w-full -translate-x-[3%] object-contain transition-opacity duration-200 group-hover:opacity-0"
+                  />
+                  <p class="pointer-events-none absolute inset-0 flex items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    {joinNetworkText}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -373,47 +377,28 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
           <source src="/webbg.mp4" type="video/mp4" />
         </video>
         <div class="absolute inset-0 bg-black/10"></div>
-        <button
-          type="button"
-          data-scroll-to-latest
-          data-scroll-to-section="#home-latest-slider"
-          aria-label="Scroll to latest section"
-          class="hero-scroll-trigger is-revealed absolute left-1/2 top-1/2 z-20 inline-flex -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center text-white opacity-0 pointer-events-none transition-opacity duration-700 hover:opacity-80"
-        >
-          <svg
-            viewBox="0 0 12 16"
-            class="hero-arrow-nudge h-[4.8rem] w-[4.8rem] md:h-24 md:w-24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.35"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M6 1.5v10.5"></path>
-            <path d="m2.9 8.9 3.1 3.1 3.1-3.1"></path>
-          </svg>
-        </button>
       </div>
     </div>
 
     <section
       data-announcement-bar
-      class="fixed inset-x-0 bottom-0 z-40 h-10 bg-[#42b09a] text-white/90 md:h-11"
+      style="--announcement-bar-bg:#42b09a;background-color:var(--announcement-bar-bg);"
+      class="fixed inset-x-0 bottom-0 z-40 h-12 text-white/90 transition-[background-color] duration-500 ease-out md:h-14"
     >
-      <div class="mx-auto flex h-full max-w-6xl items-center gap-2 px-4 sm:px-6 md:gap-3 lg:px-8">
-        <p class="shrink-0 text-[0.82rem] font-semibold leading-none md:text-[0.86rem]">
+      <div class="mx-auto flex h-full max-w-6xl flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-center sm:px-6 md:gap-x-5 lg:px-8">
+        <p class="shrink-0 text-[0.88rem] font-extrabold uppercase tracking-[0.08em] leading-none md:text-[1rem]">
           {announcement.label}
         </p>
-        <p class="shrink-0 text-[0.82rem] font-semibold leading-none md:text-[0.86rem]">
+        <p class="shrink-0 text-[0.9rem] font-bold leading-none md:text-[1rem]">
           {announcement.date}
         </p>
-        <p class="min-w-0 truncate text-[0.82rem] font-light leading-none md:text-[0.86rem]">
+        <p class="min-w-0 truncate text-[0.95rem] font-bold leading-none md:text-[1.05rem]">
           {announcement.title}
         </p>
         <a
           href={announcement.ctaHref}
-          class="shrink-0 inline-flex cursor-pointer border border-white/90 px-2 py-0.5 text-[0.78rem] font-light leading-none transition-colors hover:border-white hover:bg-white/10 hover:text-white/90 md:text-[0.82rem]"
+          data-announcement-cta
+          class="shrink-0 inline-flex cursor-pointer items-center border border-white/90 bg-white/10 px-3 py-1 text-[0.82rem] font-semibold uppercase tracking-[0.06em] leading-none text-white transition-colors hover:border-white hover:bg-white md:text-[0.88rem]"
         >
           {announcement.ctaText}
         </a>
@@ -422,52 +407,13 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
   </section>
 
   <style is:inline>
-    @keyframes heroArrowNudge {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-      25% {
-        transform: translateY(5px);
-      }
-      50% {
-        transform: translateY(1px);
-      }
-      75% {
-        transform: translateY(6px);
-      }
-    }
-
-    .hero-arrow-nudge {
-      animation: heroArrowNudge 1.8s ease-in-out infinite;
-      transform-origin: center;
-    }
-
-    .hero-scroll-trigger.is-revealed {
-      margin-top: 22px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .hero-arrow-nudge {
-        animation: none;
-      }
+    [data-announcement-cta]:hover,
+    [data-announcement-cta]:focus-visible {
+      color: var(--announcement-bar-bg);
     }
   </style>
 
   <script is:inline>
-    const initHeroArrow = () => {
-      const trigger = document.querySelector("[data-scroll-to-latest]");
-      if (!(trigger instanceof HTMLElement)) return;
-      if (trigger.dataset.arrowBound === "true") return;
-      trigger.dataset.arrowBound = "true";
-
-      const revealArrow = () => {
-        trigger.classList.remove("opacity-0", "pointer-events-none");
-      };
-
-      window.setTimeout(revealArrow, 10000);
-    };
-
     const initLandingVideos = () => {
       document.querySelectorAll("[data-landing-video]").forEach((video) => {
         video.muted = true;
@@ -479,110 +425,155 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
       });
     };
 
-    const initSliderStatsCounter = () => {
-      const section = document.getElementById("home-latest-slider");
-      const statsBox = document.querySelector("[data-slider-stats]");
-      if (!section || !statsBox || section.dataset.counterBound === "true") return;
+    const initAnnouncementBarTheme = () => {
+      const runtime = window;
+      runtime["__announcementBarThemeCleanup"]?.();
 
-      section.dataset.counterBound = "true";
+      const bar = document.querySelector("[data-announcement-bar]");
+      const heroSection = document.querySelector("[data-hero-section]");
+      if (!(bar instanceof HTMLElement) || !(heroSection instanceof HTMLElement)) return;
 
-      const countEls = Array.from(statsBox.querySelectorAll("[data-countup]"));
-      const rafIds = new Map();
-      const START_THRESHOLD = 0.55;
-      let runToken = 0;
-      let isActive = false;
+      const landingColor = "#42b09a";
+      const scrolledColor = "#0a1220";
+      let rafId = 0;
 
-      const animateCount = (el, target, duration, token) => {
-        const start = performance.now();
+      const updateTheme = () => {
+        const navHeightValue = document.documentElement.style.getPropertyValue("--nav-h");
+        const navHeight = Number.parseFloat(navHeightValue);
+        const threshold = Number.isFinite(navHeight) ? navHeight + 8 : 80;
+        const nextColor =
+          heroSection.getBoundingClientRect().bottom <= threshold
+            ? scrolledColor
+            : landingColor;
 
-        const tick = (now) => {
-          if (token !== runToken) return;
-          const progress = Math.min(1, (now - start) / duration);
-          const value = Math.round(target * progress);
-          el.textContent = String(value);
-          if (progress < 1) {
-            const rafId = window.requestAnimationFrame(tick);
-            rafIds.set(el, rafId);
-          } else {
-            el.textContent = String(target);
-            const rafId = rafIds.get(el);
-            if (rafId) {
-              window.cancelAnimationFrame(rafId);
-              rafIds.delete(el);
-            }
+        if (bar.dataset.themeColor === nextColor) return;
+        bar.dataset.themeColor = nextColor;
+        bar.style.setProperty("--announcement-bar-bg", nextColor);
+      };
+
+      const scheduleUpdate = () => {
+        if (rafId) return;
+        rafId = window.requestAnimationFrame(() => {
+          rafId = 0;
+          updateTheme();
+        });
+      };
+
+      window.addEventListener("scroll", scheduleUpdate, { passive: true });
+      window.addEventListener("resize", scheduleUpdate);
+      scheduleUpdate();
+
+      runtime["__announcementBarThemeCleanup"] = () => {
+        if (rafId) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+        window.removeEventListener("scroll", scheduleUpdate);
+        window.removeEventListener("resize", scheduleUpdate);
+      };
+    };
+
+    const initAudioPreviewPlayers = () => {
+      const formatTime = (value) => {
+        const totalSeconds = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      };
+
+      document.querySelectorAll("[data-audio-preview]").forEach((player) => {
+        if (!(player instanceof HTMLElement) || player.dataset.bound === "true") return;
+
+        const audio = player.querySelector("[data-audio-el]");
+        const toggle = player.querySelector("[data-audio-toggle]");
+        const playIcon = player.querySelector("[data-audio-icon-play]");
+        const pauseIcon = player.querySelector("[data-audio-icon-pause]");
+        const progressFill = player.querySelector("[data-audio-progress-fill]");
+        const progressRail = player.querySelector("[data-audio-progress-rail]");
+        const currentTime = player.querySelector("[data-audio-current]");
+        const durationTime = player.querySelector("[data-audio-duration]");
+        const waveBars = Array.from(player.querySelectorAll("[data-audio-wave-bar]"));
+
+        if (
+          !(audio instanceof HTMLAudioElement) ||
+          !(toggle instanceof HTMLButtonElement) ||
+          !(progressFill instanceof HTMLElement) ||
+          !(progressRail instanceof HTMLElement)
+        ) {
+          return;
+        }
+
+        player.dataset.bound = "true";
+
+        const syncUI = () => {
+          const duration = audio.duration || 0;
+          const current = audio.currentTime || 0;
+          const progress = duration > 0 ? current / duration : 0;
+          const activeBars = Math.round(progress * waveBars.length);
+
+          progressFill.style.width = `${progress * 100}%`;
+
+          if (currentTime instanceof HTMLElement) {
+            currentTime.textContent = formatTime(current);
           }
+
+          if (durationTime instanceof HTMLElement) {
+            durationTime.textContent = formatTime(duration || 24);
+          }
+
+          if (playIcon instanceof HTMLElement) {
+            playIcon.classList.toggle("hidden", !audio.paused);
+          }
+
+          if (pauseIcon instanceof HTMLElement) {
+            pauseIcon.classList.toggle("hidden", audio.paused);
+          }
+
+          toggle.setAttribute(
+            "aria-label",
+            audio.paused ? "Play audio preview" : "Pause audio preview",
+          );
+
+          waveBars.forEach((bar, index) => {
+            bar.classList.toggle("bg-[#42b09a]", index < activeBars);
+            bar.classList.toggle("bg-primary/12", index >= activeBars);
+          });
         };
 
-        el.textContent = "0";
-        const rafId = window.requestAnimationFrame(tick);
-        rafIds.set(el, rafId);
-      };
-
-      const resetCountup = () => {
-        runToken += 1;
-        section.dataset.counterDone = "false";
-        countEls.forEach((el) => {
-          const rafId = rafIds.get(el);
-          if (rafId) {
-            window.cancelAnimationFrame(rafId);
-            rafIds.delete(el);
+        toggle.addEventListener("click", () => {
+          if (audio.paused) {
+            audio.play().catch(() => {});
+          } else {
+            audio.pause();
           }
-          el.textContent = "0";
         });
-      };
 
-      const runCountup = () => {
-        if (section.dataset.counterDone === "true") return;
-        section.dataset.counterDone = "true";
-        runToken += 1;
-        const token = runToken;
-
-        countEls.forEach((el, index) => {
-          const target = Number(el.dataset.countupTarget || "0");
-          if (!Number.isFinite(target) || target <= 0) return;
-          animateCount(el, target, 420 + index * 80, token);
+        progressRail.addEventListener("click", (event) => {
+          const rect = progressRail.getBoundingClientRect();
+          if (rect.width <= 0 || !audio.duration) return;
+          const clickX = event.clientX - rect.left;
+          const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+          audio.currentTime = ratio * audio.duration;
+          syncUI();
         });
-      };
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const entry = entries[0];
-          if (!entry) return;
+        audio.addEventListener("loadedmetadata", syncUI);
+        audio.addEventListener("timeupdate", syncUI);
+        audio.addEventListener("play", syncUI);
+        audio.addEventListener("pause", syncUI);
+        audio.addEventListener("ended", () => {
+          audio.currentTime = 0;
+          syncUI();
+        });
 
-          if (entry.intersectionRatio >= START_THRESHOLD) {
-            if (!isActive) {
-              isActive = true;
-              runCountup();
-            }
-            return;
-          }
-
-          if (entry.intersectionRatio < START_THRESHOLD) {
-            if (!isActive) return;
-            isActive = false;
-            resetCountup();
-          }
-        },
-        { threshold: [0, START_THRESHOLD] },
-      );
-
-      observer.observe(section);
-
-      const rect = section.getBoundingClientRect();
-      const inView =
-        rect.top < window.innerHeight * 0.6 && rect.bottom > window.innerHeight * 0.4;
-      if (inView) {
-        isActive = true;
-        runCountup();
-      } else {
-        resetCountup();
-      }
+        syncUI();
+      });
     };
 
     const initHomeEnhancements = () => {
-      initHeroArrow();
       initLandingVideos();
-      initSliderStatsCounter();
+      initAnnouncementBarTheme();
+      initAudioPreviewPlayers();
     };
 
     if (document.readyState === "loading") {
@@ -603,7 +594,7 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
     const articleTriggerIdPrefix = "article-section-highlight-";
     const articleWindow = window as Window & {
-      __lenis?: { on?: (event: string, cb: () => void) => void };
+      __lenis?: { on?: (_event: string, _cb: () => void) => void };
       __articleLenisBridgeBound?: boolean;
       __articleHighlightCleanup?: (() => void) | null;
       __articleHighlightDisabled?: boolean;
@@ -655,24 +646,47 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
         const span = document.createElement("span");
         span.dataset.readingWord = "true";
         span.className = "inline";
-        span.textContent = index === words.length - 1 ? word : `${word} `;
+        span.textContent = word;
         paragraph.append(span);
+
+        if (index < words.length - 1) {
+          const spacer = document.createElement("span");
+          spacer.dataset.readingSpacer = "true";
+          spacer.className = "inline";
+          spacer.textContent = " ";
+          spacer.style.whiteSpace = "pre-wrap";
+          paragraph.append(spacer);
+        }
       });
 
       paragraph.dataset.wordsWrapped = "true";
       return Array.from(paragraph.querySelectorAll<HTMLElement>("[data-reading-word]"));
     };
 
+    const setReadingSegmentState = (segment: HTMLElement, isActive: boolean) => {
+      segment.style.backgroundColor = isActive ? "#475569" : "transparent";
+      segment.style.color = isActive ? "#f8fafc" : "#0a1220";
+      segment.style.borderRadius = "0";
+    };
+
     const setWordsByProgress = (words: HTMLElement[], progress: number) => {
       const clampedProgress = Math.max(0, Math.min(1, progress));
-      const easedProgress = gsap.parseEase("power1.out")(clampedProgress);
-      const scaled = easedProgress * words.length;
+      const highlightedCount = Math.max(
+        0,
+        Math.min(words.length, Math.floor(clampedProgress * words.length)),
+      );
 
       words.forEach((word, index) => {
-        const local = Math.max(0, Math.min(1, scaled - index));
-        const textChannel = Math.round(local * 255);
-        word.style.backgroundColor = `rgba(238, 135, 54, ${local.toFixed(3)})`;
-        word.style.color = `rgb(${textChannel}, ${textChannel}, ${textChannel})`;
+        const isActive = index < highlightedCount;
+        setReadingSegmentState(word, isActive);
+
+        const spacer = word.nextElementSibling;
+        if (
+          spacer instanceof HTMLElement &&
+          spacer.dataset.readingSpacer === "true"
+        ) {
+          setReadingSegmentState(spacer, isActive);
+        }
       });
     };
 
@@ -686,15 +700,17 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
     };
 
     const resetArticleHighlightStyles = (article: HTMLElement) => {
-      const words = Array.from(
-        article.querySelectorAll<HTMLElement>("[data-reading-word]"),
+      const segments = Array.from(
+        article.querySelectorAll<HTMLElement>(
+          "[data-reading-word], [data-reading-spacer]",
+        ),
       );
-      words.forEach((word) => {
-        word.style.backgroundColor = "transparent";
-        word.style.color = "#000000";
-        word.style.borderRadius = "0";
-        word.style.paddingLeft = "0";
-        word.style.paddingRight = "0";
+      segments.forEach((segment) => {
+        segment.style.backgroundColor = "transparent";
+        segment.style.color = "#0a1220";
+        segment.style.borderRadius = "0";
+        segment.style.paddingLeft = "0";
+        segment.style.paddingRight = "0";
       });
     };
 
@@ -786,9 +802,15 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
       if (!allWords.length) return;
 
-      gsap.killTweensOf(allWords);
-      gsap.set(allWords, {
-        color: "#000000",
+      const allSegments = Array.from(
+        article.querySelectorAll<HTMLElement>(
+          "[data-reading-word], [data-reading-spacer]",
+        ),
+      );
+
+      gsap.killTweensOf(allSegments);
+      gsap.set(allSegments, {
+        color: "#0a1220",
         backgroundColor: "transparent",
         borderRadius: "0",
         paddingLeft: "0",
@@ -857,51 +879,190 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
   <section
     id="home-latest-slider"
-    data-scroll-lock-section
-    class="flex [height:var(--section-h,calc(100svh-112px))] flex-col border-b border-black/20 bg-white"
+    style="background-color:#d8e9e3;background-image:linear-gradient(180deg,#d8e9e3 0%,#d8e9e3 calc(100% - 88px),#eaf3f0 calc(100% - 34px),#ffffff 100%);"
+    class="flex h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] flex-col overflow-hidden bg-[#d8e9e3] pb-[var(--announce-h,48px)]"
   >
-    <HeroArticleSlider items={midPageSliderItems} autoplayMs={4000} />
-    <div data-slider-stats class="flex-1 bg-white">
-      <div class="h-full w-full px-4 py-6 sm:px-6 md:py-8 lg:px-8">
-        <div class="h-full grid grid-cols-1 md:grid-cols-[40%_60%] md:gap-0">
-          <div class="w-full md:pr-8">
-            <p class="text-left text-sm font-semibold leading-relaxed text-black md:text-base">
-              {sliderStats.description}
-            </p>
+    <div class="min-h-0 flex-1 basis-0 bg-[#d8e9e3]">
+      <div class="h-full w-full overflow-hidden px-4 py-4 sm:px-6 md:py-5 lg:px-8">
+        <article class="grid h-full min-h-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] md:items-center md:gap-8">
+          <div class="flex min-h-0 flex-col justify-center md:pr-4">
+            <div>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
+                  {audioRelease.type}
+                </p>
+                <p class="text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/48">
+                  {audioRelease.date}
+                </p>
+              </div>
+              <h3 class="mt-2 max-w-3xl text-left text-[1.82rem] font-bold leading-[0.95] tracking-tight text-primary md:text-[2.1rem] lg:text-[2.45rem]">
+                {audioRelease.title}
+              </h3>
+              <p class="mt-3 max-w-2xl text-left text-[0.95rem] font-semibold leading-[1.48] text-primary/76 md:text-[1rem]">
+                {audioRelease.summary}
+              </p>
+            </div>
 
-            <div class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-6 md:mt-7 md:gap-6">
-              {sliderStats.items.map((item) => (
-                <div class="text-center">
-                <p
-                  data-countup
-                  data-countup-target={item.value}
-                  class="text-3xl font-semibold leading-none text-black md:text-4xl"
+            <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <a
+                href={audioRelease.href}
+                class="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover"
+              >
+                {audioRelease.ctaText}
+                <svg
+                  viewBox="0 0 20 12"
+                  class="h-3 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
                 >
-                  0
-                </p>
-                <div class="mx-auto mt-3 h-[4px] w-24 bg-black"></div>
-                <p class="mt-3 text-sm font-semibold leading-none text-black md:text-base">
-                  {item.label}
-                </p>
+                  <path d="M1 6h14"></path>
+                  <path d="m11 2 4 4-4 4"></path>
+                </svg>
+              </a>
+              <p class="text-sm font-semibold text-primary/58">
+                Linked to the written article release page.
+              </p>
+            </div>
+          </div>
+
+          <div
+            data-audio-preview
+            class="rounded-[1.2rem] bg-[#e8f1f0] px-5 py-4 text-primary shadow-[0_10px_24px_rgba(10,18,32,0.06)] md:px-6 md:py-5"
+          >
+            <audio data-audio-el preload="metadata" class="hidden">
+              <source src={audioRelease.audioSrc} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+            <div class="flex h-full min-h-0 flex-col justify-center">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-4">
+                  <button
+                    type="button"
+                    data-audio-toggle
+                    class="inline-flex h-14 w-14 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(10,18,32,0.16)] transition-colors hover:bg-hover"
+                    aria-label="Play audio preview"
+                  >
+                    <svg
+                      data-audio-icon-play
+                      viewBox="0 0 20 20"
+                      class="h-5 w-5 translate-x-px"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 4.75v10.5a.75.75 0 0 0 1.14.643l8.25-5.25a.75.75 0 0 0 0-1.286l-8.25-5.25A.75.75 0 0 0 6 4.75Z"></path>
+                    </svg>
+                    <svg
+                      data-audio-icon-pause
+                      viewBox="0 0 20 20"
+                      class="hidden h-5 w-5"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 4.5A1.5 1.5 0 0 1 7.5 6v8A1.5 1.5 0 0 1 6 15.5h-.5A1.5 1.5 0 0 1 4 14V6a1.5 1.5 0 0 1 1.5-1.5H6Zm8.5 0A1.5 1.5 0 0 1 16 6v8a1.5 1.5 0 0 1-1.5 1.5H14a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 14 4.5h.5Z"></path>
+                    </svg>
+                  </button>
+                  <div class="min-w-0">
+                    <p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-primary/52">
+                      {audioRelease.series}
+                    </p>
+                    <p class="mt-1 line-clamp-2 text-[1rem] font-semibold leading-snug text-primary md:text-[1.04rem]">
+                      Episode 01: {audioRelease.title}
+                    </p>
+                  </div>
                 </div>
-              ))}
+                <p class="shrink-0 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/52">
+                  {audioRelease.duration}
+                </p>
+              </div>
+
+              <div class="mt-5">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-primary/52">
+                    Preview
+                  </p>
+                  <p class="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-primary/42">
+                    Audio brief
+                  </p>
+                </div>
+
+                <div class="mt-4 flex items-end gap-1.5">
+                  {[
+                    "22%",
+                    "40%",
+                    "34%",
+                    "58%",
+                    "44%",
+                    "64%",
+                    "38%",
+                    "72%",
+                    "48%",
+                    "76%",
+                    "54%",
+                    "68%",
+                    "46%",
+                    "84%",
+                    "52%",
+                    "66%",
+                    "36%",
+                    "60%",
+                    "42%",
+                    "74%",
+                    "50%",
+                    "62%",
+                    "34%",
+                    "56%",
+                    "40%",
+                    "70%",
+                    "58%",
+                    "64%",
+                  ].map((height, index) => (
+                    <span
+                      data-audio-wave-bar
+                      class:list={[
+                        "block h-14 flex-1 rounded-sm bg-primary/12",
+                        index < 10 && "bg-[#42b09a]",
+                      ]}
+                      style={`height:${height};`}
+                    ></span>
+                  ))}
+                </div>
+
+                <div class="mt-3 flex items-center justify-between text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-primary/42">
+                  <span data-audio-current>00:00</span>
+                  <span>Preview</span>
+                  <span data-audio-duration>{audioRelease.duration}</span>
+                </div>
+
+                <button
+                  type="button"
+                  data-audio-progress-rail
+                  class="mt-4 block w-full cursor-pointer"
+                  aria-label="Seek audio preview"
+                >
+                  <span class="block h-2 w-full overflow-hidden rounded-full bg-primary/10">
+                    <span
+                      data-audio-progress-fill
+                      class="block h-full rounded-full bg-[#42b09a] transition-[width] duration-150"
+                      style="width:0%;"
+                    ></span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="hidden h-full md:grid md:grid-cols-2 md:border-l md:border-black">
-            <div class="group flex items-center justify-center px-4">
-              <p class="text-center text-4xl font-sans font-bold leading-[0.9] tracking-tight text-black transition-colors duration-200 group-hover:text-[#ee8736] lg:text-5xl">
-                Articles
-              </p>
-            </div>
-            <div class="group flex items-center justify-center border-l border-black px-4">
-              <p class="text-center text-4xl font-sans font-bold leading-[0.9] tracking-tight text-black transition-colors duration-200 group-hover:text-[#70c8e0] lg:text-5xl">
-                Publications
-              </p>
-            </div>
-          </div>
-        </div>
+        </article>
       </div>
     </div>
+    <HeroArticleSlider
+      items={midPageSliderItems}
+      autoplayMs={4000}
+      fitParentHeight={true}
+      class="min-h-0 flex-1 basis-0 border-t border-primary/12"
+    />
   </section>
 
   <section id="article-section" data-article-section class="border-b border-black/20 bg-white">
@@ -913,7 +1074,7 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
           aria-pressed="false"
           aria-label="Disable scroll text highlight"
           title="Disable scroll text highlight"
-          class="inline-flex h-8 w-8 cursor-pointer items-center justify-center border border-black text-black transition-colors hover:bg-black hover:text-white"
+          class="inline-flex h-8 w-8 cursor-pointer items-center justify-center border border-black text-primary transition-colors hover:bg-black hover:text-white"
         >
           <svg
             viewBox="0 0 24 24"
@@ -931,21 +1092,21 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
         </button>
         <span
           data-highlight-toggle-label
-          class="text-[0.72rem] font-light uppercase tracking-[0.08em] text-black/70"
+          class="text-[0.72rem] font-light uppercase tracking-[0.08em] text-primary/70"
         >
           Highlight on
         </span>
       </div>
       <h2
         data-article-title
-        class="text-left text-3xl font-bold leading-tight tracking-tight text-black md:text-5xl"
+        class="text-left text-3xl font-bold leading-tight tracking-tight text-foreground md:text-5xl"
       >
         {featuredArticle.title}
       </h2>
-      <p class="mt-4 text-left text-sm font-semibold leading-relaxed text-black md:text-base">
+      <p class="mt-4 text-left text-sm font-semibold leading-relaxed text-foreground md:text-base">
         {featuredArticle.editors}
       </p>
-      <div class="mt-8 text-left text-base font-medium leading-relaxed text-black [text-rendering:optimizeLegibility] md:text-lg">
+      <div class="mt-8 text-left text-base font-medium leading-relaxed text-foreground [text-rendering:optimizeLegibility] md:text-lg">
         <figure class="float-none mx-auto mb-5 w-40 sm:w-48 md:float-right md:ml-6 md:mb-4 md:mt-1 md:w-56 lg:w-60">
           <img
             src="/articles/red-sea-ebook.pdf.png"
@@ -959,8 +1120,8 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
         ))}
       </div>
       <a
-        href="#"
-        class="clear-both mt-10 inline-flex cursor-pointer border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-black transition-colors hover:bg-black hover:text-white"
+        href="/blog"
+        class="clear-both mt-10 inline-flex cursor-pointer border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-primary transition-colors hover:bg-black hover:text-white"
       >
         More
       </a>
@@ -1008,7 +1169,7 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
       </div>
       <div class="mt-4 flex justify-center">
         <a
-          href="#"
+          href="/blog"
           class="inline-flex cursor-pointer text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
         >
           View all publications

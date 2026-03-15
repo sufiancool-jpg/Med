@@ -23,7 +23,7 @@ async function saveTraffic() {
   if (fs.existsSync(filePath)) {
     try {
       localData = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    } catch (e) {
+    } catch {
       console.warn(
         "⚠️ Warning: Error reading existing clones.json, starting fresh.",
       );

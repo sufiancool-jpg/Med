@@ -16,27 +16,27 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #000000;
-  --primary: #000000;
-  --hover: #000000;
-  --accent: #000000;
-  --accent-foreground: #000000;
+  --foreground: #0a1220;
+  --primary: #0a1220;
+  --hover: #15243a;
+  --accent: #0a1220;
+  --accent-foreground: #0a1220;
   --border: #daa650;
   --muted: #ffffff;
-  --muted-foreground: #000000;
+  --muted-foreground: #0a1220;
   --card: #ffffff;
 }
 
 :root[data-theme="dark"] {
   --background: #ffffff;
-  --foreground: #000000;
-  --primary: #000000;
-  --hover: #000000;
-  --accent: #000000;
-  --accent-foreground: #000000;
+  --foreground: #0a1220;
+  --primary: #0a1220;
+  --hover: #15243a;
+  --accent: #0a1220;
+  --accent-foreground: #0a1220;
   --border: #daa650;
   --muted: #ffffff;
-  --muted-foreground: #000000;
+  --muted-foreground: #0a1220;
   --card: #ffffff;
 }
 
@@ -58,7 +58,9 @@
   h5,
   h6 {
     color: var(--foreground);
-    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
+      Arial, sans-serif;
     letter-spacing: -0.01em;
     line-height: 1.15;
   }
@@ -91,7 +93,9 @@
 
 @layer utilities {
   .font-heading {
-    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
+      Arial, sans-serif;
   }
 }
 
@@ -106,9 +110,4 @@ html.lenis body {
 
 .lenis.lenis-stopped {
   overflow: hidden;
-}
-
-html.section-lock-active,
-html.section-lock-active body {
-  overscroll-behavior: none;
 }

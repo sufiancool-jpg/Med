@@ -14,12 +14,14 @@ interface Props {
   items?: HeroSliderItem[];
   class?: string;
   autoplayMs?: number;
+  fitParentHeight?: boolean;
 }
 
 const {
   items = [],
   class: className = "",
   autoplayMs = 0,
+  fitParentHeight = false,
 } = Astro.props as Props;
 
 const isSingleItem = items.length === 1;
@@ -55,24 +57,33 @@ const getTitleSizeClass = (title: string) => {
   trackItems.length > 0 ? (
     <section
       class:list={[
-        "relative w-full overflow-hidden bg-background [--slide-h:242px] h-[var(--slide-h)]",
+        fitParentHeight
+          ? "relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-transparent"
+          : "relative w-full overflow-hidden bg-background [--slide-h:242px] h-[var(--slide-h)]",
         className,
       ]}
       data-hero-slider
       data-base-count={baseItems.length}
       data-clone-count={cloneCount}
       data-autoplay-ms={autoplayMs}
+      data-fit-parent-height={fitParentHeight ? "true" : "false"}
       aria-roledescription="carousel"
       aria-label="Featured blog articles"
       tabindex="0"
     >
-      <div class="h-full w-full overflow-hidden bg-background">
+      <div
+        class:list={[
+          fitParentHeight
+            ? "absolute inset-0 overflow-hidden bg-transparent"
+            : "h-full w-full overflow-hidden bg-background",
+        ]}
+      >
         <div
-          class="flex h-full gap-0 will-change-transform transition-transform duration-500 ease-linear"
+          class="flex h-full items-stretch gap-0 will-change-transform transition-transform duration-500 ease-linear"
           data-slider-track
         >
           {trackItems.map((item) => (
-            <article class="relative h-full shrink-0 overflow-hidden opacity-50" data-slide>
+            <article class="relative h-full min-h-full shrink-0 overflow-hidden opacity-50" data-slide>
               <img
                 src={item.image}
                 alt={item.title}
@@ -181,6 +192,8 @@ const getTitleSizeClass = (title: string) => {
       const baseCount = Number(slider.getAttribute("data-base-count") || "0");
       const cloneCount = Number(slider.getAttribute("data-clone-count") || "0");
       const autoplayMs = Number(slider.getAttribute("data-autoplay-ms") || "0");
+      const fitParentHeight =
+        slider.getAttribute("data-fit-parent-height") === "true";
 
       let index = cloneCount > 0 ? cloneCount : 0;
       let slideWidth = 0;
@@ -215,8 +228,10 @@ const getTitleSizeClass = (title: string) => {
           centerOffset = (visibleTrackWidth - slider.clientWidth) / 2;
         }
 
-        const slideHeight = (slideWidth * 9) / 16;
-        slider.style.setProperty("--slide-h", `${slideHeight}px`);
+        if (!fitParentHeight) {
+          const slideHeight = (slideWidth * 9) / 16;
+          slider.style.setProperty("--slide-h", `${slideHeight}px`);
+        }
         slides.forEach((slide) => {
           slide.style.width = `${slideWidth}px`;
         });
