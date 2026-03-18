@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const metadata = {
+  title: "Career",
+  description:
+    "Career opportunities and speculative applications for research, editorial, and programme support roles.",
+};
+---
+
+<BaseLayout {metadata}>
+  <section class="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+    <p class="text-sm font-semibold uppercase tracking-[0.08em] text-primary/70">
+      Get Involved
+    </p>
+    <h1 class="mt-3 text-4xl font-semibold leading-tight md:text-5xl">
+      Career
+    </h1>
+    <p class="mt-5 text-base leading-8 text-muted-foreground">
+      The platform periodically opens roles across research, editorial, programme
+      coordination, and communications. For current openings or speculative
+      applications, contact the team directly.
+    </p>
+
+    <div class="mt-10 border border-border bg-card p-6 md:p-8">
+      <h2 class="text-2xl font-semibold leading-tight text-foreground">
+        Current hiring approach
+      </h2>
+      <p class="mt-4 text-sm leading-7 text-muted-foreground">
+        Applications are reviewed according to programme needs, subject-matter
+        expertise, writing ability, and regional experience relevant to the
+        platform’s work.
+      </p>
+      <a
+        href="/contact"
+        class="mt-6 inline-flex border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-primary transition-colors hover:bg-hover hover:text-white"
+      >
+        Contact the team
+      </a>
+    </div>
+  </section>
+</BaseLayout>

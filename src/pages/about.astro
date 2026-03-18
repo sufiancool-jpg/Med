@@ -1,9 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { getImage } from "astro:assets";
-import Content2 from "../components/widgets/Content2.astro";
-import Values from "../components/widgets/Values.astro";
-import aboutImage from "../assets/images/about-office.webp";
+import { Icon } from "astro-icon/components";
 
 const metadata = {
   title: "About us",
@@ -11,76 +8,280 @@ const metadata = {
     "Research, dialogue, and educational programme offering collective reflection and informed policymaking at national and transnational levels.",
 };
 
-const values = [
+const aboutIntro = [
+  "The Mediterranean Platform fosters exchanges between academic, policy, and business communities across the Mediterranean and beyond, contributing to high-quality knowledge production. It promotes multidisciplinary research through a broad regional network, aiming to support better-informed decision-making and evidence-based policies, while amplifying local perspectives in international debates.",
+  "Policy dialogues are central to its work, bringing stakeholders together to address transnational issues, support mediation, and develop operational ideas for diplomatic and business strategies, especially in complex and conflict-affected contexts.",
+  "The Platform places youth at the centre of its efforts, encouraging their participation and equipping them through training and mentorship programmes to become agents of change. It also runs executive trainings and educational activities that foster knowledge exchange, skills development, and communities of practice across academic, diplomatic, and civil society circles.",
+];
+
+const mockLinkedInUrl = "https://www.linkedin.com/";
+const aboutVideoEmbedUrl = "https://www.youtube.com/embed/zlRl8sJU_4I?rel=0";
+const partnerLogos = [
   {
-    title: "Collective Reflection",
-    description:
-      "The platform offers a space for collective reflection on governance, diplomacy, and regional transformations.",
+    src: "/Logos/European-Commission.png",
+    alt: "European Commission",
   },
   {
-    title: "Policy-Relevant Research",
-    description:
-      "Multi-disciplinary and policy-relevant outputs support informed policymaking and advocacy.",
+    src: "/Logos/Unimed.png",
+    alt: "Unimed",
   },
   {
-    title: "Dialogue Support",
-    description:
-      "Dialogue support and track-two engagement connect experts, stakeholders, and decision-makers.",
+    src: "/Logos/Logo-LDTF.png",
+    alt: "LDTF",
   },
   {
-    title: "Capacity Building",
-    description:
-      "Mentorship and knowledge exchange strengthen local research capabilities and policy participation.",
+    src: "/Logos/PM-SOG-Logo.png.jpg",
+    alt: "PM SOG",
   },
   {
-    title: "Regional Cooperation",
-    description:
-      "Workstreams foster cooperation across the Mediterranean, Africa, and Gulf policy spaces.",
+    src: "/Logos/download-1.png",
+    alt: "Partner logo",
   },
   {
-    title: "Scenario-Making",
-    description:
-      "Future studies and scenario-making help shape long-term strategic policy discussions.",
+    src: "/Logos/unnamed-e1709546741640.png",
+    alt: "Partner logo",
   },
 ];
 
-const optimizedImage = await getImage({
-  src: aboutImage,
-  format: "webp",
-});
+const teamMembers = [
+  {
+    name: "Luigi Narbone",
+    role: "Director",
+    image: "/Team/luigi-narbone.jpg",
+    email: "luigi.narbone@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Director with a background in EU and UN diplomacy, including roles as EU Ambassador in the Gulf and positions across multiple international contexts. His work focuses on MENA geopolitics, security, and political economy, alongside conflict dynamics and peacebuilding, bridging policy, diplomacy, and academic research.",
+  },
+  {
+    name: "Virginie Collombier",
+    role: "Scientific Coordinator",
+    image: "/Team/virginie-collombier.jpg",
+    email: "virginie.collombier@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Scientific Coordinator working on socio-political transformations and geopolitical dynamics in the MENA region, with a strong focus on Libya. Her work examines state-society relations, power structures, and political dialogue, combining research with field-based initiatives and mentoring emerging researchers.",
+  },
+  {
+    name: "Ilaria Bertocchini",
+    role: "Project Coordinator",
+    image: "/Team/ilaria-bertocchini.jpg",
+    email: "ilaria.bertocchini@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Project Coordinator specializing in project management, monitoring and evaluation (M&E) across Europe and the MENA region. She brings experience in development cooperation, institutional processes, and coordination between stakeholders in complex project environments.",
+  },
+  {
+    name: "Meryem Akabouch",
+    role: "Research Associate",
+    image: "/Team/meryem-akabouch.jpeg",
+    email: "meryem.akabouch@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Research Associate with a background in political theory and translation, focusing on political Islam, Europe-Africa relations, and social and political dynamics in the Mediterranean and Middle East, with an interest in intellectual and policy-oriented research.",
+  },
+  {
+    name: "Carlo Palleschi",
+    role: "Associate Researcher",
+    image: "/Team/carlo-palleschi.jpg",
+    email: "carlo.palleschi@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Associate Researcher and World Bank consultant working on African development and environmental issues, with experience across international organizations, research centres, and academic institutions, contributing to policy-oriented analysis and publications.",
+  },
+  {
+    name: "Meraf Villani",
+    role: "Associate Researcher",
+    image: "/Team/meraf-villani.jpg",
+    email: "meraf.villani@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Associate Researcher focusing on Africa-Europe relations, dialogue initiatives, and cultural exchange. She is actively engaged in projects that strengthen connections between regions, while contributing to discussions on African geopolitics and moderating international platforms.",
+  },
+  {
+    name: "Leon Stille",
+    role: "Energy Expert",
+    image: "/Team/leon-stille.jpg",
+    email: "leon.stille@mediterranean-platform.org",
+    linkedin: mockLinkedInUrl,
+    bio:
+      "Energy expert specializing in energy transition, hydrogen, and renewable technologies, with experience across industry, research, and education. His work combines technical expertise with project development, innovation, and policy engagement in the energy sector.",
+  },
+];
 ---
 
-<BaseLayout {metadata}>
-  <link slot="head" rel="preload" href={optimizedImage.src} as="image" />
-  <Content2
-    title="About the Platform"
-    description={[
-      "The Mediterranean Platform is a research, dialogue, and educational programme focused on informed policymaking and advocacy.",
-      "It addresses political, socio-economic and security transformations, MENA geopolitics, regional security and diplomacy, and future studies for the broader Mediterranean.",
-    ]}
-    tagline="About us"
-    image={aboutImage}
-    imageAlt="Mediterranean policy dialogue and research"
-    actions={[
-      {
-        text: "Contact",
-        href: "/contact",
-        variant: "primary",
-        icon: "lucide:mail",
-      },
-      {
-        text: "Publications",
-        href: "/blog",
-        variant: "secondary",
-        icon: "lucide:arrow-right",
-      },
-    ]}
-  />
-  <Values
-    items={values}
-    columns={3}
-    tagline="Approach"
-    title="What Defines Our Work"
-    subtitle="Principles guiding research, dialogue, and policy engagement"
-  />
+<BaseLayout {metadata} hideAnnouncementBar={true}>
+  <div class="bg-white">
+    <section id="mission" class="about-anchor border-b border-black bg-white">
+      <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+        <div class="grid items-start gap-6 md:grid-cols-[32%_68%] md:gap-8">
+          <div class="flex justify-start md:sticky md:top-[calc(var(--nav-h,72px)+2rem)]">
+            <div class="w-full max-w-[22rem] space-y-5">
+              <img
+                src="/Logo3.png"
+                alt="Mediterranean Platform"
+                class="w-full object-contain"
+              />
+              <div class="aspect-video w-full overflow-hidden border border-black/15 bg-black/5">
+                <iframe
+                  src={aboutVideoEmbedUrl}
+                  title="Mediterranean Platform video"
+                  class="h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/65">
+              About us
+            </p>
+            <div class="mt-2.5 space-y-3 text-[0.95rem] leading-[1.58] text-muted-foreground md:text-[0.98rem]">
+              {aboutIntro.map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="team" class="about-anchor bg-white">
+      <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-14 lg:px-8">
+        <div class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
+          {teamMembers.map((member) => (
+            <article class="about-profile-card w-full border-b border-dotted border-black/30 pb-4">
+              <img
+                src={member.image}
+                alt={member.name}
+                loading="lazy"
+                class="about-profile-image aspect-[5/6] w-full object-cover object-center"
+              />
+              <div class="mt-3.5">
+                <h3 class="text-[0.98rem] font-semibold leading-tight text-foreground">
+                  {member.name}
+                </h3>
+                <p class="mt-2.5 text-[0.86rem] leading-[1.68] text-muted-foreground">
+                  {member.bio}
+                </p>
+                <a
+                  href={`mailto:${member.email}`}
+                  class="mt-3.5 inline-flex text-[0.8rem] font-medium text-primary transition-colors hover:text-hover"
+                >
+                  {member.email}
+                </a>
+                <div class="mt-2 block">
+                  <a
+                    href={member.linkedin}
+                    aria-label={`${member.name} LinkedIn`}
+                    target="_blank"
+                    rel="noreferrer"
+                    class="inline-flex items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+                  >
+                    <Icon name="lucide:linkedin" class="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white">
+      <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
+        <div class="about-cta-block flex flex-col items-start gap-4 md:gap-5">
+          <a
+            href="/career"
+            class="inline-flex w-fit items-baseline gap-3 self-start text-[clamp(1.7rem,3.8vw,3.1rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-black transition-all hover:text-[#42b09a] hover:underline"
+          >
+            <span>Looking to join us? Check careers</span>
+            <span aria-hidden="true">&gt;</span>
+          </a>
+          <a
+            href="/volunteer"
+            class="inline-flex w-fit items-baseline gap-3 self-start text-[clamp(1.7rem,3.8vw,3.1rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-black transition-all hover:text-[#42b09a] hover:underline"
+          >
+            <span>A particular project? Volunteer</span>
+            <span aria-hidden="true">&gt;</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white">
+      <div class="mx-auto max-w-7xl px-4 pb-14 sm:px-6 md:pb-16 lg:px-8">
+        <div class="about-partners-block border-t border-dotted border-black/30 pt-6 md:pt-7">
+          <p class="text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-primary/70">
+            Our collaborations
+          </p>
+          <div class="mt-5 grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-6">
+            {partnerLogos.map((logo) => (
+              <div class="flex h-20 items-center justify-center px-4 md:h-24">
+                <img
+                  src={logo.src}
+                  alt={logo.alt}
+                  loading="lazy"
+                  class="max-h-12 w-auto max-w-full object-contain md:max-h-14"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 </BaseLayout>
+
+<style>
+  .about-anchor {
+    scroll-margin-top: calc(var(--nav-h, 72px) + 1.25rem);
+  }
+
+  .about-profile-image {
+    filter: grayscale(1) contrast(1.1) brightness(1.01);
+    -webkit-filter: grayscale(1) contrast(1.1) brightness(1.01);
+    transition:
+      filter 520ms ease,
+      -webkit-filter 520ms ease;
+  }
+
+  .about-profile-card:hover .about-profile-image,
+  .about-profile-card:focus-within .about-profile-image,
+  .about-profile-image:hover,
+  .about-profile-image:focus {
+    filter: grayscale(0.2) contrast(1.04) brightness(1);
+    -webkit-filter: grayscale(0.2) contrast(1.04) brightness(1);
+  }
+
+  .about-cta-block {
+    max-width: 64rem;
+  }
+
+  .about-partners-block {
+    max-width: 64rem;
+  }
+
+  @media (min-width: 768px) {
+    .about-cta-block {
+      margin-left: 0;
+    }
+
+    .about-partners-block {
+      margin-left: 0;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .about-cta-block {
+      margin-left: 0;
+    }
+
+    .about-partners-block {
+      margin-left: 0;
+    }
+  }
+</style>

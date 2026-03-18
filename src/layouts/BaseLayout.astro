@@ -4,6 +4,7 @@ interface Props {
   description?: string;
   ogImage?: string;
   canonical?: string;
+  hideAnnouncementBar?: boolean;
   metadata?: {
     title?: string;
     description?: string;
@@ -16,6 +17,7 @@ interface Props {
 import Seo from "../components/seo/Seo.astro";
 import Schema from "../components/seo/Schema.astro";
 import Navbar from "../components/layout/Navbar.astro";
+import AnnouncementBar from "../components/layout/AnnouncementBar.astro";
 import Footer from "../components/layout/Footer.astro";
 import "../styles/global.css";
 import SpeedInsights from "@vercel/speed-insights/astro";
@@ -23,7 +25,7 @@ import Analytics from "@vercel/analytics/astro";
 
 import { siteConfig } from "../config/site";
 
-const { title, description, ogImage, canonical, metadata } = Astro.props;
+const { title, description, ogImage, canonical, metadata, hideAnnouncementBar = false } = Astro.props;
 
 const finalTitle = metadata?.title || title;
 const finalDescription = metadata?.description || description;
@@ -77,12 +79,18 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
       Skip to content
     </a>
 
-    <div class="relative flex min-h-screen flex-col overflow-x-hidden">
+    <div class="relative flex min-h-screen flex-col overflow-x-hidden bg-white">
       <Navbar />
-      <main id="main-content" class="relative z-10 grow pt-[var(--nav-h,72px)]">
+      <main
+        id="main-content"
+        class="relative z-10 grow bg-white pt-[var(--nav-h,72px)]"
+      >
         <slot />
       </main>
-      <Footer />
+      {!hideAnnouncementBar && <AnnouncementBar />}
+      <div class="bg-white">
+        <Footer />
+      </div>
     </div>
     <script>
       import Lenis from "lenis";
@@ -90,6 +98,8 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
       const runtime = window as Window & {
         __lenis?: Lenis;
         __fixedOffsetCleanup?: () => void;
+        __announcementBarThemeCleanup?: () => void;
+        __announcementBarThemeBound?: boolean;
       };
       const lenisInstance = new Lenis({
         duration: 1.05,
@@ -103,7 +113,7 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
         const announcement = document.querySelector("[data-announcement-bar]");
         const navHeight = nav instanceof HTMLElement ? nav.offsetHeight : 72;
         const announcementHeight =
-          announcement instanceof HTMLElement ? announcement.offsetHeight : 40;
+          announcement instanceof HTMLElement ? announcement.offsetHeight : 0;
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
 
         document.documentElement.style.setProperty(
@@ -155,6 +165,88 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
         document.removeEventListener("astro:page-load", syncFixedOffsets);
         document.removeEventListener("astro:after-swap", syncFixedOffsets);
       };
+
+      const initAnnouncementBarTheme = () => {
+        runtime.__announcementBarThemeCleanup?.();
+
+        const bar = document.querySelector("[data-announcement-bar]");
+        const footer = document.querySelector("footer");
+        const main = document.getElementById("main-content");
+        const themeAnchor =
+          main?.querySelector(
+            "[data-announcement-theme-anchor], [data-hero-section], section, article",
+          ) ?? main?.firstElementChild;
+
+        if (!(bar instanceof HTMLElement)) return;
+
+        const landingColor = "#42b09a";
+        const scrolledColor = "#0a1220";
+        let rafId = 0;
+
+        const updateTheme = () => {
+          const navHeightValue =
+            document.documentElement.style.getPropertyValue("--nav-h");
+          const navHeight = Number.parseFloat(navHeightValue);
+          const threshold = Number.isFinite(navHeight) ? navHeight + 8 : 80;
+          const nextColor =
+            themeAnchor instanceof HTMLElement
+              ? themeAnchor.getBoundingClientRect().bottom <= threshold
+                ? scrolledColor
+                : landingColor
+              : window.scrollY > threshold
+                ? scrolledColor
+                : landingColor;
+          const footerOpacity =
+            footer instanceof HTMLElement
+              ? Math.max(
+                  0,
+                  Math.min(
+                    1,
+                    (footer.getBoundingClientRect().top -
+                      (window.innerHeight - 32)) /
+                      176,
+                  ),
+                )
+              : 1;
+
+          bar.style.opacity = footerOpacity.toFixed(3);
+          bar.style.pointerEvents = footerOpacity <= 0.05 ? "none" : "auto";
+
+          if (bar.dataset.themeColor !== nextColor) {
+            bar.dataset.themeColor = nextColor;
+            bar.style.setProperty("--announcement-bar-bg", nextColor);
+          }
+        };
+
+        const scheduleUpdate = () => {
+          if (rafId) return;
+          rafId = window.requestAnimationFrame(() => {
+            rafId = 0;
+            updateTheme();
+          });
+        };
+
+        window.addEventListener("scroll", scheduleUpdate, { passive: true });
+        window.addEventListener("resize", scheduleUpdate);
+        scheduleUpdate();
+
+        runtime.__announcementBarThemeCleanup = () => {
+          if (rafId) {
+            window.cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          window.removeEventListener("scroll", scheduleUpdate);
+          window.removeEventListener("resize", scheduleUpdate);
+        };
+      };
+
+      if (!runtime.__announcementBarThemeBound) {
+        document.addEventListener("astro:page-load", initAnnouncementBarTheme);
+        document.addEventListener("astro:after-swap", initAnnouncementBarTheme);
+        runtime.__announcementBarThemeBound = true;
+      }
+
+      initAnnouncementBarTheme();
     </script>
     <SpeedInsights />
     <Analytics />

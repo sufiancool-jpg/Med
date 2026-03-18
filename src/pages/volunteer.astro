@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const metadata = {
+  title: "Volunteer",
+  description:
+    "Volunteer opportunities supporting events, knowledge exchange, and editorial or outreach activities.",
+};
+---
+
+<BaseLayout {metadata}>
+  <section class="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+    <p class="text-sm font-semibold uppercase tracking-[0.08em] text-primary/70">
+      Get Involved
+    </p>
+    <h1 class="mt-3 text-4xl font-semibold leading-tight md:text-5xl">
+      Volunteer
+    </h1>
+    <p class="mt-5 text-base leading-8 text-muted-foreground">
+      Volunteer contributions can support events, research assistance, community
+      outreach, and editorial coordination. The team welcomes expressions of
+      interest from students, early-career researchers, and practitioners.
+    </p>
+
+    <div class="mt-10 border border-border bg-card p-6 md:p-8">
+      <h2 class="text-2xl font-semibold leading-tight text-foreground">
+        Areas of support
+      </h2>
+      <p class="mt-4 text-sm leading-7 text-muted-foreground">
+        Opportunities may include event assistance, communications support,
+        publication preparation, and knowledge-exchange activities tied to the
+        platform’s ongoing projects.
+      </p>
+      <a
+        href="/contact"
+        class="mt-6 inline-flex border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-primary transition-colors hover:bg-hover hover:text-white"
+      >
+        Express interest
+      </a>
+    </div>
+  </section>
+</BaseLayout>

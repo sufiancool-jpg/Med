@@ -113,6 +113,9 @@ const featuredPublications = [
     excerpt:
       "A multi-disciplinary publication on regional opportunity structures, cooperation pathways, and strategic dialogue.",
     href: "#",
+    thumbnail: "/articles/red-sea-ebook.pdf.png",
+    thumbnailAlt: "The Red Sea publication cover",
+    tags: ["#RedSea", "#RegionalCooperation", "#PolicyDialogue"],
   },
   {
     type: "Policy Paper",
@@ -122,6 +125,9 @@ const featuredPublications = [
     excerpt:
       "Policy paper on governance architecture and local institutional design for stability and inclusive policymaking.",
     href: "#",
+    thumbnail: "/blog/blog_post_10_1768850582328.webp",
+    thumbnailAlt: "Publication thumbnail placeholder for local governance policy paper",
+    tags: ["#Libya", "#LocalGovernance", "#InstitutionalDesign"],
   },
   {
     type: "Policy Paper",
@@ -132,6 +138,9 @@ const featuredPublications = [
     excerpt:
       "Comparative insights connecting local governance, peace process design, and practical dialogue support.",
     href: "#",
+    thumbnail: "/blog/blog_post_11_1768850597259.webp",
+    thumbnailAlt: "Publication thumbnail placeholder for subnational governance policy paper",
+    tags: ["#SubnationalGovernance", "#Yemen", "#PeaceProcess"],
   },
   {
     type: "Policy Paper",
@@ -142,6 +151,9 @@ const featuredPublications = [
     excerpt:
       "Evidence-led paper on youth inclusion, national dialogue, and long-term vision-making processes.",
     href: "#",
+    thumbnail: "/blog/blog_post_12_1768850610966.webp",
+    thumbnailAlt: "Publication thumbnail placeholder for youth inclusion policy paper",
+    tags: ["#YouthInclusion", "#NationalDialogue", "#VisionMaking"],
   },
 ];
 
@@ -150,39 +162,42 @@ const activityThemes = [
     title: "Libya Platform",
     summary:
       "Multi-track initiative combining field-based research, capacity building, and dialogue support.",
-    meta: "Activity platform",
+    meta: "Project",
+    hoverBg: "#15243a",
+    hoverTitle: "#ffffff",
+    hoverMeta: "rgba(255,255,255,0.76)",
+    hoverSummary: "rgba(255,255,255,0.88)",
   },
   {
     title: "Africa Nexus",
     summary:
       "Policy analyses and crossroads exchanges to strengthen African-European knowledge ecosystems.",
-    meta: "Activity platform",
-  },
-  {
-    title: "Mediterranean Connectivity Platform",
-    summary:
-      "Research and policy dialogue on energy, transport, logistics, and digital shifts in the region.",
-    meta: "Activity platform",
+    meta: "Project",
+    hoverBg: "#42b09a",
+    hoverTitle: "#ffffff",
+    hoverMeta: "rgba(255,255,255,0.76)",
+    hoverSummary: "rgba(255,255,255,0.88)",
   },
   {
     title: "Gulf Platform",
     summary:
       "Research and dialogue on Europe-Gulf relations, societal trends, and sectoral cooperation.",
-    meta: "Activity platform",
-  },
-  {
-    title: "Youth Dynamics and Policies",
-    summary:
-      "Further project stream focused on youth pathways, participation, and policy impact.",
-    meta: "Further project",
-  },
-  {
-    title: "EU Inclusive Open Strategic Autonomy Centre",
-    summary:
-      "Further project supporting policy reflection on strategic autonomy and inclusive cooperation.",
-    meta: "Further project",
+    meta: "Project",
+    hoverBg: "#8c6335",
+    hoverTitle: "#ffffff",
+    hoverMeta: "rgba(255,255,255,0.76)",
+    hoverSummary: "rgba(255,255,255,0.88)",
   },
 ];
+
+const newsletterSection = {
+  label: "Newsletter",
+  title: "Subscribe to Our Newsletter",
+  body:
+    "Join the mailing list for new publications, event updates, and project briefings across the Mediterranean, Africa, and Gulf policy space.",
+  ctaText: "Join mailing list",
+  ctaHref: "/contact",
+};
 
 const decodeEntities = (value: string) =>
   value
@@ -262,13 +277,6 @@ try {
   console.error("Failed to load RSS imagery for hero slider:", error);
 }
 
-const announcement = {
-  label: "Next talk",
-  date: "May 20",
-  title: "African Talks: South African Foreign Policy",
-  ctaText: "Register",
-  ctaHref: "/widgets",
-};
 const landingIntro = {
   firstRest:
     "is a research, dialogue, and educational initiative dedicated to examining the region's evolving political, socio-economic, and security dynamics. We provide a space for collective reflection on Mediterranean transformations, foster informed debate, and support evidence-based policymaking across national and transnational levels.",
@@ -380,38 +388,7 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
       </div>
     </div>
 
-    <section
-      data-announcement-bar
-      style="--announcement-bar-bg:#42b09a;background-color:var(--announcement-bar-bg);"
-      class="fixed inset-x-0 bottom-0 z-40 h-12 text-white/90 transition-[background-color] duration-500 ease-out md:h-14"
-    >
-      <div class="mx-auto flex h-full max-w-6xl flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-center sm:px-6 md:gap-x-5 lg:px-8">
-        <p class="shrink-0 text-[0.88rem] font-extrabold uppercase tracking-[0.08em] leading-none md:text-[1rem]">
-          {announcement.label}
-        </p>
-        <p class="shrink-0 text-[0.9rem] font-bold leading-none md:text-[1rem]">
-          {announcement.date}
-        </p>
-        <p class="min-w-0 truncate text-[0.95rem] font-bold leading-none md:text-[1.05rem]">
-          {announcement.title}
-        </p>
-        <a
-          href={announcement.ctaHref}
-          data-announcement-cta
-          class="shrink-0 inline-flex cursor-pointer items-center border border-white/90 bg-white/10 px-3 py-1 text-[0.82rem] font-semibold uppercase tracking-[0.06em] leading-none text-white transition-colors hover:border-white hover:bg-white md:text-[0.88rem]"
-        >
-          {announcement.ctaText}
-        </a>
-      </div>
-    </section>
   </section>
-
-  <style is:inline>
-    [data-announcement-cta]:hover,
-    [data-announcement-cta]:focus-visible {
-      color: var(--announcement-bar-bg);
-    }
-  </style>
 
   <script is:inline>
     const initLandingVideos = () => {
@@ -423,54 +400,6 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
           playPromise.catch(() => {});
         }
       });
-    };
-
-    const initAnnouncementBarTheme = () => {
-      const runtime = window;
-      runtime["__announcementBarThemeCleanup"]?.();
-
-      const bar = document.querySelector("[data-announcement-bar]");
-      const heroSection = document.querySelector("[data-hero-section]");
-      if (!(bar instanceof HTMLElement) || !(heroSection instanceof HTMLElement)) return;
-
-      const landingColor = "#42b09a";
-      const scrolledColor = "#0a1220";
-      let rafId = 0;
-
-      const updateTheme = () => {
-        const navHeightValue = document.documentElement.style.getPropertyValue("--nav-h");
-        const navHeight = Number.parseFloat(navHeightValue);
-        const threshold = Number.isFinite(navHeight) ? navHeight + 8 : 80;
-        const nextColor =
-          heroSection.getBoundingClientRect().bottom <= threshold
-            ? scrolledColor
-            : landingColor;
-
-        if (bar.dataset.themeColor === nextColor) return;
-        bar.dataset.themeColor = nextColor;
-        bar.style.setProperty("--announcement-bar-bg", nextColor);
-      };
-
-      const scheduleUpdate = () => {
-        if (rafId) return;
-        rafId = window.requestAnimationFrame(() => {
-          rafId = 0;
-          updateTheme();
-        });
-      };
-
-      window.addEventListener("scroll", scheduleUpdate, { passive: true });
-      window.addEventListener("resize", scheduleUpdate);
-      scheduleUpdate();
-
-      runtime["__announcementBarThemeCleanup"] = () => {
-        if (rafId) {
-          window.cancelAnimationFrame(rafId);
-          rafId = 0;
-        }
-        window.removeEventListener("scroll", scheduleUpdate);
-        window.removeEventListener("resize", scheduleUpdate);
-      };
     };
 
     const initAudioPreviewPlayers = () => {
@@ -572,7 +501,6 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
     const initHomeEnhancements = () => {
       initLandingVideos();
-      initAnnouncementBarTheme();
       initAudioPreviewPlayers();
     };
 
@@ -1138,32 +1066,51 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
 
       <div class="overflow-hidden border border-border bg-border">
         {featuredPublications.slice(0, 3).map((item) => (
-          <article class="border-b border-border bg-background px-4 py-3 last:border-b-0 md:px-5 md:py-3">
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <p class="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                {item.type} - {item.date}
+          <article class="relative overflow-hidden border-b border-border bg-background px-4 py-3 last:border-b-0 md:px-5 md:py-3">
+            <div class="pr-24 sm:pr-24 md:pr-28">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p class="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  {item.type} - {item.date}
+                </p>
+                <p class="text-xs font-medium uppercase tracking-[0.08em] text-primary/85">
+                  {item.authors}
+                </p>
+              </div>
+              <h3 class="mt-1.5 text-lg font-semibold leading-tight md:text-xl">
+                <a
+                  href={item.href}
+                  class="line-clamp-2 cursor-pointer transition-colors hover:text-hover"
+                >
+                  {item.title}
+                </a>
+              </h3>
+              <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                {item.excerpt}
               </p>
-              <p class="text-xs font-medium uppercase tracking-[0.08em] text-primary/85">
-                {item.authors}
-              </p>
+              <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <a
+                  href={item.href}
+                  class="inline-flex cursor-pointer text-xs font-semibold uppercase tracking-[0.06em] text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
+                >
+                  Open publication
+                </a>
+                <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.72rem] font-medium tracking-[0.04em] text-primary/70">
+                  {item.tags.map((tag) => (
+                    <span>{tag}</span>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h3 class="mt-1.5 text-lg font-semibold leading-tight md:text-xl">
-              <a
-                href={item.href}
-                class="line-clamp-2 cursor-pointer transition-colors hover:text-hover"
-              >
-                {item.title}
-              </a>
-            </h3>
-            <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">
-              {item.excerpt}
-            </p>
-            <a
-              href={item.href}
-              class="mt-1.5 inline-flex cursor-pointer text-xs font-semibold uppercase tracking-[0.06em] text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
-            >
-              Open publication
-            </a>
+            <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 md:right-5">
+              <div class="h-[4.5rem] w-[4.5rem] overflow-hidden border border-black/15 bg-black/5 sm:h-[5rem] sm:w-[5rem] md:h-[5.75rem] md:w-[5.75rem]">
+                <img
+                  src={item.thumbnail}
+                  alt={item.thumbnailAlt}
+                  loading="lazy"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+            </div>
           </article>
         ))}
       </div>
@@ -1178,25 +1125,40 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
     </div>
   </section>
 
-  <section class="border-b border-border">
+  <section>
     <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
       <div class="mb-10">
         <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
-          Projects and Activities
+          Projects
         </h2>
         <p class="mt-4 max-w-2xl text-base text-muted-foreground">
-          Core platforms and further projects focused on research, policy dialogue, and capacity building.
+          Core platforms focused on research, policy dialogue, and regional cooperation.
         </p>
       </div>
 
       <div class="grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
         {activityThemes.map((item) => (
-          <article class="bg-background p-6">
-            <h3 class="text-2xl font-semibold leading-tight">{item.title}</h3>
-            <p class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85">
+          <article
+            data-project-card
+            style={`--project-hover-bg:${item.hoverBg};--project-hover-title:${item.hoverTitle};--project-hover-meta:${item.hoverMeta};--project-hover-summary:${item.hoverSummary};`}
+            class="bg-background p-6 transition-colors duration-300"
+          >
+            <h3
+              data-project-title
+              class="text-2xl font-semibold leading-tight transition-colors duration-300"
+            >
+              {item.title}
+            </h3>
+            <p
+              data-project-meta
+              class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85 transition-colors duration-300"
+            >
               {item.meta}
             </p>
-            <p class="mt-4 text-sm text-muted-foreground">
+            <p
+              data-project-summary
+              class="mt-4 text-sm text-muted-foreground transition-colors duration-300"
+            >
               {item.summary}
             </p>
           </article>
@@ -1204,5 +1166,73 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
       </div>
     </div>
   </section>
+
+  <section class="border-t border-black/10 bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-5 sm:px-6 md:py-6 lg:px-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl">
+          <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/65">
+            {newsletterSection.label}
+          </p>
+          <h2 class="mt-1.5 text-3xl font-semibold leading-tight text-foreground md:text-4xl">
+            {newsletterSection.title}
+          </h2>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+            {newsletterSection.body}
+          </p>
+        </div>
+        <form
+          action={newsletterSection.ctaHref}
+          method="get"
+          class="w-full max-w-xl"
+        >
+          <input type="hidden" name="interest" value="newsletter" />
+          <label
+            for="newsletter-email"
+            class="text-xs font-semibold uppercase tracking-[0.08em] text-primary/65"
+          >
+            Email address
+          </label>
+          <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              id="newsletter-email"
+              name="email"
+              type="email"
+              required
+              placeholder="Your email address"
+              class="min-w-0 flex-1 border border-black bg-white px-4 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-primary/45 focus:border-hover"
+            />
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center border border-black bg-primary px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-hover"
+            >
+              {newsletterSection.ctaText}
+            </button>
+          </div>
+          <p class="mt-1.5 text-xs leading-5 text-primary/60">
+            Submission routes visitors to the contact page for mailing-list follow-up.
+          </p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <style is:inline>
+    [data-project-card]:hover {
+      background-color: var(--project-hover-bg);
+    }
+
+    [data-project-card]:hover [data-project-title] {
+      color: var(--project-hover-title);
+    }
+
+    [data-project-card]:hover [data-project-meta] {
+      color: var(--project-hover-meta);
+    }
+
+    [data-project-card]:hover [data-project-summary] {
+      color: var(--project-hover-summary);
+    }
+  </style>
 
 </BaseLayout>

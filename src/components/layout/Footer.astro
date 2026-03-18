@@ -1,45 +1,113 @@
 ---
 import { siteConfig } from "../../config/site";
 
-const footerLinks = {
-  linkedin: "/contact",
-  youtube: "/contact",
-  contact: "/contact",
-};
+const footerSections = [
+  {
+    title: "Explore",
+    links: [
+      { text: "Home", href: "/" },
+      { text: "About", href: "/about" },
+      { text: "Projects", href: "/services" },
+      { text: "Publications", href: "/blog" },
+      { text: "Media", href: "/widgets" },
+      { text: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "Get Involved",
+    links: [
+      { text: "Career", href: "/career" },
+      { text: "Volunteer", href: "/volunteer" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { text: "Imprint", href: "/imprint" },
+      { text: "Privacy Policy", href: "/privacy-policy" },
+      { text: "Terms of Use", href: "/terms-of-use" },
+    ],
+  },
+];
+
+const socialLinks = [
+  {
+    text: "LinkedIn",
+    href: siteConfig.socialLinks.linkedin,
+  },
+  {
+    text: "YouTube",
+    href: siteConfig.socialLinks.youtube,
+  },
+];
+
+const footerHoverText = "Join the Network";
 ---
 
-<footer class="mt-20 border-t border-border bg-card">
-  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-    <div class="flex flex-col items-center justify-between gap-8 md:flex-row">
-      <div class="flex flex-col items-center gap-2 md:items-start">
-        <span class="text-lg font-bold text-foreground">{siteConfig.name}</span>
-        <p class="text-sm text-muted-foreground">
-          {siteConfig.description}
-        </p>
-      </div>
-      <div class="flex items-center gap-6">
-        <a
-          href={footerLinks.linkedin}
-          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-          >LinkedIn</a
-        >
-        <a
-          href={footerLinks.youtube}
-          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-          >YouTube</a
-        >
-        <a
-          href={footerLinks.contact}
-          class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-          >Contact</a
-        >
+<footer class="border-t border-black/10 bg-white">
+  <div class="mx-auto max-w-7xl bg-white px-4 py-10 sm:px-6 md:py-12 lg:px-8">
+    <div class="border-b border-black pb-8 md:pb-10">
+      <div class="grid items-stretch gap-6 md:min-h-[10.5rem] md:grid-cols-[32%_68%] md:gap-8">
+        <div class="w-full md:border-r md:border-black md:pr-8">
+          <div class="group relative flex h-full w-full items-center justify-start">
+            <div class="relative w-full max-w-[22rem] aspect-[235/76]">
+              <img
+                src="/Logo3.png"
+                alt="Mediterranean Platform"
+                class="absolute inset-0 h-full w-full -translate-x-[3%] object-contain transition-opacity duration-200 group-hover:opacity-0"
+              />
+              <p class="pointer-events-none absolute inset-0 flex items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                {footerHoverText}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex h-full w-full items-center md:pl-0">
+          <div class="grid w-full gap-x-8 gap-y-5 sm:grid-cols-3">
+            {
+              footerSections.map((section) => (
+                <div>
+                  <h2 class="text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                    {section.title}
+                  </h2>
+                  <ul class="mt-2.5 space-y-1.5 text-[0.92rem] leading-5 text-primary/75">
+                    {section.links.map((link) => (
+                      <li>
+                        <a
+                          href={link.href}
+                          class="cursor-pointer transition-colors hover:text-hover"
+                        >
+                          {link.text}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+        </div>
       </div>
     </div>
-    <div
-      class="mt-8 border-t border-border pt-8 text-center text-xs text-muted-foreground"
-    >
-      &copy; {new Date().getFullYear()}
-      {siteConfig.author}. All rights reserved.
+    <div class="flex flex-col gap-4 pt-6 text-sm text-primary/70 md:flex-row md:items-center md:justify-between">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {
+          socialLinks.map((link) => (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              class="cursor-pointer transition-colors hover:text-hover"
+            >
+              {link.text}
+            </a>
+          ))
+        }
+      </div>
+      <p>
+        &copy; {new Date().getFullYear()} {siteConfig.author}. All rights reserved.
+      </p>
     </div>
   </div>
 </footer>

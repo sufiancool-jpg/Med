@@ -1,0 +1,42 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const metadata = {
+  title: "Terms of Use",
+  description:
+    "General terms governing informational use of the website and its published materials.",
+};
+---
+
+<BaseLayout {metadata}>
+  <section class="mx-auto max-w-4xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
+    <p class="text-sm font-semibold uppercase tracking-[0.08em] text-primary/70">
+      Legal
+    </p>
+    <h1 class="mt-3 text-4xl font-semibold leading-tight md:text-5xl">
+      Terms of Use
+    </h1>
+    <div class="mt-8 space-y-6 border border-border bg-card p-6 md:p-8">
+      <p class="text-sm leading-7 text-muted-foreground">
+        The website is provided for general informational purposes relating to the
+        platform’s publications, events, and projects. Content may be updated,
+        revised, or removed as programmes and editorial priorities evolve.
+      </p>
+      <p class="text-sm leading-7 text-muted-foreground">
+        Users should independently verify information before relying on it for
+        professional, legal, or policy decisions. External links are provided for
+        convenience and remain subject to the terms of their respective websites.
+      </p>
+      <p class="text-sm leading-7 text-muted-foreground">
+        Questions regarding website use, permissions, or published materials can
+        be directed through the contact page.
+      </p>
+      <a
+        href="/contact"
+        class="inline-flex border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-primary transition-colors hover:bg-hover hover:text-white"
+      >
+        Contact for permissions
+      </a>
+    </div>
+  </section>
+</BaseLayout>

@@ -16,10 +16,11 @@ export const siteConfig = {
     contact: "/contact",
   },
   navLinks: [
+    { text: "Home", href: "/" },
     { text: "About", href: "/about" },
-    { text: "Activities", href: "/services" },
+    { text: "Projects", href: "/services" },
+    { text: "Media", href: "/widgets" },
     { text: "Publications", href: "/blog" },
-    { text: "Events", href: "/widgets" },
     { text: "Contact", href: "/contact" },
   ],
 };
