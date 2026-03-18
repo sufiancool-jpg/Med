@@ -1,0 +1,151 @@
+---
+const newsletterSection = {
+  label: "Newsletter",
+  title: "Subscribe to Our Newsletter",
+  body:
+    "Join the mailing list for new publications, event updates, and project briefings across the Mediterranean, Africa, and Gulf policy space.",
+  ctaText: "Join mailing list",
+  ctaHref: "/contact",
+};
+---
+
+<section class="border-t border-black/10 bg-white">
+  <div class="mx-auto max-w-6xl px-4 py-5 sm:px-6 md:py-6 lg:px-8">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div class="max-w-3xl">
+        <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/65">
+          {newsletterSection.label}
+        </p>
+        <h2 class="mt-1.5 text-3xl font-semibold leading-tight text-foreground md:text-4xl">
+          {newsletterSection.title}
+        </h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+          {newsletterSection.body}
+        </p>
+      </div>
+      <form data-newsletter-signup class="w-full max-w-xl" novalidate>
+        <label
+          for="global-newsletter-email"
+          class="text-xs font-semibold uppercase tracking-[0.08em] text-primary/65"
+        >
+          Email address
+        </label>
+        <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+          <input
+            id="global-newsletter-email"
+            name="email"
+            data-newsletter-email
+            type="email"
+            required
+            placeholder="Your email address"
+            class="min-w-0 flex-1 border border-black bg-white px-4 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-primary/45 focus:border-hover"
+          />
+          <button
+            type="submit"
+            data-newsletter-submit
+            class="inline-flex items-center justify-center border border-black bg-primary px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-hover"
+          >
+            {newsletterSection.ctaText}
+          </button>
+        </div>
+        <p
+          data-newsletter-status
+          class="mt-1.5 min-h-[1.25rem] text-xs leading-5 text-primary/60"
+          aria-live="polite"
+        ></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  const NEWSLETTER_STORAGE_KEY = "medplatform-newsletter-subscribed-email";
+
+  const newsletterForms = Array.from(
+    document.querySelectorAll("[data-newsletter-signup]"),
+  );
+
+  newsletterForms.forEach((form) => {
+    if (!(form instanceof HTMLFormElement) || form.dataset.bound === "true") {
+      return;
+    }
+
+    form.dataset.bound = "true";
+
+    const emailInput = form.querySelector("[data-newsletter-email]");
+    const submitButton = form.querySelector("[data-newsletter-submit]");
+    const statusText = form.querySelector("[data-newsletter-status]");
+
+    if (
+      !(emailInput instanceof HTMLInputElement) ||
+      !(submitButton instanceof HTMLButtonElement) ||
+      !(statusText instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    const setIdleState = () => {
+      submitButton.disabled = false;
+      submitButton.textContent = "Join mailing list";
+      submitButton.classList.remove("opacity-70", "cursor-not-allowed");
+      emailInput.disabled = false;
+    };
+
+    const setPendingState = () => {
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting...";
+      submitButton.classList.add("opacity-70", "cursor-not-allowed");
+      emailInput.disabled = true;
+    };
+
+    const setSuccessState = (email) => {
+      submitButton.disabled = true;
+      submitButton.textContent = "Subscribed";
+      submitButton.classList.add("opacity-70", "cursor-not-allowed");
+      emailInput.value = email;
+      emailInput.disabled = true;
+      statusText.textContent = "You’re subscribed to the newsletter.";
+      statusText.classList.remove("text-red-700");
+      statusText.classList.add("text-[#2e7d68]");
+    };
+
+    const setErrorState = (message) => {
+      setIdleState();
+      statusText.textContent = message;
+      statusText.classList.remove("text-[#2e7d68]");
+      statusText.classList.add("text-red-700");
+      emailInput.focus();
+    };
+
+    const storedEmail =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(NEWSLETTER_STORAGE_KEY)
+        : null;
+
+    if (storedEmail) {
+      setSuccessState(storedEmail);
+    } else {
+      setIdleState();
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const email = emailInput.value.trim();
+
+      if (!email || !emailInput.checkValidity()) {
+        emailInput.reportValidity();
+        setErrorState("Enter a valid email address.");
+        return;
+      }
+
+      statusText.textContent = "";
+      statusText.classList.remove("text-red-700", "text-[#2e7d68]");
+      setPendingState();
+
+      await new Promise((resolve) => window.setTimeout(resolve, 450));
+      window.localStorage.setItem(NEWSLETTER_STORAGE_KEY, email);
+      setSuccessState(email);
+    });
+  });
+</script>

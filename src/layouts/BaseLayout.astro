@@ -18,6 +18,7 @@ import Seo from "../components/seo/Seo.astro";
 import Schema from "../components/seo/Schema.astro";
 import Navbar from "../components/layout/Navbar.astro";
 import AnnouncementBar from "../components/layout/AnnouncementBar.astro";
+import NewsletterSignup from "../components/layout/NewsletterSignup.astro";
 import Footer from "../components/layout/Footer.astro";
 import "../styles/global.css";
 import SpeedInsights from "@vercel/speed-insights/astro";
@@ -88,6 +89,7 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
         <slot />
       </main>
       {!hideAnnouncementBar && <AnnouncementBar />}
+      <NewsletterSignup />
       <div class="bg-white">
         <Footer />
       </div>

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { siteConfig } from "../config/site";
+import { getCollection } from "astro:content";
 import HeroArticleSlider from "../components/widgets/HeroArticleSlider.astro";
 
 const toHashtag = (value: string) =>
@@ -9,100 +10,6 @@ const toHashtag = (value: string) =>
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "")}`;
-
-const sliderNarratives = [
-  {
-    title: "The Red Sea: Divided by Water, United by Opportunities",
-    href: "#",
-    excerpt:
-      "Policy-relevant analysis on regional integration, cooperation, and shared opportunities across the Mediterranean and Red Sea space.",
-    author: "Ghanem, Narbone, Palleschi, and Maru (ed.)",
-    date: "Feb 25, 2026",
-    category: "E-book",
-    image:
-      "https://mp.luiss.it/wp-content/uploads/2026/02/Screenshot-2026-02-25-at-11.55.33.jpg",
-    hashtags: `${toHashtag("Policy relevant")} ${toHashtag("Red Sea")} ${toHashtag("Mediterranean")}`,
-  },
-  {
-    title: "Distribution of Powers in Libya’s Future Local Governance System",
-    href: "#",
-    excerpt:
-      "A policy-oriented assessment of local governance design and pathways for effective institutional balance.",
-    author: "Intissar Kherigi",
-    date: "Feb 5, 2026",
-    category: "Policy paper",
-    image:
-      "https://mp.luiss.it/wp-content/uploads/2026/02/jpeg-optimizer_P9300014b.jpg",
-    hashtags: `${toHashtag("Policy Paper")} ${toHashtag("Libya Platform")} ${toHashtag("Governance")}`,
-  },
-  {
-    title:
-      "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya’s Peace Process",
-    href: "#",
-    excerpt:
-      "Comparative lessons for inclusive dialogue support and local governance in conflict-affected environments.",
-    author: "Mohamed Aziz Mrad",
-    date: "Jan 8, 2026",
-    category: "Policy paper",
-    image:
-      "https://mp.luiss.it/wp-content/uploads/2026/01/thomas-foertsch-BGPVQ_ISkU-unsplash1.jpg",
-    hashtags: `${toHashtag("Dialogue Support")} ${toHashtag("Policy Analysis")} ${toHashtag("Libya Platform")}`,
-  },
-  {
-    title:
-      "Youth as Catalysts for Shaping Libya’s Future Pathways for Inclusion in National Dialogue and Vision-Making",
-    href: "#",
-    excerpt:
-      "An inclusion-focused paper on youth participation, skills and knowledge building, and national dialogue processes.",
-    author: "Abdelkarim Skouri",
-    date: "Dec 2, 2025",
-    category: "Policy Paper",
-    hashtags: `${toHashtag("Youth Platform")} ${toHashtag("Capacity Building")} ${toHashtag("National Dialogue")}`,
-  },
-  {
-    title:
-      "Hydrogen Valleys and Sustainable Development in Algeria: Pivoting from Hydrocarbons to an Inclusive Euro Mediterranean Hydrogen Economy",
-    href: "#",
-    excerpt:
-      "Research on natural resources governance, energy transition, and climate-linked development in the region.",
-    author: "Leon Stille",
-    date: "Nov 21, 2025",
-    category: "Policy Paper",
-    hashtags: `${toHashtag("Energy Transition")} ${toHashtag("Climate Change")} ${toHashtag("Sustainable Development")}`,
-  },
-  {
-    title:
-      "Mediterranean Connectivity Platform: Energy, Transport, Logistics, and Digital Shifts",
-    href: "#",
-    excerpt:
-      "Dialogue and research on how connectivity initiatives shape integration opportunities and policy choices.",
-    author: "Mediterranean Connectivity Team",
-    date: "Latest update",
-    category: "Research Report",
-    hashtags: `${toHashtag("Mediterranean Connectivity Platform")} ${toHashtag("Policy Dialogue")} ${toHashtag("Research")}`,
-  },
-  {
-    title: "Africa Nexus: Building an African-European Knowledge Ecosystem",
-    href: "#",
-    excerpt:
-      "A platform connecting experts, young scholars, and policymakers through policy analyses and knowledge exchange.",
-    author: "Africa Nexus Team",
-    date: "Latest update",
-    category: "Policy Brief",
-    hashtags: `${toHashtag("Africa Nexus")} ${toHashtag("Crossroads exchanges")} ${toHashtag("Knowledge Exchange")}`,
-  },
-  {
-    title:
-      "Gulf Platform: Europe–Gulf Dialogue on Geopolitical, Economic, and Societal Trends",
-    href: "#",
-    excerpt:
-      "Policy-relevant research and dialogue support for decision-makers and regional security discussions.",
-    author: "Gulf Platform Team",
-    date: "Latest update",
-    category: "Series",
-    hashtags: `${toHashtag("Gulf Platform")} ${toHashtag("Regional Security")} ${toHashtag("Policy Relevant")}`,
-  },
-];
 
 const featuredPublications = [
   {
@@ -163,6 +70,7 @@ const activityThemes = [
     summary:
       "Multi-track initiative combining field-based research, capacity building, and dialogue support.",
     meta: "Project",
+    href: "/services/libya-platform",
     hoverBg: "#15243a",
     hoverTitle: "#ffffff",
     hoverMeta: "rgba(255,255,255,0.76)",
@@ -173,6 +81,7 @@ const activityThemes = [
     summary:
       "Policy analyses and crossroads exchanges to strengthen African-European knowledge ecosystems.",
     meta: "Project",
+    href: "/services/africa-nexus",
     hoverBg: "#42b09a",
     hoverTitle: "#ffffff",
     hoverMeta: "rgba(255,255,255,0.76)",
@@ -183,54 +92,13 @@ const activityThemes = [
     summary:
       "Research and dialogue on Europe-Gulf relations, societal trends, and sectoral cooperation.",
     meta: "Project",
+    href: "/services/gulf-platform",
     hoverBg: "#8c6335",
     hoverTitle: "#ffffff",
     hoverMeta: "rgba(255,255,255,0.76)",
     hoverSummary: "rgba(255,255,255,0.88)",
   },
 ];
-
-const newsletterSection = {
-  label: "Newsletter",
-  title: "Subscribe to Our Newsletter",
-  body:
-    "Join the mailing list for new publications, event updates, and project briefings across the Mediterranean, Africa, and Gulf policy space.",
-  ctaText: "Join mailing list",
-  ctaHref: "/contact",
-};
-
-const decodeEntities = (value: string) =>
-  value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-
-const stripCdata = (value: string) =>
-  value.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
-
-const extractTag = (input: string, tagName: string) => {
-  const match = input.match(
-    new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`),
-  );
-  return match?.[1] ?? "";
-};
-
-const extractAttr = (input: string, tagName: string, attrName: string) => {
-  const match = input.match(
-    new RegExp(`<${tagName}[^>]*\\s${attrName}="([^"]+)"[^>]*\\/?>`),
-  );
-  return match?.[1] ?? "";
-};
-
-const normalizeLink = (value: string) =>
-  decodeEntities(stripCdata(value)).replace(/\?at_medium=RSS&at_campaign=rss$/, "");
-
-const upscaleBbcImage = (url: string) =>
-  url.includes("/standard/240/")
-    ? url.replace("/standard/240/", "/standard/1024/")
-    : url;
 
 const fillerImages = [
   "/blog/blog_post_1_1768848683359.webp",
@@ -240,42 +108,31 @@ const fillerImages = [
   "/blog/blog_post_12_1768850610966.webp",
 ];
 
-let heroSliderItems = sliderNarratives.map((item, index) => ({
-  ...item,
-  category: item.category,
-  image: item.image || fillerImages[index % fillerImages.length],
+const formatBlogDate = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+
+const blogEntries = await getCollection("blog");
+const sortedBlogEntries = blogEntries
+  .filter((post) => post.data && post.data.pubDate)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const heroSliderItems = sortedBlogEntries.map((post, index) => ({
+  title: post.data.title,
+  href: `/blog/${post.id}`,
+  excerpt: post.data.description,
+  author: post.data.author,
+  date: formatBlogDate(post.data.pubDate),
+  category: post.data.category ?? "Publication",
+  image: post.data.image || fillerImages[index % fillerImages.length],
+  hashtags: (post.data.tags ?? [])
+    .slice(0, 3)
+    .map((tag) => toHashtag(tag.replace(/-/g, " ")))
+    .join(" "),
 }));
-
-try {
-  const bbcFeedResponse = await fetch("https://feeds.bbci.co.uk/news/rss.xml");
-  if (bbcFeedResponse.ok) {
-    const bbcFeedXml = await bbcFeedResponse.text();
-    const feedAssets = Array.from(bbcFeedXml.matchAll(/<item>([\s\S]*?)<\/item>/g))
-      .map((match) => match[1])
-      .map((itemXml) => {
-        const href = normalizeLink(extractTag(itemXml, "link"));
-        const image =
-          extractAttr(itemXml, "media:thumbnail", "url") ||
-          extractAttr(itemXml, "media:content", "url");
-        return { href, image: image ? upscaleBbcImage(image) : "" };
-      })
-      .filter((item) => item.image);
-
-    if (feedAssets.length > 0) {
-      heroSliderItems = sliderNarratives.map((item, index) => {
-        const asset = feedAssets[index % feedAssets.length];
-        return {
-          ...item,
-          href: item.href,
-          category: item.category,
-          image: item.image || asset.image || fillerImages[index % fillerImages.length],
-        };
-      });
-    }
-  }
-} catch (error) {
-  console.error("Failed to load RSS imagery for hero slider:", error);
-}
 
 const landingIntro = {
   firstRest:
@@ -292,7 +149,7 @@ const audioRelease = {
     "A mock preview episode unpacking the strategic significance of the Red Sea and the regional actors shaping its future.",
   duration: "00:24",
   date: "New episode",
-  href: "/blog",
+  href: "/blog/red-sea-corridors-audio-brief",
   ctaText: "Open release page",
   audioSrc: "/audio/mock-red-sea-brief.mp3",
 };
@@ -852,7 +709,7 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
                 </svg>
               </a>
               <p class="text-sm font-semibold text-primary/58">
-                Linked to the written article release page.
+                Opens the full audio release page.
               </p>
             </div>
           </div>
@@ -1143,76 +1000,34 @@ const midPageSliderItems = heroSliderItems.slice(0, 3);
             style={`--project-hover-bg:${item.hoverBg};--project-hover-title:${item.hoverTitle};--project-hover-meta:${item.hoverMeta};--project-hover-summary:${item.hoverSummary};`}
             class="bg-background p-6 transition-colors duration-300"
           >
-            <h3
-              data-project-title
-              class="text-2xl font-semibold leading-tight transition-colors duration-300"
-            >
-              {item.title}
-            </h3>
-            <p
-              data-project-meta
-              class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85 transition-colors duration-300"
-            >
-              {item.meta}
-            </p>
-            <p
-              data-project-summary
-              class="mt-4 text-sm text-muted-foreground transition-colors duration-300"
-            >
-              {item.summary}
-            </p>
+            <a href={item.href} class="block">
+              <h3
+                data-project-title
+                class="text-2xl font-semibold leading-tight transition-colors duration-300"
+              >
+                {item.title}
+              </h3>
+              <p
+                data-project-meta
+                class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85 transition-colors duration-300"
+              >
+                {item.meta}
+              </p>
+              <p
+                data-project-summary
+                class="mt-4 text-sm text-muted-foreground transition-colors duration-300"
+              >
+                {item.summary}
+              </p>
+              <p
+                data-project-summary
+                class="mt-5 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors duration-300"
+              >
+                Open project →
+              </p>
+            </a>
           </article>
         ))}
-      </div>
-    </div>
-  </section>
-
-  <section class="border-t border-black/10 bg-white">
-    <div class="mx-auto max-w-6xl px-4 py-5 sm:px-6 md:py-6 lg:px-8">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-3xl">
-          <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/65">
-            {newsletterSection.label}
-          </p>
-          <h2 class="mt-1.5 text-3xl font-semibold leading-tight text-foreground md:text-4xl">
-            {newsletterSection.title}
-          </h2>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-            {newsletterSection.body}
-          </p>
-        </div>
-        <form
-          action={newsletterSection.ctaHref}
-          method="get"
-          class="w-full max-w-xl"
-        >
-          <input type="hidden" name="interest" value="newsletter" />
-          <label
-            for="newsletter-email"
-            class="text-xs font-semibold uppercase tracking-[0.08em] text-primary/65"
-          >
-            Email address
-          </label>
-          <div class="mt-2 flex flex-col gap-2 sm:flex-row">
-            <input
-              id="newsletter-email"
-              name="email"
-              type="email"
-              required
-              placeholder="Your email address"
-              class="min-w-0 flex-1 border border-black bg-white px-4 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-primary/45 focus:border-hover"
-            />
-            <button
-              type="submit"
-              class="inline-flex items-center justify-center border border-black bg-primary px-6 py-2.5 text-sm font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:bg-hover"
-            >
-              {newsletterSection.ctaText}
-            </button>
-          </div>
-          <p class="mt-1.5 text-xs leading-5 text-primary/60">
-            Submission routes visitors to the contact page for mailing-list follow-up.
-          </p>
-        </form>
       </div>
     </div>
   </section>

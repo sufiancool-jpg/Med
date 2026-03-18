@@ -105,8 +105,17 @@ const footerHoverText = "Join the Network";
           ))
         }
       </div>
-      <p>
-        &copy; {new Date().getFullYear()} {siteConfig.author}. All rights reserved.
+      <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span>&copy; {new Date().getFullYear()} {siteConfig.author}. All rights reserved.</span>
+        <span aria-hidden="true">·</span>
+        <a
+          href="https://www.linkedin.com/in/sufian-ararah-b3112117a/"
+          target="_blank"
+          rel="noreferrer"
+          class="cursor-pointer transition-colors hover:text-hover"
+        >
+          Designed by Sufian Ararah
+        </a>
       </p>
     </div>
   </div>

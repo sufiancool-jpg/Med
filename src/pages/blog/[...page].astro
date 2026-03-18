@@ -1,9 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
 import { getCollection } from "astro:content";
-import Headline from "../../components/ui/Headline.astro";
-import Pagination from "../../components/ui/Pagination.astro";
-import PostItem from "../../components/blog/PostItem.astro";
 import type { GetStaticPathsOptions } from "astro";
 
 export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
@@ -12,11 +10,59 @@ export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
     .filter((post) => post.data && post.data.pubDate)
     .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-  return paginate(sortedPosts, { pageSize: 6 });
+  return paginate(sortedPosts, { pageSize: Math.max(sortedPosts.length, 1) });
 }
 
 const { page } = Astro.props;
 const blog = page.data;
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const publicationTypeOptions = [
+  "Policy Paper",
+  "Research Report",
+  "Policy Brief",
+  "E-Book",
+  "Pod-Cast",
+  "Archive & Commentary",
+];
+
+const normalizePublicationType = (value?: string) => {
+  if (value === "Podcast" || value === "Pod-Cast") {
+    return "Pod-Cast";
+  }
+
+  if (value === "Series") {
+    return "Archive & Commentary";
+  }
+
+  return value ?? "Archive & Commentary";
+};
+
+const formatTopic = (value?: string) =>
+  value
+    ?.split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ") ?? "General";
+
+const publicationArticles = blog.map((post) => ({
+  title: post.data.title,
+  summary: post.data.description,
+  author: post.data.author,
+  date: dateFormatter.format(post.data.pubDate),
+  topic: formatTopic(post.data.tags?.[0]),
+  type: normalizePublicationType(post.data.category),
+  primaryLabel: "Publication",
+  typeLabel: normalizePublicationType(post.data.category),
+  hashtags: post.data.tags ?? [],
+  image: post.data.image ?? "/blog/welcome.webp",
+  imageAlt: post.data.title,
+  href: `/blog/${post.id}`,
+}));
 
 const metadata = {
   title: "Publications",
@@ -25,28 +71,12 @@ const metadata = {
 ---
 
 <BaseLayout metadata={metadata}>
-  <section class="relative px-4 py-8 sm:px-6 lg:px-8 md:py-12">
-    <div class="absolute inset-0 z-0">
-      <div class="absolute inset-0 bg-accent/10">
-      </div>
-    </div>
-    <div class="relative mx-auto max-w-5xl">
-      <Headline
-        tagline="Publications"
-        title="Our Publications"
-        subtitle="Explore policy papers, briefs, reports, and current regional analysis."
-        classes={{
-          container: "reveal mb-12 text-center",
-          title:
-            "font-heading mb-4 text-4xl font-bold tracking-tight text-foreground md:text-6xl",
-          subtitle: "mx-auto max-w-3xl text-xl text-muted-foreground",
-        }}
-      />
-
-      <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {blog.map((post) => <PostItem post={post} />)}
-      </div>
-      <Pagination page={page} />
-    </div>
-  </section>
+  <FilteredArticleArchive
+    items={publicationArticles}
+    containerClass="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 md:pt-12 md:pb-12 lg:px-8"
+    resultsId="publications-results"
+    searchPlaceholder="Search publications"
+    emptyMessage="No publications match the current search and filter combination."
+    typeOptions={publicationTypeOptions}
+  />
 </BaseLayout>

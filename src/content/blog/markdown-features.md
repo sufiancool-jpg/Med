@@ -3,9 +3,12 @@ title: "Policy Brief: Regional Security and Diplomacy"
 pubDate: "2026-01-19"
 description: "A short policy brief format for dialogue support and informed policymaking."
 author: "Mediterranean Platform Editorial Team"
+authorRole: "Policy dialogue, editorial production, and publication development"
 category: "Policy Brief"
 tags: ["policy-brief", "policy-relevant", "regional-security"]
 image: "/blog/markdown.webp"
+downloadHref: "/mp_luiss_site_summary.pdf"
+downloadLabel: "Download PDF"
 ---
 
 # Policy Brief Format

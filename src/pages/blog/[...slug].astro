@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Schema from "../../components/seo/Schema.astro";
-
+import { Icon } from "astro-icon/components";
 import { getCollection, render } from "astro:content";
 
 export async function getStaticPaths() {
@@ -14,21 +14,53 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
-const { title, description, pubDate, author, image } = post.data;
+const {
+  title,
+  description,
+  pubDate,
+  author,
+  authorRole,
+  authorImage,
+  image,
+  category,
+  tags = [],
+  downloadHref,
+  downloadLabel,
+} = post.data;
 
-const formattedDate = pubDate.toLocaleDateString("es-ES", {
+const formattedDate = pubDate.toLocaleDateString("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
 });
 
 const readingTime = remarkPluginFrontmatter?.minutesRead
-  ? `${Math.ceil(remarkPluginFrontmatter.minutesRead)} min de lectura`
+  ? `${Math.ceil(remarkPluginFrontmatter.minutesRead)} min read`
   : "";
 
+const publicationType = category ?? "Publication";
+const topicTags = tags.map((tag: string) =>
+  tag
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" "),
+);
+const authorInitials = author
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((part) => part[0]?.toUpperCase() ?? "")
+  .join("");
+const resolvedAuthorRole = authorRole ?? `${publicationType} contributor`;
+const resolvedDownloadLabel =
+  downloadLabel ??
+  (downloadHref?.toLowerCase().endsWith(".pdf")
+    ? "Download PDF"
+    : "Download publication");
+
 const metadata = {
-  title: title,
-  description: description,
+  title,
+  description,
   ogImage: image,
 };
 ---
@@ -45,33 +77,218 @@ const metadata = {
       url: Astro.url.href,
     }}
   />
-  <section class="relative px-4 py-8 sm:px-6 lg:px-8 md:py-12">
-    <div class="relative mx-auto max-w-3xl">
-      <div class="reveal mb-10 text-center">
-        <p class="text-sm font-semibold tracking-wide text-primary uppercase">
-          {formattedDate} • {author}
-          {readingTime && ` • ${readingTime}`}
-        </p>
-        <h1
-          class="font-heading mt-2 text-3xl font-bold leading-tight tracking-tighter text-foreground sm:text-4xl md:text-5xl"
-        >
-          {title}
-        </h1>
-      </div>
 
-      {
-        image && (
-          <div class="reveal relative mb-8 h-96 w-full overflow-hidden rounded-xl shadow-lg">
-            <img src={image} alt={title} class="h-full w-full object-cover" />
+  <section class="bg-white">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
+      <div class="grid gap-10 xl:grid-cols-[minmax(0,1.55fr)_21rem] xl:items-start">
+        <article>
+          <div class="max-w-5xl">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/60">
+              <a
+                href={`/blog/category/${encodeURIComponent(publicationType)}`}
+                class="transition-colors hover:text-hover"
+              >
+                {publicationType}
+              </a>
+              <span aria-hidden="true" class="text-primary/35">/</span>
+              <span>{formattedDate}</span>
+              {readingTime && (
+                <>
+                  <span aria-hidden="true" class="text-primary/35">/</span>
+                  <span>{readingTime}</span>
+                </>
+              )}
+            </div>
+
+            <h1 class="mt-4 text-[clamp(1.4rem,3.5vw,2.9rem)] font-bold leading-[0.96] tracking-[-0.035em] text-primary">
+              {title}
+            </h1>
+
+            <p class="mt-5 max-w-4xl text-[1.05rem] italic leading-8 text-primary/74 md:text-[1.18rem]">
+              {description}
+            </p>
+
+            {downloadHref && (
+              <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.98rem] italic text-primary/78">
+                <span>To access the full publication, use the publication file here</span>
+                <a
+                  href={downloadHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  class="font-semibold not-italic text-hover transition-colors hover:text-primary"
+                >
+                  {resolvedDownloadLabel}
+                </a>
+              </div>
+            )}
           </div>
-        )
-      }
 
-      <div
-        class="reveal prose prose-lg mx-auto dark:prose-invert prose-headings:text-foreground prose-a:text-primary prose-a:decoration-accent hover:prose-a:underline prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-code:text-primary"
-      >
-        <Content />
+          {image && (
+            <div class="mt-8 overflow-hidden border border-black/12 bg-white">
+              <img src={image} alt={title} class="aspect-[5/4] w-full object-cover" />
+            </div>
+          )}
+
+          <div
+            id="publication-body"
+            class="publication-prose mt-10 max-w-none text-[1rem] leading-8 text-primary/78"
+          >
+            <Content />
+          </div>
+        </article>
+
+        <aside class="xl:sticky xl:top-[calc(var(--nav-h,72px)+2rem)] xl:border-l xl:border-black/10 xl:pl-8">
+          <div class="space-y-8">
+            <section>
+              <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                Author
+              </h2>
+              <div class="mt-4 border-t border-black/10 pt-4">
+                <div class="flex items-start gap-4">
+                  {authorImage ? (
+                    <img
+                      src={authorImage}
+                      alt={author}
+                      class="h-20 w-20 shrink-0 object-cover grayscale"
+                    />
+                  ) : (
+                    <div class="flex h-20 w-20 shrink-0 items-center justify-center bg-[#eef2ef] text-[1.35rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                      {authorInitials}
+                    </div>
+                  )}
+                  <div class="min-w-0">
+                    <p class="text-[1.4rem] font-semibold leading-tight text-primary">
+                      {author}
+                    </p>
+                    <p class="mt-2 text-[1rem] leading-7 text-primary/72">
+                      {resolvedAuthorRole}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="border-t border-black/10 pt-6">
+              <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                Publication
+              </h2>
+              <div class="mt-5 space-y-4">
+                <p class="text-[2rem] font-semibold leading-none tracking-[-0.03em] text-primary">
+                  {formattedDate}
+                </p>
+                <p class="text-[0.85rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
+                  {publicationType}
+                </p>
+                {topicTags.length > 0 && (
+                  <div class="flex flex-wrap gap-x-3 gap-y-2 text-[1rem] italic leading-7 text-primary/72">
+                    {tags.map((tag, index) => (
+                      <a
+                        href={`/blog/tags/${encodeURIComponent(tag)}`}
+                        class="transition-colors hover:text-hover"
+                      >
+                        #{topicTags[index]}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section class="border-t border-black/10 pt-6">
+              <div class="grid gap-3">
+                <a
+                  href="#publication-body"
+                  class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                >
+                  <span>Open publication</span>
+                  <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
+                </a>
+                {downloadHref && (
+                  <a
+                    href={downloadHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                  >
+                    <span>{resolvedDownloadLabel}</span>
+                    <Icon name="lucide:download" class="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            </section>
+          </div>
+        </aside>
       </div>
     </div>
   </section>
 </BaseLayout>
+
+<style is:inline>
+  .publication-prose > h1:first-child {
+    display: none;
+  }
+
+  .publication-prose :is(h2, h3, h4) {
+    margin-top: 2.5rem;
+    color: #0a1220;
+    font-size: clamp(1.35rem, 2.2vw, 2rem);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+
+  .publication-prose p {
+    margin-top: 1.1rem;
+  }
+
+  .publication-prose ul,
+  .publication-prose ol {
+    margin-top: 1.25rem;
+    padding-left: 1.3rem;
+  }
+
+  .publication-prose li + li {
+    margin-top: 0.45rem;
+  }
+
+  .publication-prose a {
+    color: #15243a;
+    text-decoration: underline;
+    text-decoration-color: rgba(21, 36, 58, 0.24);
+    text-underline-offset: 0.22em;
+  }
+
+  .publication-prose a:hover {
+    color: #42b09a;
+    text-decoration-color: rgba(66, 176, 154, 0.42);
+  }
+
+  .publication-prose blockquote {
+    margin-top: 1.5rem;
+    border-left: 1px solid rgba(10, 18, 32, 0.18);
+    padding-left: 1.2rem;
+    font-style: italic;
+    color: rgba(10, 18, 32, 0.74);
+  }
+
+  .publication-prose code {
+    background: rgba(10, 18, 32, 0.05);
+    padding: 0.12rem 0.34rem;
+    font-size: 0.94em;
+  }
+
+  .publication-prose pre {
+    margin-top: 1.5rem;
+    overflow-x: auto;
+    background: #0a1220;
+    padding: 1.1rem 1.2rem;
+    color: #f8fafc;
+  }
+
+  .publication-prose pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+</style>

@@ -84,6 +84,11 @@ const getTitleSizeClass = (title: string) => {
         >
           {trackItems.map((item) => (
             <article class="relative h-full min-h-full shrink-0 overflow-hidden opacity-50" data-slide>
+              <a
+                href={item.href}
+                class="absolute inset-0 z-20"
+                aria-label={`Open ${item.title}`}
+              ></a>
               <img
                 src={item.image}
                 alt={item.title}
@@ -91,7 +96,7 @@ const getTitleSizeClass = (title: string) => {
                 loading="lazy"
               />
               <div class="absolute inset-0 bg-foreground/35"></div>
-              <div class="absolute inset-0 z-10 flex items-center justify-start px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5">
+              <div class="pointer-events-none absolute inset-0 z-30 flex items-center justify-start px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5">
                 <div class="max-w-[86%] text-left">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
@@ -114,9 +119,7 @@ const getTitleSizeClass = (title: string) => {
                       getTitleSizeClass(item.title),
                     ]}
                   >
-                    <a href={item.href} class="cursor-pointer transition-colors hover:text-white/80">
-                      {item.title}
-                    </a>
+                    {item.title}
                   </h3>
                 </div>
               </div>
