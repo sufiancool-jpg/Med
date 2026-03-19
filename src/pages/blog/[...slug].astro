@@ -2,13 +2,17 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Schema from "../../components/seo/Schema.astro";
 import AudioPreviewPlayer from "../../components/widgets/AudioPreviewPlayer.astro";
+import RelatedPublicationSlider from "../../components/widgets/RelatedPublicationSlider.astro";
 import { Icon } from "astro-icon/components";
 import { render } from "astro:content";
 import {
   DEFAULT_PROFILE_IMAGE,
   getPublicationBySlug,
+  getPublicationCardDate,
   getPublications,
+  getSimilarPublications,
   isDefaultProfileImage,
+  shouldShowPublicationLead,
 } from "../../lib/site-data";
 
 export async function getStaticPaths() {
@@ -56,10 +60,107 @@ const resolvedDownloadLabel =
     ? "Download PDF"
     : "Download publication");
 const authorProfileHref = publication.authorPerson?.href;
+const showLeadPreview = shouldShowPublicationLead(publication);
+const similarPublications = (await getSimilarPublications(publication, 5)).map((item) => ({
+  href: item.href,
+  title: item.title,
+  previewText: item.previewText,
+  image: item.image,
+  outputType: item.outputType,
+  date: getPublicationCardDate(item),
+  hashtags: item.hashtags.map((tag) => tag.label),
+}));
+const relatedProjectsLeadLabel =
+  publication.relatedProjects.length === 1
+    ? "This Publication is part of"
+    : "This Publication is part of the following projects";
+const seoDescription = publication.previewText || publication.description;
+
+const getProjectButtonTextColor = (color: string) => {
+  const normalized = color.trim().replace("#", "");
+  const hex = normalized.length === 3
+    ? normalized
+        .split("")
+        .map((value) => `${value}${value}`)
+        .join("")
+    : normalized;
+
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return "#ffffff";
+  }
+
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+
+  return luminance > 0.65 ? "#0a1220" : "#ffffff";
+};
+
+type SidebarAction = {
+  href: string;
+  label: string;
+  icon: "download" | "arrow-down-right";
+  download?: boolean;
+  target?: "_blank";
+  rel?: string;
+};
+
+const sidebarActions: SidebarAction[] = [];
+const sidebarActionHrefs = new Set<string>();
+
+const pushSidebarAction = (action: SidebarAction) => {
+  const normalizedHref = action.href.trim();
+
+  if (!normalizedHref || sidebarActionHrefs.has(normalizedHref)) {
+    return;
+  }
+
+  sidebarActionHrefs.add(normalizedHref);
+  sidebarActions.push(action);
+};
+
+if (isPodcast && podcastAudioHref) {
+  pushSidebarAction({
+    href: "#podcast-player",
+    label: "Listen to episode",
+    icon: "arrow-down-right",
+  });
+}
+
+if (!isPodcast && publication.downloadHref) {
+  pushSidebarAction({
+    href: publication.downloadHref,
+    label: resolvedDownloadLabel,
+    icon: "download",
+    download: true,
+    target: "_blank",
+    rel: "noreferrer",
+  });
+}
+
+if (!isPodcast && !publication.downloadHref) {
+  pushSidebarAction({
+    href: "#publication-body",
+    label: "View publication",
+    icon: "arrow-down-right",
+  });
+}
+
+if (fileDownloadHref) {
+  pushSidebarAction({
+    href: fileDownloadHref,
+    label: resolvedDownloadLabel,
+    icon: "download",
+    download: true,
+    target: "_blank",
+    rel: "noreferrer",
+  });
+}
 
 const metadata = {
   title: publication.title,
-  description: publication.description,
+  description: seoDescription,
   ogImage: publication.image,
 };
 ---
@@ -69,7 +170,7 @@ const metadata = {
     type="BlogPosting"
     data={{
       title: publication.title,
-      description: publication.description,
+      description: seoDescription,
       image: publication.image,
       pubDate: publication.pubDate,
       author: publication.author,
@@ -103,21 +204,29 @@ const metadata = {
               {publication.title}
             </h1>
 
-            <p class="mt-5 max-w-4xl text-[1.05rem] italic leading-8 text-primary/74 md:text-[1.18rem]">
-              {publication.description}
-            </p>
+            {showLeadPreview && (
+              <p class="mt-5 max-w-4xl text-[1.05rem] italic leading-8 text-primary/74 md:text-[1.18rem]">
+                {publication.previewText}
+              </p>
+            )}
 
-            {!isPodcast && publication.downloadHref && (
-              <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.98rem] italic text-primary/78">
-                <span>To access the full publication, use the publication file here</span>
-                <a
-                  href={publication.downloadHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  class="font-semibold not-italic text-hover transition-colors hover:text-primary"
-                >
-                  {resolvedDownloadLabel}
-                </a>
+            {sidebarActions.length > 0 && (
+              <div class="mt-6 grid gap-3 xl:hidden">
+                {sidebarActions.map((action) => (
+                  <a
+                    href={action.href}
+                    target={action.target}
+                    rel={action.rel}
+                    download={action.download}
+                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                  >
+                    <span>{action.label}</span>
+                    <Icon
+                      name={`lucide:${action.icon}`}
+                      class="h-4 w-4"
+                    />
+                  </a>
+                ))}
               </div>
             )}
 
@@ -152,6 +261,32 @@ const metadata = {
               LocalContent && <LocalContent />
             )}
           </div>
+
+          {publication.references.length > 0 && (
+            <section class="mt-12 border-t border-black/10 pt-8">
+              <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                References
+              </h2>
+              <ul class="mt-5 space-y-3 text-[0.98rem] leading-7 text-primary/74">
+                {publication.references.map((reference) => (
+                  <li>
+                    {reference.url ? (
+                      <a
+                        href={reference.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        class="transition-colors hover:text-hover"
+                      >
+                        {reference.name || reference.url}
+                      </a>
+                    ) : (
+                      <span>{reference.name}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </article>
 
         <aside class="xl:sticky xl:top-[calc(var(--nav-h,72px)+2rem)] xl:border-l xl:border-black/10 xl:pl-8">
@@ -168,8 +303,8 @@ const metadata = {
                     class:list={[
                       "h-20 w-20 shrink-0",
                       isDefaultProfileImage(publication.authorImage)
-                        ? "border border-black/10 bg-[#eef2ef] object-contain p-2.5 grayscale opacity-75"
-                        : "object-cover grayscale",
+                        ? "border border-black/10 bg-[#eef2ef] object-contain p-2.5 opacity-75"
+                        : "object-cover",
                     ]}
                   />
                   <div class="min-w-0">
@@ -206,8 +341,8 @@ const metadata = {
                             class:list={[
                               "h-10 w-10 shrink-0 transition",
                               isDefaultProfileImage(person.image)
-                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 grayscale opacity-75"
-                                : "object-cover grayscale group-hover:grayscale-0",
+                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 opacity-75"
+                                : "object-cover",
                             ]}
                           />
                           <div class="min-w-0">
@@ -229,8 +364,8 @@ const metadata = {
                             class:list={[
                               "h-10 w-10 shrink-0",
                               isDefaultProfileImage(person.image)
-                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 grayscale opacity-75"
-                                : "object-cover grayscale",
+                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 opacity-75"
+                                : "object-cover",
                             ]}
                           />
                           <p class="text-[0.9rem] font-medium leading-tight text-primary">
@@ -239,6 +374,30 @@ const metadata = {
                         </div>
                       )}
                     </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {publication.relatedProjects.length > 0 && (
+              <section class="border-t border-black/10 pt-6">
+                <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                  Project
+                </h2>
+                <div class="mt-5 grid gap-3">
+                  <p class="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary/55">
+                    {relatedProjectsLeadLabel}
+                  </p>
+                  {publication.relatedProjects.map((project) => (
+                    <a
+                      href={project.href}
+                      class="block border px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5"
+                      style={`border-color:${project.color};background:${project.color};color:${getProjectButtonTextColor(project.color)};`}
+                    >
+                      <p class="text-[1rem] font-semibold leading-tight">
+                        {project.title} Project
+                      </p>
+                    </a>
                   ))}
                 </div>
               </section>
@@ -270,50 +429,23 @@ const metadata = {
               </div>
             </section>
 
-            <section class="border-t border-black/10 pt-6">
+            <section class="hidden border-t border-black/10 pt-6 xl:block">
               <div class="grid gap-3">
-                {isPodcast && podcastAudioHref && (
+                {sidebarActions.map((action) => (
                   <a
-                    href="#podcast-player"
+                    href={action.href}
+                    target={action.target}
+                    rel={action.rel}
+                    download={action.download}
                     class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
                   >
-                    <span>Listen to episode</span>
-                    <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
+                    <span>{action.label}</span>
+                    <Icon
+                      name={`lucide:${action.icon}`}
+                      class="h-4 w-4"
+                    />
                   </a>
-                )}
-                {!isPodcast && publication.downloadHref && (
-                  <a
-                    href={publication.downloadHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    download
-                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
-                  >
-                    <span>{resolvedDownloadLabel}</span>
-                    <Icon name="lucide:download" class="h-4 w-4" />
-                  </a>
-                )}
-                {!isPodcast && !publication.downloadHref && (
-                  <a
-                    href="#publication-body"
-                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
-                  >
-                    <span>View publication</span>
-                    <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
-                  </a>
-                )}
-                {fileDownloadHref && (
-                  <a
-                    href={fileDownloadHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    download
-                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
-                  >
-                    <span>{resolvedDownloadLabel}</span>
-                    <Icon name="lucide:download" class="h-4 w-4" />
-                  </a>
-                )}
+                ))}
               </div>
             </section>
           </div>
@@ -321,6 +453,14 @@ const metadata = {
       </div>
     </div>
   </section>
+
+  {similarPublications.length > 0 && (
+    <RelatedPublicationSlider
+      items={similarPublications}
+      title="Related Topics"
+      subtitle="Other publications connected through overlapping hashtags."
+    />
+  )}
 </BaseLayout>
 
 <style is:inline>

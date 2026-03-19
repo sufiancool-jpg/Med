@@ -23,7 +23,7 @@ const publicationTypeOptions = [
 
 const publicationArticles = publications.map((publication) => ({
   title: publication.title,
-  summary: publication.description,
+  summary: publication.previewText,
   author: publication.author,
   date: new Intl.DateTimeFormat("en-US", {
     month: "short",

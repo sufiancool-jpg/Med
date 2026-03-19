@@ -6,7 +6,6 @@ import {
   getProjects,
   getProjectBySlug,
   getPublicationsForProject,
-  projectStages,
 } from "../../lib/site-data";
 
 export async function getStaticPaths() {
@@ -24,10 +23,10 @@ if (!project) {
   throw new Error(`Project not found for slug "${slug}"`);
 }
 
-const currentStageIndex = Math.max(projectStages.indexOf(project.currentStage), 0);
+const currentStageIndex = Math.max(project.stagePoints.indexOf(project.currentStage), 0);
 const timelineProgress =
-  projectStages.length > 1 ? (currentStageIndex / (projectStages.length - 1)) * 100 : 0;
-const stageItems = projectStages.map((stage, index) => ({
+  project.stagePoints.length > 1 ? (currentStageIndex / (project.stagePoints.length - 1)) * 100 : 0;
+const stageItems = project.stagePoints.map((stage, index) => ({
   stage,
   isActive: index <= currentStageIndex,
   isCurrent: index === currentStageIndex,
@@ -36,7 +35,7 @@ const leadUsesDefaultImage = isDefaultProfileImage(project.lead.image);
 
 const relatedArticles = (await getPublicationsForProject(project.slug)).map((publication) => ({
   title: publication.title,
-  summary: publication.description,
+  summary: publication.previewText,
   author: publication.author,
   date: new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -73,10 +72,11 @@ const metadata = {
         </p>
       </div>
 
-      <div class="mx-auto mt-10 max-w-6xl">
+      {!project.hideProjectBar && project.stagePoints.length > 0 && (
+        <div class="mx-auto mt-10 max-w-6xl">
         <div class="flex items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-primary/58">
-          <span>Conception</span>
-          <span>Implemented</span>
+          <span>{project.stagePoints[0]}</span>
+          <span>{project.stagePoints[project.stagePoints.length - 1]}</span>
         </div>
         <div class="relative mt-5">
           <div class="absolute left-0 right-0 top-[0.6rem] h-[3px] bg-black/10"></div>
@@ -84,7 +84,10 @@ const metadata = {
             class="absolute left-0 top-[0.6rem] h-[3px]"
             style={`width:${timelineProgress}%;background:${project.color};`}
           ></div>
-          <div class="relative grid gap-4 md:grid-cols-5">
+          <div
+            class="relative grid gap-4 overflow-x-auto pb-1"
+            style={`grid-template-columns:repeat(${Math.max(stageItems.length, 1)},minmax(7rem,1fr));`}
+          >
             {stageItems.map((item) => (
               <div class="text-center">
                 <div
@@ -106,7 +109,8 @@ const metadata = {
             ))}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       <div class="mt-14 grid gap-10 lg:grid-cols-[20%_1px_minmax(0,1fr)] lg:gap-8">
         <aside class="space-y-8">
@@ -123,7 +127,7 @@ const metadata = {
                     class:list={[
                       "aspect-[4/5] w-full transition-transform duration-300 group-hover/lead:scale-[1.01]",
                       leadUsesDefaultImage
-                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 grayscale opacity-75"
+                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
                         : "object-cover",
                     ]}
                   />
@@ -139,7 +143,7 @@ const metadata = {
                     class:list={[
                       "aspect-[4/5] w-full",
                       leadUsesDefaultImage
-                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 grayscale opacity-75"
+                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
                         : "object-cover",
                     ]}
                   />

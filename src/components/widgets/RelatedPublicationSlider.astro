@@ -1,0 +1,175 @@
+---
+interface RelatedPublicationItem {
+  href: string;
+  title: string;
+  previewText: string;
+  image?: string;
+  outputType: string;
+  date: string;
+  hashtags: string[];
+}
+
+interface Props {
+  items: RelatedPublicationItem[];
+  title?: string;
+  subtitle?: string;
+}
+
+const {
+  items,
+  title = "Related Publications",
+  subtitle = "Other topics connected by similar hashtags",
+} = Astro.props as Props;
+---
+
+{
+  items.length > 0 && (
+    <section class="border-t border-black/10 bg-white">
+      <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-12 lg:px-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div class="max-w-2xl">
+            <p class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/58">
+              Discover More
+            </p>
+            <h2 class="mt-2 text-[clamp(1.9rem,4vw,3rem)] font-semibold leading-[0.96] tracking-[-0.035em] text-primary">
+              {title}
+            </h2>
+            <p class="mt-3 text-[0.98rem] leading-7 text-primary/68">
+              {subtitle}
+            </p>
+          </div>
+
+          <div class="hidden items-center gap-2 md:flex">
+            <button
+              type="button"
+              data-related-slider-prev
+              class="inline-flex h-10 w-10 items-center justify-center border border-black/12 text-primary transition-colors hover:border-black hover:text-hover"
+              aria-label="Previous related publication"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <button
+              type="button"
+              data-related-slider-next
+              class="inline-flex h-10 w-10 items-center justify-center border border-black/12 text-primary transition-colors hover:border-black hover:text-hover"
+              aria-label="Next related publication"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-6" data-related-publication-slider>
+          <div
+            data-related-slider-track
+            class="flex gap-4 overflow-x-auto scroll-smooth pb-2 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none]"
+          >
+            {items.map((item) => (
+              <article class="relative w-[17rem] shrink-0 snap-start border border-black/12 bg-white">
+                <a href={item.href} class="absolute inset-0 z-10" aria-label={`Open ${item.title}`}></a>
+                <div class="h-28 overflow-hidden bg-black/5">
+                  <img
+                    src={item.image || "/blog/welcome.webp"}
+                    alt={item.title}
+                    loading="lazy"
+                    class="h-full w-full object-cover"
+                  />
+                </div>
+                <div class="p-4">
+                  <div class="flex flex-wrap items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-primary/55">
+                    <span>{item.outputType}</span>
+                    <span aria-hidden="true">/</span>
+                    <span>{item.date}</span>
+                  </div>
+                  <h3 class="mt-3 line-clamp-2 text-[1rem] font-semibold leading-tight text-primary">
+                    {item.title}
+                  </h3>
+                  <p class="mt-2 line-clamp-3 text-[0.88rem] leading-6 text-primary/70">
+                    {item.previewText}
+                  </p>
+                  <div class="mt-3 flex flex-wrap gap-2 text-[0.72rem] font-medium text-primary/62">
+                    {item.hashtags.slice(0, 3).map((tag) => (
+                      <span class="inline-flex border border-black/10 px-2 py-1">#{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<script is:inline>
+  const initRelatedPublicationSliders = () => {
+    document.querySelectorAll("[data-related-publication-slider]").forEach((slider) => {
+      if (!(slider instanceof HTMLElement) || slider.dataset.ready === "true") {
+        return;
+      }
+
+      slider.dataset.ready = "true";
+
+      const track = slider.querySelector("[data-related-slider-track]");
+      const prevButton = slider.parentElement?.querySelector("[data-related-slider-prev]");
+      const nextButton = slider.parentElement?.querySelector("[data-related-slider-next]");
+
+      if (!(track instanceof HTMLElement)) {
+        return;
+      }
+
+      const scrollByCard = (direction) => {
+        const firstCard = track.firstElementChild;
+        const cardWidth =
+          firstCard instanceof HTMLElement ? firstCard.getBoundingClientRect().width + 16 : 320;
+
+        track.scrollBy({
+          left: direction * cardWidth,
+          behavior: "smooth",
+        });
+      };
+
+      prevButton?.addEventListener("click", () => scrollByCard(-1));
+      nextButton?.addEventListener("click", () => scrollByCard(1));
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initRelatedPublicationSliders, {
+      once: true,
+    });
+  } else {
+    initRelatedPublicationSliders();
+  }
+
+  document.addEventListener("astro:after-swap", initRelatedPublicationSliders);
+</script>
+
+<style is:inline>
+  [data-related-slider-track]::-webkit-scrollbar {
+    display: none;
+  }
+</style>

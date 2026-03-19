@@ -18,6 +18,11 @@ const blog = defineCollection({
     authorPersonSlug: z.string().optional(),
     contributorPersonSlugs: z.array(z.string()).optional(),
     contributorNames: z.array(z.string()).optional(),
+    relatedProjectSlugs: z.array(z.string()).optional(),
+    references: z.array(z.object({
+      name: z.string(),
+      url: z.string(),
+    })).optional(),
   }),
 });
 

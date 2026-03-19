@@ -13,6 +13,11 @@ export interface PublicationTag {
   label: string;
 }
 
+export interface PublicationReference {
+  name: string;
+  url: string;
+}
+
 export interface PersonSummary {
   id: number | string;
   slug: string;
@@ -46,6 +51,7 @@ export interface PublicationSummary {
   title: string;
   description: string;
   excerpt: string;
+  previewText: string;
   pubDate: Date;
   author: string;
   authorRole?: string;
@@ -58,9 +64,16 @@ export interface PublicationSummary {
   topics: string[];
   hashtags: PublicationTag[];
   contributors: PublicationPerson[];
+  references: PublicationReference[];
   relatedProjectIds: number[];
   relatedProjectSlugs: string[];
   relatedProjectTitles: string[];
+  relatedProjects: Array<{
+    slug: string;
+    title: string;
+    href: string;
+    color: string;
+  }>;
   downloadHref?: string;
   downloadLabel?: string;
   source: "wordpress" | "local";
@@ -88,6 +101,8 @@ export interface ProjectSummary {
   description: string;
   color: string;
   currentStage: string;
+  stagePoints: string[];
+  hideProjectBar: boolean;
   lead: {
     name: string;
     role: string;
@@ -180,6 +195,45 @@ const decodeHtml = (value: string) =>
 
 const stripHtml = (value: string) =>
   decodeHtml(value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+
+const PUBLICATION_PREVIEW_WORD_LIMIT = 12;
+
+const normalizeComparableText = (value: string) =>
+  stripHtml(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const takeWords = (value: string, limit = PUBLICATION_PREVIEW_WORD_LIMIT) =>
+  stripHtml(value).split(/\s+/).filter(Boolean).slice(0, limit).join(" ");
+
+const getWordCount = (value: string) => stripHtml(value).split(/\s+/).filter(Boolean).length;
+
+const clampPreviewText = (value: string, limit = PUBLICATION_PREVIEW_WORD_LIMIT) => {
+  const words = stripHtml(value).split(/\s+/).filter(Boolean);
+
+  if (words.length <= limit) {
+    return words.join(" ");
+  }
+
+  return `${words.slice(0, limit).join(" ")}...`;
+};
+
+const buildPublicationPreviewText = (...candidates: Array<string | undefined>) => {
+  const preferredSource =
+    candidates.find((value) => value && getWordCount(value) >= PUBLICATION_PREVIEW_WORD_LIMIT) ??
+    candidates.find((value) => value && stripHtml(value).length > 0) ??
+    "";
+
+  return clampPreviewText(preferredSource);
+};
+
+const isPreviewDuplicatedInContent = (preview: string, contentHtml: string) => {
+  const previewLead = takeWords(preview);
+  const contentLead = takeWords(contentHtml);
+
+  return Boolean(previewLead && contentLead && normalizeComparableText(previewLead) === normalizeComparableText(contentLead));
+};
 
 const textToParagraphHtml = (value: string) =>
   value
@@ -401,12 +455,33 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
       const peopleByName = new Map(
         (people ?? localPeopleSummaries).map((person) => [person.name.toLowerCase(), person]),
       );
+      const peopleById = new Map(
+        (people ?? localPeopleSummaries).map((person) => [String(person.id), person]),
+      );
 
       return records
         .map((record) => {
-          const leadName = String(record.meta?.mp_lead_name ?? "").trim();
-          const leadRole = String(record.meta?.mp_lead_role ?? "");
-          const leadImage = String(record.meta?.mp_lead_image ?? "");
+          const leadPersonId = Number(record.meta?.mp_lead_person_id ?? 0);
+          const leadPersonRecord = leadPersonId ? peopleById.get(String(leadPersonId)) : undefined;
+          const leadName = String(record.meta?.mp_lead_name ?? leadPersonRecord?.name ?? "").trim();
+          const leadRole = String(record.meta?.mp_lead_role ?? leadPersonRecord?.role ?? "");
+          const leadImage = String(record.meta?.mp_lead_image ?? leadPersonRecord?.image ?? "");
+          const stagePoints = Array.isArray(record.meta?.mp_stage_points)
+            ? record.meta?.mp_stage_points.map((item) => String(item)).filter(Boolean)
+            : [];
+          const teamMemberIds = Array.isArray(record.meta?.mp_team_member_ids)
+            ? record.meta?.mp_team_member_ids.map((item) => Number(item)).filter((item) => item > 0)
+            : [];
+          const legacyTeamMembers = Array.isArray(record.meta?.mp_team_members)
+            ? record.meta?.mp_team_members.map((item) => String(item))
+            : [];
+          const teamMembers =
+            teamMemberIds.length > 0
+              ? teamMemberIds
+                  .map((id) => peopleById.get(String(id)))
+                  .filter(Boolean)
+                  .map((person) => buildProjectPerson((person as PersonSummary).name, peopleByName))
+              : legacyTeamMembers.map((item) => buildProjectPerson(item, peopleByName));
 
           return {
             id: record.id,
@@ -416,15 +491,13 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
             description: stripHtml(record.excerpt.rendered),
             color: String(record.meta?.mp_color ?? "#15243a"),
             currentStage: String(record.meta?.mp_current_stage ?? projectStages[0]),
+            stagePoints: stagePoints.length > 0 ? stagePoints : projectStages,
+            hideProjectBar: Boolean(record.meta?.mp_hide_project_bar),
             lead: buildProjectPerson(leadName, peopleByName, {
               role: leadRole,
               image: leadImage,
             }),
-            team: Array.isArray(record.meta?.mp_team_members)
-              ? record.meta?.mp_team_members.map((item) =>
-                  buildProjectPerson(String(item), peopleByName),
-                )
-              : [],
+            team: teamMembers,
             donors: Array.isArray(record.meta?.mp_donors)
               ? record.meta?.mp_donors.map((item) => ({
                   name: String((item as { name?: string }).name ?? ""),
@@ -473,6 +546,14 @@ const buildWordPressPublicationSummary = (
   const relatedProjects = relatedProjectIds
     .map((id) => projectLookup.get(id))
     .filter(Boolean) as ProjectSummary[];
+  const references = Array.isArray(record.meta?.mp_references)
+    ? record.meta?.mp_references
+        .map((item) => ({
+          name: String((item as { name?: string }).name ?? "").trim(),
+          url: String((item as { url?: string }).url ?? "").trim(),
+        }))
+        .filter((item) => item.name || item.url)
+    : [];
   const contributors = [
     ...contributorPersonIds
       .filter((id) => id !== authorPersonId)
@@ -495,10 +576,15 @@ const buildWordPressPublicationSummary = (
     title: decodeHtml(record.title.rendered),
     description: stripHtml(record.excerpt.rendered),
     excerpt: stripHtml(record.excerpt.rendered),
+    previewText: buildPublicationPreviewText(
+      record.excerpt.rendered,
+      record.content.rendered,
+      record.title.rendered,
+    ),
     pubDate: new Date(record.date),
-    author: String(record.meta?.mp_author_name ?? authorPersonRecord?.name ?? "Mediterranean Platform"),
+    author: String(authorPersonRecord?.name ?? record.meta?.mp_author_name ?? "Mediterranean Platform"),
     authorRole: String(record.meta?.mp_author_role ?? authorPersonRecord?.role ?? ""),
-    authorImage: String(record.meta?.mp_author_image ?? authorPersonRecord?.image ?? "") || DEFAULT_PROFILE_IMAGE,
+    authorImage: String(authorPersonRecord?.image ?? record.meta?.mp_author_image ?? "") || DEFAULT_PROFILE_IMAGE,
     authorPerson: authorPersonRecord ? toPublicationPerson(authorPersonRecord) : undefined,
     image: String(record.meta?.mp_cover_image ?? ""),
     audioHref: String(record.meta?.mp_audio_url ?? ""),
@@ -511,9 +597,16 @@ const buildWordPressPublicationSummary = (
       label: term.name,
     })),
     contributors,
+    references,
     relatedProjectIds,
     relatedProjectSlugs: relatedProjects.map((project) => project.slug),
     relatedProjectTitles: relatedProjects.map((project) => project.title),
+    relatedProjects: relatedProjects.map((project) => ({
+      slug: project.slug,
+      title: project.title,
+      href: project.href,
+      color: project.color,
+    })),
     downloadHref: String(record.meta?.mp_download_url ?? ""),
     downloadLabel: String(record.meta?.mp_download_label ?? ""),
     source: "wordpress",
@@ -602,7 +695,8 @@ const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | n
         ? homepage.meta?.mp_latest_publication_ids
             .map((id) => publicationById.get(Number(id)))
             .filter(isPublicationSummary)
-        : publications.slice(0, 4);
+            .slice(0, 5)
+        : publications.slice(0, 5);
 
       const featuredPodcastCandidate = publicationById.get(
         Number(homepage.meta?.mp_featured_podcast_id),
@@ -657,6 +751,15 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
               image: "",
             }))),
           ];
+          const relatedProjects = (entry.data.relatedProjectSlugs ?? [])
+            .map((projectSlug) => localProjectPages.find((project) => project.slug === projectSlug))
+            .filter(Boolean)
+            .map((project) => ({
+              slug: project!.slug,
+              title: project!.title,
+              href: project!.href,
+              color: project!.color,
+            }));
 
           return {
             id: entry.id,
@@ -665,6 +768,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             title: entry.data.title,
             description: entry.data.description,
             excerpt: entry.data.description,
+            previewText: buildPublicationPreviewText(entry.data.description, entry.body, entry.data.title),
             pubDate: entry.data.pubDate,
             author: entry.data.author,
             authorRole: entry.data.authorRole ?? authorPerson?.role,
@@ -680,9 +784,14 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
                 : ["General"],
             hashtags,
             contributors,
+            references: (entry.data.references ?? []).map((reference) => ({
+              name: reference.name,
+              url: reference.url,
+            })),
             relatedProjectIds: [],
-            relatedProjectSlugs: [],
-            relatedProjectTitles: [],
+            relatedProjectSlugs: relatedProjects.map((project) => project.slug),
+            relatedProjectTitles: relatedProjects.map((project) => project.title),
+            relatedProjects,
             downloadHref: entry.data.downloadHref,
             downloadLabel: entry.data.downloadLabel,
             source: "local" as const,
@@ -734,6 +843,8 @@ export const getProjects = async (): Promise<ProjectSummary[]> => {
     description: project.description,
     color: project.color,
     currentStage: project.currentStage,
+    stagePoints: project.stagePoints,
+    hideProjectBar: project.hideProjectBar,
     lead: buildProjectPerson(project.lead.name, peopleByName, {
       role: project.lead.role,
       image: project.lead.image,
@@ -871,9 +982,11 @@ export const getPublicationsForProject = async (projectSlug: string) => {
       title: article.title,
       description: article.summary,
       excerpt: article.summary,
+      previewText: buildPublicationPreviewText(article.summary, article.title),
       pubDate: new Date(),
       author: article.author,
       contributors: [],
+      references: [],
       image: article.image,
       outputType: "Publication",
       outputTypeSlug: "publication",
@@ -886,6 +999,14 @@ export const getPublicationsForProject = async (projectSlug: string) => {
       relatedProjectIds: [],
       relatedProjectSlugs: [projectSlug],
       relatedProjectTitles: [localProject.title],
+      relatedProjects: [
+        {
+          slug: localProject.slug,
+          title: localProject.title,
+          href: localProject.href,
+          color: localProject.color,
+        },
+      ],
       source: "local" as const,
     }));
 };
@@ -917,7 +1038,7 @@ export const getHomepageSelections = async (): Promise<HomepageSelections> => {
     featuredPodcast,
     featuredArticle,
     sliderPublications: publications.slice(0, 4),
-    latestPublications: publications.slice(0, 4),
+    latestPublications: publications.slice(0, 5),
   };
 };
 
@@ -941,6 +1062,39 @@ export const getAnnouncementBarSettings = async (): Promise<AnnouncementBarSetti
   }
 
   return defaultAnnouncementBarSettings;
+};
+
+export const shouldShowPublicationLead = (publication: PublicationDetail) => {
+  if (publication.source !== "wordpress") {
+    return true;
+  }
+
+  return !isPreviewDuplicatedInContent(publication.description, publication.contentHtml);
+};
+
+export const getSimilarPublications = async (
+  publication: PublicationSummary,
+  limit = 5,
+) => {
+  const publications = await getPublications();
+  const currentHashtagSlugs = new Set(publication.hashtags.map((tag) => tag.slug));
+
+  return publications
+    .filter((candidate) => candidate.slug !== publication.slug)
+    .map((candidate) => ({
+      publication: candidate,
+      overlap: candidate.hashtags.filter((tag) => currentHashtagSlugs.has(tag.slug)).length,
+    }))
+    .filter((candidate) => candidate.overlap > 0)
+    .sort((a, b) => {
+      if (b.overlap !== a.overlap) {
+        return b.overlap - a.overlap;
+      }
+
+      return b.publication.pubDate.valueOf() - a.publication.pubDate.valueOf();
+    })
+    .slice(0, limit)
+    .map((candidate) => candidate.publication);
 };
 
 export const getFeaturedArticleParagraphs = (publication?: PublicationDetail) => {

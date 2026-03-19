@@ -50,14 +50,8 @@ const featuredPublications = homepageSelections.latestPublications.map((publicat
   title: publication.title,
   authors: publication.author,
   date: getPublicationCardDate(publication),
-  excerpt: publication.description,
+  excerpt: publication.previewText,
   href: publication.href,
-  downloadHref: publication.downloadHref,
-  downloadLabel:
-    publication.downloadLabel ||
-    (publication.downloadHref?.toLowerCase().endsWith(".pdf")
-      ? "Download PDF"
-      : "Download publication"),
   thumbnail: publication.image || "/blog/welcome.webp",
   thumbnailAlt: publication.title,
   tags: publication.hashtags.slice(0, 3).map((tag) => `#${tag.label}`),
@@ -631,7 +625,7 @@ const metadata = {
       </div>
 
       <div class="overflow-hidden border border-border bg-border">
-        {featuredPublications.slice(0, 3).map((item) => (
+        {featuredPublications.slice(0, 5).map((item) => (
           <article class="relative overflow-hidden border-b border-border bg-background px-4 py-3 last:border-b-0 md:px-5 md:py-3">
             <div class="pr-24 sm:pr-24 md:pr-28">
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -650,21 +644,10 @@ const metadata = {
                   {item.title}
                 </a>
               </h3>
-              <p class="mt-1 line-clamp-1 text-sm text-muted-foreground">
+              <p class="mt-1 text-sm text-muted-foreground">
                 {item.excerpt}
               </p>
               <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-                {item.downloadHref && (
-                  <a
-                    href={item.downloadHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    download
-                    class="inline-flex cursor-pointer text-xs font-semibold uppercase tracking-[0.06em] text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
-                  >
-                    {item.downloadLabel}
-                  </a>
-                )}
                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.72rem] font-medium tracking-[0.04em] text-primary/70">
                   {item.tags.map((tag) => (
                     <span>{tag}</span>

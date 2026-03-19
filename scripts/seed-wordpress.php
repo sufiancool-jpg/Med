@@ -121,6 +121,8 @@ foreach ($projects as $project) {
 
 	update_post_meta($project_id, 'mp_color', $project['color'] ?? '');
 	update_post_meta($project_id, 'mp_current_stage', $project['currentStage'] ?? '');
+	update_post_meta($project_id, 'mp_stage_points', $project['stagePoints'] ?? array('Conception', 'Research', 'Dialogue', 'Publication', 'Implemented'));
+	update_post_meta($project_id, 'mp_hide_project_bar', ! empty($project['hideProjectBar']));
 	update_post_meta($project_id, 'mp_lead_name', $project['leadName'] ?? '');
 	update_post_meta($project_id, 'mp_lead_role', $project['leadRole'] ?? '');
 	update_post_meta($project_id, 'mp_lead_image', $project['leadImage'] ?? '');
@@ -167,13 +169,23 @@ foreach ($publications as $publication) {
 		}
 	}
 
-	update_post_meta($publication_id, 'mp_author_name', $publication['authorName'] ?? '');
-	update_post_meta($publication_id, 'mp_author_person_id', isset($person_ids[$publication['authorPersonSlug'] ?? '']) ? $person_ids[$publication['authorPersonSlug']] : 0);
+	$author_person_slug = $publication['authorPersonSlug'] ?? '';
+	$author_person_id = isset($person_ids[$author_person_slug]) ? $person_ids[$author_person_slug] : 0;
+	$author_name = $publication['authorName'] ?? '';
+	foreach ($people as $person) {
+		if (($person['slug'] ?? '') === $author_person_slug) {
+			$author_name = $person['title'] ?? $author_name;
+			break;
+		}
+	}
+	update_post_meta($publication_id, 'mp_author_name', $author_name);
+	update_post_meta($publication_id, 'mp_author_person_id', $author_person_id);
 	update_post_meta($publication_id, 'mp_author_role', $publication['authorRole'] ?? '');
-	update_post_meta($publication_id, 'mp_author_image', $publication['authorImage'] ?? '');
+	update_post_meta($publication_id, 'mp_author_image', $author_person_id ? get_post_meta($author_person_id, 'mp_photo', true) : ($publication['authorImage'] ?? ''));
 	update_post_meta($publication_id, 'mp_cover_image', $publication['imageUrl'] ?? '');
 	update_post_meta($publication_id, 'mp_download_url', $publication['downloadUrl'] ?? '');
 	update_post_meta($publication_id, 'mp_download_label', $publication['downloadLabel'] ?? '');
+	update_post_meta($publication_id, 'mp_references', $publication['references'] ?? array());
 	$contributor_person_ids = array();
 	foreach (($publication['contributorPersonSlugs'] ?? array()) as $person_slug) {
 		if (isset($person_ids[$person_slug])) {

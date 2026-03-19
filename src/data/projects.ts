@@ -5,6 +5,8 @@ export interface ProjectPage {
   description: string;
   color: string;
   currentStage: string;
+  stagePoints: string[];
+  hideProjectBar: boolean;
   overview: string[];
   updates: string[];
   lead: {
@@ -40,6 +42,8 @@ export const projectPages: ProjectPage[] = [
       "Field-based research, capacity building, and dialogue support focused on governance processes, youth participation, and practical policy pathways.",
     color: "#15243a",
     currentStage: "Dialogue",
+    stagePoints: [...projectStages],
+    hideProjectBar: false,
     overview: [
       "The Libya Platform brings together research, policy dialogue, and operational support around governance transitions, local institutional design, and inclusive public debate.",
       "Its work is grounded in practical pathways for policymaking, with a focus on how local and national processes can be linked more effectively in conflict-affected and politically fragmented settings.",
@@ -87,6 +91,8 @@ export const projectPages: ProjectPage[] = [
       "Policy analyses, crossroads exchanges, and knowledge ecosystems linking African and European experts, researchers, and decision-makers.",
     color: "#42b09a",
     currentStage: "Publication",
+    stagePoints: [...projectStages],
+    hideProjectBar: false,
     overview: [
       "Africa Nexus is designed as a space for African-European exchange, connecting policy research, dialogue initiatives, and expert communities across regions.",
       "It focuses on building durable knowledge ecosystems that can support stronger analysis, deeper collaboration, and more grounded conversations between institutions and practitioners.",
@@ -134,6 +140,8 @@ export const projectPages: ProjectPage[] = [
       "Regional research and dialogue on Europe-Gulf relations, geopolitical shifts, sectoral cooperation, and long-term strategic trends.",
     color: "#8c6335",
     currentStage: "Implemented",
+    stagePoints: [...projectStages],
+    hideProjectBar: false,
     overview: [
       "The Gulf Platform develops policy-relevant research and dialogue around Europe-Gulf relations, strategic realignment, and the broader political economy of regional change.",
       "Its work tracks geopolitical shifts, sectoral cooperation, and the evolving role of Gulf actors in diplomacy, security, and cross-regional engagement.",

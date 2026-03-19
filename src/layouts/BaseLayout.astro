@@ -86,7 +86,7 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
       <Navbar />
       <main
         id="main-content"
-        class="relative z-10 grow bg-white pt-[var(--nav-h,72px)]"
+        class="relative z-10 grow bg-white"
       >
         <slot />
       </main>
@@ -113,7 +113,7 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
       });
 
       const syncFixedOffsets = () => {
-        const nav = document.querySelector("nav.fixed.top-0");
+        const nav = document.querySelector("nav[data-site-nav]");
         const announcement = document.querySelector("[data-announcement-bar]");
         const navHeight = nav instanceof HTMLElement ? nav.offsetHeight : 72;
         const announcementHeight =
@@ -147,7 +147,7 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
       syncFixedOffsets();
 
       const observedElements = [
-        document.querySelector("nav.fixed.top-0"),
+        document.querySelector("nav[data-site-nav]"),
         document.querySelector("[data-announcement-bar]"),
       ].filter((element): element is HTMLElement => element instanceof HTMLElement);
 
