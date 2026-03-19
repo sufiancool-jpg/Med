@@ -103,6 +103,66 @@ npm run dev
 
 <br>
 
+## Local WordPress Headless Setup
+
+This repo now includes a local headless WordPress backend for the Astro frontend.
+
+### What it manages
+
+- Homepage selections:
+  - featured podcast
+  - slider publications
+  - featured article
+  - latest publications
+- Publications:
+  - title, body, excerpt, author name, author role
+  - cover image URL
+  - download URL and button label
+  - related projects
+  - output type, topic, and hashtags
+- Projects:
+  - project page content
+  - stage / timeline
+  - lead, team, donors, updates, focus areas
+
+### Local commands
+
+```bash
+npm run wp:setup
+npm run wp:serve
+npm run dev
+```
+
+Or run both together:
+
+```bash
+npm run dev:headless
+```
+
+### Local WordPress admin
+
+- URL: `http://127.0.0.1:8081/wp-admin`
+- Username: `admin`
+- Password: `admin12345!`
+
+### Important files
+
+- WordPress plugin: `wordpress-plugin/medplatform-headless/medplatform-headless.php`
+- WordPress bootstrap: `scripts/setup-local-wordpress.mjs`
+- WordPress seeding: `scripts/generate-wordpress-seed.mjs`
+- WordPress import script: `scripts/seed-wordpress.php`
+- Astro data layer: `src/lib/site-data.ts`
+
+### Automatic rebuilds
+
+The plugin includes a build hook setting in WordPress:
+
+- WordPress admin -> `Settings` -> `Med Platform Headless`
+
+If you paste a Vercel or Netlify deploy hook URL there, WordPress will POST to it after publication, project, homepage, and taxonomy updates.
+
+<br>
+
 ## Configuration
 
 All global site information is managed in `src/config/site.ts`. Update this file with your data:

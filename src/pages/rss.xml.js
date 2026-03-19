@@ -1,26 +1,36 @@
 import rss from "@astrojs/rss";
-import { getCollection } from "astro:content";
 import { siteConfig } from "../config/site";
+import { getPublicationBySlug, getPublications } from "../lib/site-data";
 
 export async function GET(context) {
-  const blog = await getCollection("blog");
+  const publications = await getPublications();
 
   return rss({
     title: siteConfig.name,
     description: siteConfig.description,
     site: context.site,
-    items: blog
-      .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-      .map((post) => ({
-        title: post.data.title,
-        pubDate: post.data.pubDate,
-        description: post.data.description,
-        link: `/blog/${post.id}/`,
-        content: post.body, // Optional: include full content
-        customData: post.data.author
-          ? `<author>${post.data.author}</author>`
-          : undefined,
-      })),
+    items: await Promise.all(
+      publications
+        .sort((a, b) => b.pubDate.valueOf() - a.pubDate.valueOf())
+        .map(async (publication) => {
+          const detail = await getPublicationBySlug(publication.slug);
+          const content =
+            detail?.source === "wordpress"
+              ? detail.contentHtml
+              : publication.description;
+
+          return {
+            title: publication.title,
+            pubDate: publication.pubDate,
+            description: publication.description,
+            link: `/blog/${publication.slug}/`,
+            content,
+            customData: publication.author
+              ? `<author>${publication.author}</author>`
+              : undefined,
+          };
+        }),
+    ),
     customData: `<language>${siteConfig.locale}</language>`,
   });
 }

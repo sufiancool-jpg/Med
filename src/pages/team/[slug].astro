@@ -1,0 +1,166 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { Icon } from "astro-icon/components";
+import {
+  DEFAULT_PROFILE_IMAGE,
+  getPeople,
+  getPersonBySlug,
+  getPublicationCardDate,
+  getPublicationsForPerson,
+  isDefaultProfileImage,
+} from "../../lib/site-data";
+
+export async function getStaticPaths() {
+  const people = await getPeople();
+
+  return people.map((person) => ({
+    params: { slug: person.slug },
+  }));
+}
+
+const slug = Astro.params.slug ?? "";
+const person = await getPersonBySlug(slug);
+
+if (!person) {
+  throw new Error(`Person not found for slug "${slug}"`);
+}
+
+const publications = await getPublicationsForPerson(slug);
+
+const metadata = {
+  title: person.name,
+  description: person.shortBio,
+  ogImage: person.image,
+};
+---
+
+<BaseLayout {metadata}>
+  <section class="bg-white">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-12 lg:px-8">
+      <div class="grid gap-10 border-b border-black/10 pb-10 lg:grid-cols-[20rem_minmax(0,1fr)]">
+        <aside class="space-y-5">
+          <img
+            src={person.image || DEFAULT_PROFILE_IMAGE}
+            alt={person.name}
+            class:list={[
+              "team-profile-photo aspect-[5/6] w-full",
+              isDefaultProfileImage(person.image)
+                ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
+                : "object-cover",
+            ]}
+          />
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/60">Profile</p>
+            <h1 class="mt-2 text-[clamp(1.5rem,3vw,2.4rem)] font-semibold leading-[0.98] tracking-[-0.035em] text-primary">
+              {person.name}
+            </h1>
+            {person.role && (
+              <p class="mt-2.5 text-[0.96rem] leading-7 text-primary/72">{person.role}</p>
+            )}
+          </div>
+          <div class="space-y-2 text-[0.92rem] text-primary/72">
+            {person.email && (
+              <a href={`mailto:${person.email}`} class="block transition-colors hover:text-hover">
+                {person.email}
+              </a>
+            )}
+            {(person.linkedinUrl || person.websiteUrl) && (
+              <div class="flex items-center gap-3 pt-1">
+                {person.linkedinUrl && (
+                  <a
+                    href={person.linkedinUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${person.name} LinkedIn`}
+                    class="inline-flex items-center justify-center transition-colors hover:text-hover"
+                  >
+                    <Icon name="lucide:linkedin" class="h-4 w-4" />
+                  </a>
+                )}
+                {person.websiteUrl && (
+                  <a
+                    href={person.websiteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${person.name} website`}
+                    class="inline-flex items-center justify-center transition-colors hover:text-hover"
+                  >
+                    <Icon name="lucide:globe" class="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <div>
+          <div
+            class="person-prose max-w-none text-[1rem] leading-8 text-primary/78"
+            set:html={person.contentHtml}
+          ></div>
+        </div>
+      </div>
+
+      <div class="pt-10">
+        <div class="flex items-end justify-between gap-6 border-b border-dotted border-black/25 pb-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.1em] text-primary/60">
+              Publications
+            </p>
+            <h2 class="mt-2 text-[clamp(1.8rem,3.2vw,2.8rem)] font-semibold leading-[0.96] tracking-[-0.04em] text-primary">
+              Authored and co-authored work
+            </h2>
+          </div>
+          <p class="text-[0.92rem] text-primary/58">
+            {publications.length} {publications.length === 1 ? "result" : "results"}
+          </p>
+        </div>
+
+        {publications.length > 0 ? (
+          <div class="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {publications.map((publication) => {
+              const relation =
+                publication.authorPerson?.slug === person.slug ? "Author" : "Contributor";
+
+              return (
+                <article class="flex h-full flex-col border border-black/10 bg-white p-5 transition-colors hover:border-black/25">
+                  <div class="flex items-center justify-between gap-4 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
+                    <span>{relation}</span>
+                    <span>{getPublicationCardDate(publication)}</span>
+                  </div>
+                  <h3 class="mt-5 text-[1.15rem] font-semibold leading-tight text-primary">
+                    <a href={publication.href} class="transition-colors hover:text-hover">
+                      {publication.title}
+                    </a>
+                  </h3>
+                  <p class="mt-3 text-[0.94rem] leading-7 text-primary/72">
+                    {publication.description}
+                  </p>
+                  <div class="mt-5 flex flex-wrap gap-2 text-[0.8rem] italic text-primary/62">
+                    {publication.hashtags.slice(0, 3).map((tag) => (
+                      <span>#{tag.label}</span>
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p class="mt-8 text-[0.98rem] leading-7 text-primary/66">
+            No linked publications are currently assigned to this profile.
+          </p>
+        )}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style is:inline>
+  .team-profile-photo {
+    filter: none;
+  }
+
+  .person-prose p + p {
+    margin-top: 1rem;
+  }
+</style>

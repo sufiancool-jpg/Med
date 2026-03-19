@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env
 .env.production
 
+# local WordPress runtime
+.wp-local/
+wordpress/seed/generated-*.json
+
 # macOS-specific files
 .DS_Store
 

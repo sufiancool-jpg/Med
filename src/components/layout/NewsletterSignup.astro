@@ -98,7 +98,7 @@ const newsletterSection = {
       emailInput.disabled = true;
     };
 
-    const setSuccessState = (email) => {
+    const setSuccessState = (email: string) => {
       submitButton.disabled = true;
       submitButton.textContent = "Subscribed";
       submitButton.classList.add("opacity-70", "cursor-not-allowed");
@@ -109,7 +109,7 @@ const newsletterSection = {
       statusText.classList.add("text-[#2e7d68]");
     };
 
-    const setErrorState = (message) => {
+    const setErrorState = (message: string) => {
       setIdleState();
       statusText.textContent = message;
       statusText.classList.remove("text-[#2e7d68]");

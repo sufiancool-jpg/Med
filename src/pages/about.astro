@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { Icon } from "astro-icon/components";
+import { getTeamPeople, isDefaultProfileImage } from "../lib/site-data";
 
 const metadata = {
   title: "About us",
@@ -14,8 +15,8 @@ const aboutIntro = [
   "The Platform places youth at the centre of its efforts, encouraging their participation and equipping them through training and mentorship programmes to become agents of change. It also runs executive trainings and educational activities that foster knowledge exchange, skills development, and communities of practice across academic, diplomatic, and civil society circles.",
 ];
 
-const mockLinkedInUrl = "https://www.linkedin.com/";
 const aboutVideoEmbedUrl = "https://www.youtube.com/embed/zlRl8sJU_4I?rel=0";
+const teamMembers = await getTeamPeople();
 const partnerLogos = [
   {
     src: "/Logos/European-Commission.png",
@@ -43,71 +44,6 @@ const partnerLogos = [
   },
 ];
 
-const teamMembers = [
-  {
-    name: "Luigi Narbone",
-    role: "Director",
-    image: "/Team/luigi-narbone.jpg",
-    email: "luigi.narbone@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Director with a background in EU and UN diplomacy, including roles as EU Ambassador in the Gulf and positions across multiple international contexts. His work focuses on MENA geopolitics, security, and political economy, alongside conflict dynamics and peacebuilding, bridging policy, diplomacy, and academic research.",
-  },
-  {
-    name: "Virginie Collombier",
-    role: "Scientific Coordinator",
-    image: "/Team/virginie-collombier.jpg",
-    email: "virginie.collombier@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Scientific Coordinator working on socio-political transformations and geopolitical dynamics in the MENA region, with a strong focus on Libya. Her work examines state-society relations, power structures, and political dialogue, combining research with field-based initiatives and mentoring emerging researchers.",
-  },
-  {
-    name: "Ilaria Bertocchini",
-    role: "Project Coordinator",
-    image: "/Team/ilaria-bertocchini.jpg",
-    email: "ilaria.bertocchini@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Project Coordinator specializing in project management, monitoring and evaluation (M&E) across Europe and the MENA region. She brings experience in development cooperation, institutional processes, and coordination between stakeholders in complex project environments.",
-  },
-  {
-    name: "Meryem Akabouch",
-    role: "Research Associate",
-    image: "/Team/meryem-akabouch.jpeg",
-    email: "meryem.akabouch@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Research Associate with a background in political theory and translation, focusing on political Islam, Europe-Africa relations, and social and political dynamics in the Mediterranean and Middle East, with an interest in intellectual and policy-oriented research.",
-  },
-  {
-    name: "Carlo Palleschi",
-    role: "Associate Researcher",
-    image: "/Team/carlo-palleschi.jpg",
-    email: "carlo.palleschi@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Associate Researcher and World Bank consultant working on African development and environmental issues, with experience across international organizations, research centres, and academic institutions, contributing to policy-oriented analysis and publications.",
-  },
-  {
-    name: "Meraf Villani",
-    role: "Associate Researcher",
-    image: "/Team/meraf-villani.jpg",
-    email: "meraf.villani@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Associate Researcher focusing on Africa-Europe relations, dialogue initiatives, and cultural exchange. She is actively engaged in projects that strengthen connections between regions, while contributing to discussions on African geopolitics and moderating international platforms.",
-  },
-  {
-    name: "Leon Stille",
-    role: "Energy Expert",
-    image: "/Team/leon-stille.jpg",
-    email: "leon.stille@mediterranean-platform.org",
-    linkedin: mockLinkedInUrl,
-    bio:
-      "Energy expert specializing in energy transition, hydrogen, and renewable technologies, with experience across industry, research, and education. His work combines technical expertise with project development, innovation, and policy engagement in the energy sector.",
-  },
-];
 ---
 
 <BaseLayout {metadata} hideAnnouncementBar={true}>
@@ -154,36 +90,62 @@ const teamMembers = [
         <div class="grid grid-cols-1 gap-x-8 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
           {teamMembers.map((member) => (
             <article class="about-profile-card w-full border-b border-dotted border-black/30 pb-4">
-              <img
-                src={member.image}
-                alt={member.name}
-                loading="lazy"
-                class="about-profile-image aspect-[5/6] w-full object-cover object-center"
-              />
+              <a href={member.href} class="block overflow-hidden">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  loading="lazy"
+                  class:list={[
+                    "about-profile-image aspect-[5/6] w-full",
+                    isDefaultProfileImage(member.image)
+                      ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
+                      : "object-cover object-center",
+                  ]}
+                />
+              </a>
               <div class="mt-3.5">
                 <h3 class="text-[0.98rem] font-semibold leading-tight text-foreground">
-                  {member.name}
+                  <a href={member.href} class="transition-colors hover:text-hover">
+                    {member.name}
+                  </a>
                 </h3>
                 <p class="mt-2.5 text-[0.86rem] leading-[1.68] text-muted-foreground">
-                  {member.bio}
+                  {member.shortBio}
                 </p>
-                <a
-                  href={`mailto:${member.email}`}
-                  class="mt-3.5 inline-flex text-[0.8rem] font-medium text-primary transition-colors hover:text-hover"
-                >
-                  {member.email}
-                </a>
-                <div class="mt-2 block">
+                {member.email && (
                   <a
-                    href={member.linkedin}
-                    aria-label={`${member.name} LinkedIn`}
-                    target="_blank"
-                    rel="noreferrer"
-                    class="inline-flex items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+                    href={`mailto:${member.email}`}
+                    class="mt-3.5 inline-flex text-[0.8rem] font-medium text-primary transition-colors hover:text-hover"
                   >
-                    <Icon name="lucide:linkedin" class="h-3.5 w-3.5" />
+                    {member.email}
                   </a>
-                </div>
+                )}
+                {(member.linkedinUrl || member.websiteUrl) && (
+                  <div class="mt-2 flex items-center gap-2.5">
+                    {member.linkedinUrl && (
+                      <a
+                        href={member.linkedinUrl}
+                        aria-label={`${member.name} LinkedIn`}
+                        target="_blank"
+                        rel="noreferrer"
+                        class="inline-flex items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+                      >
+                        <Icon name="lucide:linkedin" class="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                    {member.websiteUrl && (
+                      <a
+                        href={member.websiteUrl}
+                        aria-label={`${member.name} website`}
+                        target="_blank"
+                        rel="noreferrer"
+                        class="inline-flex items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+                      >
+                        <Icon name="lucide:globe" class="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </article>
           ))}

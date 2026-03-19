@@ -25,6 +25,7 @@ import SpeedInsights from "@vercel/speed-insights/astro";
 import Analytics from "@vercel/analytics/astro";
 
 import { siteConfig } from "../config/site";
+import { getAnnouncementBarSettings } from "../lib/site-data";
 
 const { title, description, ogImage, canonical, metadata, hideAnnouncementBar = false } = Astro.props;
 
@@ -33,6 +34,7 @@ const finalDescription = metadata?.description || description;
 const finalOgImage = metadata?.ogImage || ogImage;
 const finalCanonical = metadata?.canonical || canonical;
 const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
+const announcementSettings = hideAnnouncementBar ? undefined : await getAnnouncementBarSettings();
 ---
 
 <!doctype html>
@@ -88,7 +90,7 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
       >
         <slot />
       </main>
-      {!hideAnnouncementBar && <AnnouncementBar />}
+      {!hideAnnouncementBar && announcementSettings && <AnnouncementBar announcement={announcementSettings} />}
       <NewsletterSignup />
       <div class="bg-white">
         <Footer />

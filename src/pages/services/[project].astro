@@ -1,35 +1,56 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
-import { projectArticles, projectPages, projectStages } from "../../data/projects";
+import {
+  isDefaultProfileImage,
+  getProjects,
+  getProjectBySlug,
+  getPublicationsForProject,
+  projectStages,
+} from "../../lib/site-data";
 
 export async function getStaticPaths() {
-  return projectPages.map((project) => ({
+  const projects = await getProjects();
+
+  return projects.map((project) => ({
     params: { project: project.slug },
-    props: { project },
   }));
 }
 
-const { project } = Astro.props;
+const slug = Astro.params.project ?? "";
+const project = await getProjectBySlug(slug);
+
+if (!project) {
+  throw new Error(`Project not found for slug "${slug}"`);
+}
+
 const currentStageIndex = Math.max(projectStages.indexOf(project.currentStage), 0);
 const timelineProgress =
-  projectStages.length > 1
-    ? (currentStageIndex / (projectStages.length - 1)) * 100
-    : 0;
+  projectStages.length > 1 ? (currentStageIndex / (projectStages.length - 1)) * 100 : 0;
 const stageItems = projectStages.map((stage, index) => ({
   stage,
   isActive: index <= currentStageIndex,
   isCurrent: index === currentStageIndex,
 }));
+const leadUsesDefaultImage = isDefaultProfileImage(project.lead.image);
 
-const relatedArticles = projectArticles
-  .filter((article) => article.platform === project.title)
-  .map((article) => ({
-    ...article,
-    primaryLabel: article.platform,
-    type: "Publication",
-    typeLabel: "Publication",
-  }));
+const relatedArticles = (await getPublicationsForProject(project.slug)).map((publication) => ({
+  title: publication.title,
+  summary: publication.description,
+  author: publication.author,
+  date: new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(publication.pubDate),
+  topic: publication.topics[0] ?? "General",
+  hashtags: publication.hashtags.map((tag) => tag.label),
+  image: publication.image ?? "/blog/welcome.webp",
+  imageAlt: publication.title,
+  href: publication.href,
+  primaryLabel: project.title,
+  typeLabel: publication.outputType,
+}));
 
 const metadata = {
   title: project.title,
@@ -94,12 +115,37 @@ const metadata = {
               Program Lead
             </p>
             <div class="mt-3">
-              <img
-                src={project.lead.image}
-                alt={project.lead.name}
-                class="aspect-[4/5] w-full object-cover grayscale"
-              />
-              <p class="mt-3 text-[1rem] font-semibold text-primary">{project.lead.name}</p>
+              {project.lead.linked && project.lead.href ? (
+                <a href={project.lead.href} class="group/lead block">
+                  <img
+                    src={project.lead.image}
+                    alt={project.lead.name}
+                    class:list={[
+                      "aspect-[4/5] w-full transition-transform duration-300 group-hover/lead:scale-[1.01]",
+                      leadUsesDefaultImage
+                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 grayscale opacity-75"
+                        : "object-cover",
+                    ]}
+                  />
+                  <p class="mt-3 text-[1rem] font-semibold text-primary transition-colors duration-200 group-hover/lead:text-hover">
+                    {project.lead.name}
+                  </p>
+                </a>
+              ) : (
+                <>
+                  <img
+                    src={project.lead.image}
+                    alt={project.lead.name}
+                    class:list={[
+                      "aspect-[4/5] w-full",
+                      leadUsesDefaultImage
+                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 grayscale opacity-75"
+                        : "object-cover",
+                    ]}
+                  />
+                  <p class="mt-3 text-[1rem] font-semibold text-primary">{project.lead.name}</p>
+                </>
+              )}
               <p class="mt-1 text-[0.88rem] leading-6 text-primary/66">{project.lead.role}</p>
             </div>
           </section>
@@ -110,7 +156,18 @@ const metadata = {
             </p>
             <ul class="mt-3 space-y-2 text-[0.92rem] leading-6 text-primary/72">
               {project.team.map((member) => (
-                <li>{member}</li>
+                <li>
+                  {member.linked && member.href ? (
+                    <a
+                      href={member.href}
+                      class="transition-colors duration-200 hover:text-hover hover:underline underline-offset-4"
+                    >
+                      {member.name}
+                    </a>
+                  ) : (
+                    <span>{member.name}</span>
+                  )}
+                </li>
               ))}
             </ul>
           </section>
@@ -125,7 +182,7 @@ const metadata = {
                   <img
                     src={donor.logo}
                     alt={donor.name}
-                    class="max-h-9 w-auto object-contain grayscale"
+                    class="max-h-9 w-auto object-contain"
                     loading="lazy"
                   />
                 </div>
@@ -134,14 +191,13 @@ const metadata = {
           </section>
         </aside>
 
-        <div class="hidden lg:block border-l border-dotted border-black/20"></div>
+        <div class="hidden border-l border-dotted border-black/20 lg:block"></div>
 
         <div>
-          <div class="max-w-4xl space-y-5 text-[1rem] leading-8 text-primary/74">
-            {project.overview.map((paragraph) => (
-              <p>{paragraph}</p>
-            ))}
-          </div>
+          <div
+            class="project-prose max-w-4xl text-[1rem] leading-8 text-primary/74"
+            set:html={project.contentHtml}
+          ></div>
 
           <section class="mt-10">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
@@ -189,7 +245,13 @@ const metadata = {
       resultsId={`${project.slug}-results`}
       searchPlaceholder={`Search ${project.title} articles`}
       emptyMessage={`No ${project.title} articles match the current search and filter combination.`}
-      typeOptions={["Publication"]}
+      typeOptions={["Publication", "Policy Paper", "Research Report", "Policy Brief", "E-Book", "Insights", "Pod-Cast"]}
     />
   </div>
 </BaseLayout>
+
+<style is:inline>
+  .project-prose > * + * {
+    margin-top: 1.15rem;
+  }
+</style>

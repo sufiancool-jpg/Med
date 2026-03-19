@@ -1,67 +1,66 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Schema from "../../components/seo/Schema.astro";
+import AudioPreviewPlayer from "../../components/widgets/AudioPreviewPlayer.astro";
 import { Icon } from "astro-icon/components";
-import { getCollection, render } from "astro:content";
+import { render } from "astro:content";
+import {
+  DEFAULT_PROFILE_IMAGE,
+  getPublicationBySlug,
+  getPublications,
+  isDefaultProfileImage,
+} from "../../lib/site-data";
 
 export async function getStaticPaths() {
-  const blog = await getCollection("blog");
-  return blog.map((post) => ({
-    params: { slug: post.id },
-    props: { post },
+  const publications = await getPublications();
+
+  return publications.map((publication) => ({
+    params: { slug: publication.slug },
   }));
 }
 
-const { post } = Astro.props;
-const { Content, remarkPluginFrontmatter } = await render(post);
-const {
-  title,
-  description,
-  pubDate,
-  author,
-  authorRole,
-  authorImage,
-  image,
-  category,
-  tags = [],
-  downloadHref,
-  downloadLabel,
-} = post.data;
+const slug = Astro.params.slug ?? "";
+const publication = await getPublicationBySlug(slug);
 
-const formattedDate = pubDate.toLocaleDateString("en-US", {
+if (!publication) {
+  throw new Error(`Publication not found for slug "${slug}"`);
+}
+
+let LocalContent = undefined;
+let readingTime = "";
+
+if (publication.source === "local") {
+  const { Content, remarkPluginFrontmatter } = await render(publication.localEntry);
+  LocalContent = Content;
+  readingTime = remarkPluginFrontmatter?.minutesRead
+    ? `${Math.ceil(remarkPluginFrontmatter.minutesRead)} min read`
+    : "";
+}
+
+const formattedDate = publication.pubDate.toLocaleDateString("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
 });
 
-const readingTime = remarkPluginFrontmatter?.minutesRead
-  ? `${Math.ceil(remarkPluginFrontmatter.minutesRead)} min read`
-  : "";
-
-const publicationType = category ?? "Publication";
-const topicTags = tags.map((tag: string) =>
-  tag
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" "),
-);
-const authorInitials = author
-  .split(/\s+/)
-  .filter(Boolean)
-  .slice(0, 2)
-  .map((part) => part[0]?.toUpperCase() ?? "")
-  .join("");
-const resolvedAuthorRole = authorRole ?? `${publicationType} contributor`;
+const resolvedAuthorRole = publication.authorRole || `${publication.outputType} contributor`;
+const isPodcast = publication.outputTypeSlug === "pod-cast";
+const podcastAudioHref = publication.audioHref || (isPodcast ? publication.downloadHref : undefined);
+const fileDownloadHref =
+  publication.downloadHref && publication.downloadHref !== podcastAudioHref
+    ? publication.downloadHref
+    : undefined;
 const resolvedDownloadLabel =
-  downloadLabel ??
-  (downloadHref?.toLowerCase().endsWith(".pdf")
+  publication.downloadLabel ||
+  (fileDownloadHref?.toLowerCase().endsWith(".pdf")
     ? "Download PDF"
     : "Download publication");
+const authorProfileHref = publication.authorPerson?.href;
 
 const metadata = {
-  title,
-  description,
-  ogImage: image,
+  title: publication.title,
+  description: publication.description,
+  ogImage: publication.image,
 };
 ---
 
@@ -69,11 +68,11 @@ const metadata = {
   <Schema
     type="BlogPosting"
     data={{
-      title,
-      description,
-      image,
-      pubDate,
-      author,
+      title: publication.title,
+      description: publication.description,
+      image: publication.image,
+      pubDate: publication.pubDate,
+      author: publication.author,
       url: Astro.url.href,
     }}
   />
@@ -85,10 +84,10 @@ const metadata = {
           <div class="max-w-5xl">
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/60">
               <a
-                href={`/blog/category/${encodeURIComponent(publicationType)}`}
+                href={`/blog/category/${encodeURIComponent(publication.outputTypeSlug)}`}
                 class="transition-colors hover:text-hover"
               >
-                {publicationType}
+                {publication.outputType}
               </a>
               <span aria-hidden="true" class="text-primary/35">/</span>
               <span>{formattedDate}</span>
@@ -101,18 +100,18 @@ const metadata = {
             </div>
 
             <h1 class="mt-4 text-[clamp(1.4rem,3.5vw,2.9rem)] font-bold leading-[0.96] tracking-[-0.035em] text-primary">
-              {title}
+              {publication.title}
             </h1>
 
             <p class="mt-5 max-w-4xl text-[1.05rem] italic leading-8 text-primary/74 md:text-[1.18rem]">
-              {description}
+              {publication.description}
             </p>
 
-            {downloadHref && (
+            {!isPodcast && publication.downloadHref && (
               <div class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.98rem] italic text-primary/78">
                 <span>To access the full publication, use the publication file here</span>
                 <a
-                  href={downloadHref}
+                  href={publication.downloadHref}
                   target="_blank"
                   rel="noreferrer"
                   class="font-semibold not-italic text-hover transition-colors hover:text-primary"
@@ -121,11 +120,25 @@ const metadata = {
                 </a>
               </div>
             )}
+
+            {isPodcast && podcastAudioHref && (
+              <AudioPreviewPlayer
+                id="podcast-player"
+                audioSrc={podcastAudioHref}
+                title={publication.title}
+                initialDuration="00:24"
+                containerClass="mt-6 max-w-4xl"
+              />
+            )}
           </div>
 
-          {image && (
+          {publication.image && (
             <div class="mt-8 overflow-hidden border border-black/12 bg-white">
-              <img src={image} alt={title} class="aspect-[5/4] w-full object-cover" />
+              <img
+                src={publication.image}
+                alt={publication.title}
+                class="aspect-[5/4] w-full object-cover"
+              />
             </div>
           )}
 
@@ -133,7 +146,11 @@ const metadata = {
             id="publication-body"
             class="publication-prose mt-10 max-w-none text-[1rem] leading-8 text-primary/78"
           >
-            <Content />
+            {publication.source === "wordpress" ? (
+              <Fragment set:html={publication.contentHtml}></Fragment>
+            ) : (
+              LocalContent && <LocalContent />
+            )}
           </div>
         </article>
 
@@ -145,20 +162,25 @@ const metadata = {
               </h2>
               <div class="mt-4 border-t border-black/10 pt-4">
                 <div class="flex items-start gap-4">
-                  {authorImage ? (
-                    <img
-                      src={authorImage}
-                      alt={author}
-                      class="h-20 w-20 shrink-0 object-cover grayscale"
-                    />
-                  ) : (
-                    <div class="flex h-20 w-20 shrink-0 items-center justify-center bg-[#eef2ef] text-[1.35rem] font-semibold uppercase tracking-[0.08em] text-primary">
-                      {authorInitials}
-                    </div>
-                  )}
+                  <img
+                    src={publication.authorImage || DEFAULT_PROFILE_IMAGE}
+                    alt={publication.author}
+                    class:list={[
+                      "h-20 w-20 shrink-0",
+                      isDefaultProfileImage(publication.authorImage)
+                        ? "border border-black/10 bg-[#eef2ef] object-contain p-2.5 grayscale opacity-75"
+                        : "object-cover grayscale",
+                    ]}
+                  />
                   <div class="min-w-0">
                     <p class="text-[1.4rem] font-semibold leading-tight text-primary">
-                      {author}
+                      {authorProfileHref ? (
+                        <a href={authorProfileHref} class="transition-colors hover:text-hover">
+                          {publication.author}
+                        </a>
+                      ) : (
+                        publication.author
+                      )}
                     </p>
                     <p class="mt-2 text-[1rem] leading-7 text-primary/72">
                       {resolvedAuthorRole}
@@ -167,6 +189,60 @@ const metadata = {
                 </div>
               </div>
             </section>
+
+            {publication.contributors.length > 0 && (
+              <section class="border-t border-black/10 pt-6">
+                <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                  People involved
+                </h2>
+                <div class="mt-5 grid gap-3">
+                  {publication.contributors.map((person) => (
+                    <div class="border border-black/10 px-3 py-3">
+                      {person.href ? (
+                        <a href={person.href} class="group flex items-center gap-3">
+                          <img
+                            src={person.image || DEFAULT_PROFILE_IMAGE}
+                            alt={person.name}
+                            class:list={[
+                              "h-10 w-10 shrink-0 transition",
+                              isDefaultProfileImage(person.image)
+                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 grayscale opacity-75"
+                                : "object-cover grayscale group-hover:grayscale-0",
+                            ]}
+                          />
+                          <div class="min-w-0">
+                            <p class="text-[0.9rem] font-medium leading-tight text-primary transition-colors group-hover:text-hover">
+                              {person.name}
+                            </p>
+                            {person.role && (
+                              <p class="mt-1 text-[0.75rem] leading-5 text-primary/58">
+                                {person.role}
+                              </p>
+                            )}
+                          </div>
+                        </a>
+                      ) : (
+                        <div class="flex items-center gap-3">
+                          <img
+                            src={person.image || DEFAULT_PROFILE_IMAGE}
+                            alt={person.name}
+                            class:list={[
+                              "h-10 w-10 shrink-0",
+                              isDefaultProfileImage(person.image)
+                                ? "border border-black/10 bg-[#eef2ef] object-contain p-1 grayscale opacity-75"
+                                : "object-cover grayscale",
+                            ]}
+                          />
+                          <p class="text-[0.9rem] font-medium leading-tight text-primary">
+                            {person.name}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section class="border-t border-black/10 pt-6">
               <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
@@ -177,16 +253,16 @@ const metadata = {
                   {formattedDate}
                 </p>
                 <p class="text-[0.85rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-                  {publicationType}
+                  {publication.outputType}
                 </p>
-                {topicTags.length > 0 && (
+                {publication.hashtags.length > 0 && (
                   <div class="flex flex-wrap gap-x-3 gap-y-2 text-[1rem] italic leading-7 text-primary/72">
-                    {tags.map((tag, index) => (
+                    {publication.hashtags.map((tag) => (
                       <a
-                        href={`/blog/tags/${encodeURIComponent(tag)}`}
+                        href={`/blog/tags/${encodeURIComponent(tag.slug)}`}
                         class="transition-colors hover:text-hover"
                       >
-                        #{topicTags[index]}
+                        #{tag.label}
                       </a>
                     ))}
                   </div>
@@ -196,16 +272,39 @@ const metadata = {
 
             <section class="border-t border-black/10 pt-6">
               <div class="grid gap-3">
-                <a
-                  href="#publication-body"
-                  class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
-                >
-                  <span>Open publication</span>
-                  <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
-                </a>
-                {downloadHref && (
+                {isPodcast && podcastAudioHref && (
                   <a
-                    href={downloadHref}
+                    href="#podcast-player"
+                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                  >
+                    <span>Listen to episode</span>
+                    <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
+                  </a>
+                )}
+                {!isPodcast && publication.downloadHref && (
+                  <a
+                    href={publication.downloadHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                  >
+                    <span>{resolvedDownloadLabel}</span>
+                    <Icon name="lucide:download" class="h-4 w-4" />
+                  </a>
+                )}
+                {!isPodcast && !publication.downloadHref && (
+                  <a
+                    href="#publication-body"
+                    class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
+                  >
+                    <span>View publication</span>
+                    <Icon name="lucide:arrow-down-right" class="h-4 w-4" />
+                  </a>
+                )}
+                {fileDownloadHref && (
+                  <a
+                    href={fileDownloadHref}
                     target="_blank"
                     rel="noreferrer"
                     download
@@ -257,38 +356,5 @@ const metadata = {
     text-decoration: underline;
     text-decoration-color: rgba(21, 36, 58, 0.24);
     text-underline-offset: 0.22em;
-  }
-
-  .publication-prose a:hover {
-    color: #42b09a;
-    text-decoration-color: rgba(66, 176, 154, 0.42);
-  }
-
-  .publication-prose blockquote {
-    margin-top: 1.5rem;
-    border-left: 1px solid rgba(10, 18, 32, 0.18);
-    padding-left: 1.2rem;
-    font-style: italic;
-    color: rgba(10, 18, 32, 0.74);
-  }
-
-  .publication-prose code {
-    background: rgba(10, 18, 32, 0.05);
-    padding: 0.12rem 0.34rem;
-    font-size: 0.94em;
-  }
-
-  .publication-prose pre {
-    margin-top: 1.5rem;
-    overflow-x: auto;
-    background: #0a1220;
-    padding: 1.1rem 1.2rem;
-    color: #f8fafc;
-  }
-
-  .publication-prose pre code {
-    background: transparent;
-    padding: 0;
-    color: inherit;
   }
 </style>

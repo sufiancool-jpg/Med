@@ -15,6 +15,7 @@ interface Props {
   class?: string;
   autoplayMs?: number;
   fitParentHeight?: boolean;
+  contentPosition?: "center" | "bottom";
 }
 
 const {
@@ -22,6 +23,7 @@ const {
   class: className = "",
   autoplayMs = 0,
   fitParentHeight = false,
+  contentPosition = "center",
 } = Astro.props as Props;
 
 const isSingleItem = items.length === 1;
@@ -96,7 +98,14 @@ const getTitleSizeClass = (title: string) => {
                 loading="lazy"
               />
               <div class="absolute inset-0 bg-foreground/35"></div>
-              <div class="pointer-events-none absolute inset-0 z-30 flex items-center justify-start px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5">
+              <div
+                class:list={[
+                  "pointer-events-none absolute inset-0 z-30 flex justify-start",
+                  contentPosition === "bottom"
+                    ? "items-end px-5 pt-5 pb-12 sm:px-6 sm:pt-6 sm:pb-14 md:px-8 md:pt-8 md:pb-16"
+                    : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
+                ]}
+              >
                 <div class="max-w-[86%] text-left">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (

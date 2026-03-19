@@ -218,21 +218,22 @@ const socialLinks = siteConfig.socialLinks;
 
   aboutSectionLinks.forEach((link) => {
     link.addEventListener("click", (event) => {
+      const mouseEvent = event as MouseEvent;
       const target = (link as HTMLAnchorElement).dataset.aboutTarget;
 
       if (
         !target ||
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
+        mouseEvent.defaultPrevented ||
+        mouseEvent.button !== 0 ||
+        mouseEvent.metaKey ||
+        mouseEvent.ctrlKey ||
+        mouseEvent.shiftKey ||
+        mouseEvent.altKey
       ) {
         return;
       }
 
-      event.preventDefault();
+      mouseEvent.preventDefault();
       closeMobileMenu();
 
       if (normalizePath(window.location.pathname) === "/about") {

@@ -1,0 +1,93 @@
+[
+  {
+    "slug": "luigi-narbone",
+    "title": "Luigi Narbone",
+    "menuOrder": 1,
+    "excerpt": "Director with a background in EU and UN diplomacy, including roles as EU Ambassador in the Gulf and positions across multiple international contexts. His work focuses on MENA geopolitics, security, and political economy, alongside conflict dynamics and peacebuilding, bridging policy, diplomacy, and academic research.",
+    "contentHtml": "<p>Director with a background in EU and UN diplomacy, including roles as EU Ambassador in the Gulf and positions across multiple international contexts.</p><p>His work focuses on MENA geopolitics, security, and political economy, alongside conflict dynamics and peacebuilding, bridging policy, diplomacy, and academic research.</p>",
+    "role": "Director",
+    "email": "luigi.narbone@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/luigi-narbone.jpg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "virginie-collombier",
+    "title": "Virginie Collombier",
+    "menuOrder": 2,
+    "excerpt": "Scientific Coordinator working on socio-political transformations and geopolitical dynamics in the MENA region, with a strong focus on Libya. Her work examines state-society relations, power structures, and political dialogue, combining research with field-based initiatives and mentoring emerging researchers.",
+    "contentHtml": "<p>Scientific Coordinator working on socio-political transformations and geopolitical dynamics in the MENA region, with a strong focus on Libya.</p><p>Her work examines state-society relations, power structures, and political dialogue, combining research with field-based initiatives and mentoring emerging researchers.</p>",
+    "role": "Scientific Coordinator",
+    "email": "virginie.collombier@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/virginie-collombier.jpg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "ilaria-bertocchini",
+    "title": "Ilaria Bertocchini",
+    "menuOrder": 3,
+    "excerpt": "Project Coordinator specializing in project management, monitoring and evaluation (M&E) across Europe and the MENA region. She brings experience in development cooperation, institutional processes, and coordination between stakeholders in complex project environments.",
+    "contentHtml": "<p>Project Coordinator specializing in project management, monitoring and evaluation (M&E) across Europe and the MENA region.</p><p>She brings experience in development cooperation, institutional processes, and coordination between stakeholders in complex project environments.</p>",
+    "role": "Project Coordinator",
+    "email": "ilaria.bertocchini@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/ilaria-bertocchini.jpg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "meryem-akabouch",
+    "title": "Meryem Akabouch",
+    "menuOrder": 4,
+    "excerpt": "Research Associate with a background in political theory and translation, focusing on political Islam, Europe-Africa relations, and social and political dynamics in the Mediterranean and Middle East, with an interest in intellectual and policy-oriented research.",
+    "contentHtml": "<p>Research Associate with a background in political theory and translation, focusing on political Islam, Europe-Africa relations, and social and political dynamics in the Mediterranean and Middle East.</p><p>Her work combines intellectual inquiry with policy-oriented research and regional analysis.</p>",
+    "role": "Research Associate",
+    "email": "meryem.akabouch@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/meryem-akabouch.jpeg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "carlo-palleschi",
+    "title": "Carlo Palleschi",
+    "menuOrder": 5,
+    "excerpt": "Associate Researcher and World Bank consultant working on African development and environmental issues, with experience across international organizations, research centres, and academic institutions, contributing to policy-oriented analysis and publications.",
+    "contentHtml": "<p>Associate Researcher and World Bank consultant working on African development and environmental issues, with experience across international organizations, research centres, and academic institutions.</p><p>He contributes to policy-oriented analysis, publications, and cross-regional project development.</p>",
+    "role": "Associate Researcher",
+    "email": "carlo.palleschi@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/carlo-palleschi.jpg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "meraf-villani",
+    "title": "Meraf Villani",
+    "menuOrder": 6,
+    "excerpt": "Associate Researcher focusing on Africa-Europe relations, dialogue initiatives, and cultural exchange. She is actively engaged in projects that strengthen connections between regions, while contributing to discussions on African geopolitics and moderating international platforms.",
+    "contentHtml": "<p>Associate Researcher focusing on Africa-Europe relations, dialogue initiatives, and cultural exchange.</p><p>She is actively engaged in projects that strengthen connections between regions, while contributing to discussions on African geopolitics and moderating international platforms.</p>",
+    "role": "Associate Researcher",
+    "email": "meraf.villani@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/meraf-villani.jpg",
+    "showOnTeamPage": true
+  },
+  {
+    "slug": "leon-stille",
+    "title": "Leon Stille",
+    "menuOrder": 7,
+    "excerpt": "Energy expert specializing in energy transition, hydrogen, and renewable technologies, with experience across industry, research, and education. His work combines technical expertise with project development, innovation, and policy engagement in the energy sector.",
+    "contentHtml": "<p>Energy expert specializing in energy transition, hydrogen, and renewable technologies, with experience across industry, research, and education.</p><p>His work combines technical expertise with project development, innovation, and policy engagement in the energy sector.</p>",
+    "role": "Energy Expert",
+    "email": "leon.stille@mediterranean-platform.org",
+    "linkedinUrl": "https://www.linkedin.com/",
+    "websiteUrl": "",
+    "imageUrl": "/Team/leon-stille.jpg",
+    "showOnTeamPage": true
+  }
+]

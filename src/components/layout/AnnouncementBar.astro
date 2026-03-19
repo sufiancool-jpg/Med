@@ -1,11 +1,14 @@
 ---
-const announcement = {
-  label: "Next talk",
-  date: "May 20",
-  title: "African Talks: South African Foreign Policy",
-  ctaText: "Register",
-  ctaHref: "/widgets",
-};
+import type { AnnouncementBarSettings } from "../../lib/site-data";
+
+interface Props {
+  announcement: AnnouncementBarSettings;
+}
+
+const { announcement } = Astro.props;
+const resolvedText = announcement.text?.trim() || "Announcement";
+const resolvedLinkLabel = announcement.linkLabel?.trim() || "Learn more";
+const resolvedLinkHref = announcement.linkHref?.trim() || "/";
 ---
 
 <section
@@ -13,22 +16,16 @@ const announcement = {
   style="--announcement-bar-bg:#42b09a;background-color:var(--announcement-bar-bg);"
   class="fixed inset-x-0 bottom-0 z-40 h-12 text-white/90 transition-[background-color,opacity] duration-500 ease-out md:h-14"
 >
-  <div class="mx-auto flex h-full max-w-6xl flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 text-center sm:px-6 md:gap-x-5 lg:px-8">
-    <p class="shrink-0 text-[0.88rem] font-extrabold leading-none tracking-[0.08em] uppercase md:text-[1rem]">
-      {announcement.label}
-    </p>
-    <p class="shrink-0 text-[0.9rem] font-bold leading-none md:text-[1rem]">
-      {announcement.date}
-    </p>
-    <p class="min-w-0 truncate text-[0.95rem] font-bold leading-none md:text-[1.05rem]">
-      {announcement.title}
+  <div class="mx-auto flex h-full max-w-6xl items-center justify-center gap-3 px-4 text-center sm:px-6 md:gap-5 lg:px-8">
+    <p class="min-w-0 flex-1 truncate text-[0.9rem] font-bold leading-none md:text-[1rem]">
+      {resolvedText}
     </p>
     <a
-      href={announcement.ctaHref}
+      href={resolvedLinkHref}
       data-announcement-cta
       class="inline-flex shrink-0 cursor-pointer items-center border border-white/90 bg-white/10 px-3 py-1 text-[0.82rem] font-semibold leading-none tracking-[0.06em] uppercase text-white transition-colors hover:border-white hover:bg-white md:text-[0.88rem]"
     >
-      {announcement.ctaText}
+      {resolvedLinkLabel}
     </a>
   </div>
 </section>

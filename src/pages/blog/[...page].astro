@@ -1,26 +1,16 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
-import { getCollection } from "astro:content";
+import { getPublications } from "../../lib/site-data";
 import type { GetStaticPathsOptions } from "astro";
 
 export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
-  const blogEntries = await getCollection("blog");
-  const sortedPosts = blogEntries
-    .filter((post) => post.data && post.data.pubDate)
-    .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-
-  return paginate(sortedPosts, { pageSize: Math.max(sortedPosts.length, 1) });
+  const publications = await getPublications();
+  return paginate(publications, { pageSize: Math.max(publications.length, 1) });
 }
 
 const { page } = Astro.props;
-const blog = page.data;
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
+const publications = page.data;
 
 const publicationTypeOptions = [
   "Policy Paper",
@@ -28,40 +18,26 @@ const publicationTypeOptions = [
   "Policy Brief",
   "E-Book",
   "Pod-Cast",
-  "Archive & Commentary",
+  "Insights",
 ];
 
-const normalizePublicationType = (value?: string) => {
-  if (value === "Podcast" || value === "Pod-Cast") {
-    return "Pod-Cast";
-  }
-
-  if (value === "Series") {
-    return "Archive & Commentary";
-  }
-
-  return value ?? "Archive & Commentary";
-};
-
-const formatTopic = (value?: string) =>
-  value
-    ?.split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ") ?? "General";
-
-const publicationArticles = blog.map((post) => ({
-  title: post.data.title,
-  summary: post.data.description,
-  author: post.data.author,
-  date: dateFormatter.format(post.data.pubDate),
-  topic: formatTopic(post.data.tags?.[0]),
-  type: normalizePublicationType(post.data.category),
+const publicationArticles = publications.map((publication) => ({
+  title: publication.title,
+  summary: publication.description,
+  author: publication.author,
+  date: new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(publication.pubDate),
+  topic: publication.topics[0] ?? "General",
+  type: publication.outputType,
   primaryLabel: "Publication",
-  typeLabel: normalizePublicationType(post.data.category),
-  hashtags: post.data.tags ?? [],
-  image: post.data.image ?? "/blog/welcome.webp",
-  imageAlt: post.data.title,
-  href: `/blog/${post.id}`,
+  typeLabel: publication.outputType,
+  hashtags: publication.hashtags.map((tag) => tag.label),
+  image: publication.image ?? "/blog/welcome.webp",
+  imageAlt: publication.title,
+  href: publication.href,
 }));
 
 const metadata = {
