@@ -1067,7 +1067,7 @@ const loadLocalPublicationDetails = async (): Promise<Map<string, PublicationDet
 
 export const getProjects = async (): Promise<ProjectSummary[]> => {
   const wordpressProjects = await loadWordPressProjects();
-  if (wordpressProjects) {
+  if (wordpressProjects && wordpressProjects.length > 0) {
     return wordpressProjects;
   }
 
@@ -1139,7 +1139,7 @@ export const getProjects = async (): Promise<ProjectSummary[]> => {
 
 export const getPeople = async (): Promise<PersonSummary[]> => {
   const wordpressPeople = await loadWordPressPeople();
-  if (wordpressPeople) {
+  if (wordpressPeople && wordpressPeople.length > 0) {
     return wordpressPeople;
   }
 
@@ -1163,7 +1163,7 @@ export const getProjectBySlug = async (slug: string) => {
 
 export const getPublications = async (): Promise<PublicationSummary[]> => {
   const wordpressPublications = await loadWordPressPublications();
-  if (wordpressPublications) {
+  if (wordpressPublications && wordpressPublications.length > 0) {
     return wordpressPublications;
   }
 
@@ -1304,7 +1304,15 @@ export const getPublicationsForPerson = async (personSlug: string) => {
 
 export const getHomepageSelections = async (): Promise<HomepageSelections> => {
   const wordpressSelections = await loadWordPressHomepageSelections();
-  if (wordpressSelections) {
+  if (
+    wordpressSelections &&
+    (
+      wordpressSelections.sliderPublications.length > 0 ||
+      wordpressSelections.latestPublications.length > 0 ||
+      Boolean(wordpressSelections.featuredArticle) ||
+      Boolean(wordpressSelections.featuredPodcast)
+    )
+  ) {
     return wordpressSelections;
   }
 
