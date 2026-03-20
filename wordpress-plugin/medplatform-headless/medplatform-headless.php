@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Author: Codex
  */
 
@@ -139,6 +139,17 @@ function mp_headless_sanitize_hex_color_value($value) {
 	$sanitized = sanitize_hex_color(wp_unslash($value));
 
 	return is_string($sanitized) ? $sanitized : '';
+}
+
+function mp_headless_sanitize_secret_value($value) {
+	return trim(preg_replace('/[\r\n]+/', '', (string) wp_unslash($value)));
+}
+
+function mp_headless_sanitize_repo_path_value($value) {
+	$value = trim((string) wp_unslash($value));
+	$value = preg_replace('#/+#', '/', $value);
+
+	return ltrim($value, '/');
 }
 
 function mp_headless_trim_words($value, $limit) {
@@ -3788,10 +3799,65 @@ function mp_headless_register_settings() {
 			'default'           => '',
 		)
 	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_repo_owner',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_repo_name',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_branch',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'sanitize_text_field',
+			'default'           => 'main',
+		)
+	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_token',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'mp_headless_sanitize_secret_value',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_trigger_path',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'mp_headless_sanitize_repo_path_value',
+			'default'           => '.hostinger/deploy-trigger.json',
+		)
+	);
 }
 add_action('admin_init', 'mp_headless_register_settings');
 
 function mp_headless_render_settings_page() {
+	$github_repo_owner  = (string) get_option('mp_headless_github_repo_owner', '');
+	$github_repo_name   = (string) get_option('mp_headless_github_repo_name', '');
+	$github_branch      = (string) get_option('mp_headless_github_branch', 'main');
+	$github_token       = (string) get_option('mp_headless_github_token', '');
+	$github_trigger_path = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e('Med Platform Headless', 'medplatform-headless'); ?></h1>
@@ -3810,6 +3876,44 @@ function mp_headless_render_settings_page() {
 					<td>
 						<input id="mp_headless_build_hook_url" type="url" class="regular-text code" name="mp_headless_build_hook_url" value="<?php echo esc_attr(get_option('mp_headless_build_hook_url', '')); ?>" />
 						<p class="description"><?php esc_html_e('Optional. When set, WordPress will POST to this URL after people, project, publication, homepage, or taxonomy changes.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row" colspan="2" style="padding-bottom:0;">
+						<h2 style="margin:0;"><?php esc_html_e('GitHub Auto Deploy', 'medplatform-headless'); ?></h2>
+						<p class="description" style="margin:6px 0 0;"><?php esc_html_e('Optional. When configured, WordPress will commit a tiny deploy-trigger file to GitHub after CMS changes. Hostinger auto-deployment will then redeploy the frontend from the updated branch.', 'medplatform-headless'); ?></p>
+					</th>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_github_repo_owner"><?php esc_html_e('GitHub Repo Owner', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_github_repo_owner" type="text" class="regular-text code" name="mp_headless_github_repo_owner" value="<?php echo esc_attr($github_repo_owner); ?>" placeholder="sufiancool-jpg" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_github_repo_name"><?php esc_html_e('GitHub Repo Name', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_github_repo_name" type="text" class="regular-text code" name="mp_headless_github_repo_name" value="<?php echo esc_attr($github_repo_name); ?>" placeholder="Med" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_github_branch"><?php esc_html_e('GitHub Branch', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_github_branch" type="text" class="regular-text code" name="mp_headless_github_branch" value="<?php echo esc_attr($github_branch); ?>" placeholder="main" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_github_token"><?php esc_html_e('GitHub Token', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_github_token" type="password" class="regular-text code" name="mp_headless_github_token" value="<?php echo esc_attr($github_token); ?>" autocomplete="new-password" />
+						<p class="description"><?php esc_html_e('Use a GitHub fine-grained personal access token with Contents read/write access to this repository.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_github_trigger_path"><?php esc_html_e('Trigger File Path', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_github_trigger_path" type="text" class="regular-text code" name="mp_headless_github_trigger_path" value="<?php echo esc_attr($github_trigger_path); ?>" placeholder=".hostinger/deploy-trigger.json" />
+						<p class="description"><?php esc_html_e('WordPress updates this file in GitHub to force a Hostinger redeploy. Leave the default unless you have a reason to change it.', 'medplatform-headless'); ?></p>
 					</td>
 				</tr>
 			</table>
@@ -3963,26 +4067,126 @@ add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');
 
 function mp_headless_trigger_build($reason) {
 	$hook = get_option('mp_headless_build_hook_url', '');
-	if (! $hook) {
+	if ($hook) {
+		wp_remote_post(
+			$hook,
+			array(
+				'timeout' => 5,
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode(
+					array(
+						'reason'    => $reason,
+						'site'      => mp_headless_get_frontend_url('/'),
+						'timestamp' => time(),
+					)
+				),
+			)
+		);
+	}
+
+	mp_headless_trigger_github_deploy($reason);
+}
+
+function mp_headless_get_github_deploy_settings() {
+	return array(
+		'owner'        => trim((string) get_option('mp_headless_github_repo_owner', '')),
+		'repo'         => trim((string) get_option('mp_headless_github_repo_name', '')),
+		'branch'       => trim((string) get_option('mp_headless_github_branch', 'main')) ?: 'main',
+		'token'        => trim((string) get_option('mp_headless_github_token', '')),
+		'trigger_path' => trim((string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json')) ?: '.hostinger/deploy-trigger.json',
+	);
+}
+
+function mp_headless_trigger_github_deploy($reason) {
+	$settings = mp_headless_get_github_deploy_settings();
+
+	if ($settings['owner'] === '' || $settings['repo'] === '' || $settings['token'] === '') {
 		return;
 	}
 
-	wp_remote_post(
-		$hook,
+	$last_trigger_at = (int) get_option('mp_headless_github_last_trigger_at', 0);
+	if ($last_trigger_at > 0 && (time() - $last_trigger_at) < 30) {
+		return;
+	}
+
+	$encoded_path_parts = array_map('rawurlencode', explode('/', $settings['trigger_path']));
+	$contents_url       = sprintf(
+		'https://api.github.com/repos/%s/%s/contents/%s',
+		rawurlencode($settings['owner']),
+		rawurlencode($settings['repo']),
+		implode('/', $encoded_path_parts)
+	);
+	$headers            = array(
+		'Accept'               => 'application/vnd.github+json',
+		'Authorization'        => 'Bearer ' . $settings['token'],
+		'X-GitHub-Api-Version' => '2022-11-28',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.1',
+	);
+	$existing_sha       = '';
+	$lookup_response    = wp_remote_get(
+		add_query_arg('ref', $settings['branch'], $contents_url),
 		array(
-			'timeout' => 5,
-			'headers' => array(
-				'Content-Type' => 'application/json',
-			),
-			'body'    => wp_json_encode(
-				array(
-					'reason'    => $reason,
-					'site'      => mp_headless_get_frontend_url('/'),
-					'timestamp' => time(),
-				)
-			),
+			'timeout' => 15,
+			'headers' => $headers,
 		)
 	);
+
+	if (is_wp_error($lookup_response)) {
+		error_log('Med Platform Headless GitHub deploy lookup failed: ' . $lookup_response->get_error_message());
+		return;
+	}
+
+	$lookup_status = (int) wp_remote_retrieve_response_code($lookup_response);
+	if ($lookup_status === 200) {
+		$lookup_body = json_decode(wp_remote_retrieve_body($lookup_response), true);
+		$existing_sha = isset($lookup_body['sha']) ? sanitize_text_field((string) $lookup_body['sha']) : '';
+	} elseif ($lookup_status !== 404) {
+		error_log('Med Platform Headless GitHub deploy lookup returned status ' . $lookup_status);
+		return;
+	}
+
+	$payload = array(
+		'reason'     => $reason,
+		'site'       => mp_headless_get_frontend_url('/'),
+		'cms'        => home_url('/'),
+		'timestamp'  => time(),
+		'updated_at' => gmdate('c'),
+		'nonce'      => wp_generate_uuid4(),
+	);
+	$request_body = array(
+		'message' => sprintf('Trigger Hostinger deploy: %s', substr($reason, 0, 120)),
+		'content' => base64_encode(wp_json_encode($payload)),
+		'branch'  => $settings['branch'],
+	);
+
+	if ($existing_sha !== '') {
+		$request_body['sha'] = $existing_sha;
+	}
+
+	$commit_response = wp_remote_request(
+		$contents_url,
+		array(
+			'method'  => 'PUT',
+			'timeout' => 20,
+			'headers' => $headers,
+			'body'    => wp_json_encode($request_body),
+		)
+	);
+
+	if (is_wp_error($commit_response)) {
+		error_log('Med Platform Headless GitHub deploy commit failed: ' . $commit_response->get_error_message());
+		return;
+	}
+
+	$commit_status = (int) wp_remote_retrieve_response_code($commit_response);
+	if (! in_array($commit_status, array(200, 201), true)) {
+		error_log('Med Platform Headless GitHub deploy commit returned status ' . $commit_status . ' with body: ' . wp_remote_retrieve_body($commit_response));
+		return;
+	}
+
+	update_option('mp_headless_github_last_trigger_at', time(), false);
 }
 
 function mp_headless_filter_post_type_link($post_link, $post) {
