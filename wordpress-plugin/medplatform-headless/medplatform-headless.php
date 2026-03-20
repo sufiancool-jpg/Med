@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.2
+ * Version: 0.1.3
  * Author: Codex
  */
 
@@ -164,6 +164,10 @@ function mp_headless_set_github_deploy_status($status, $message, $reason = '') {
 		),
 		false
 	);
+}
+
+function mp_headless_github_auto_push_enabled() {
+	return (bool) get_option('mp_headless_github_auto_push_enabled', true);
 }
 
 function mp_headless_trim_words($value, $limit) {
@@ -4009,6 +4013,20 @@ function mp_headless_import_seed_content() {
 }
 add_action('admin_post_mp_headless_import_seed_content', 'mp_headless_import_seed_content');
 
+function mp_headless_manual_push_update() {
+	if (! current_user_can('manage_options')) {
+		wp_die(esc_html__('You do not have permission to push a manual frontend update.', 'medplatform-headless'));
+	}
+
+	check_admin_referer('mp_headless_manual_push_update', 'mp_headless_manual_push_nonce');
+
+	mp_headless_trigger_build('manual_push_update', true);
+
+	wp_safe_redirect(admin_url('options-general.php?page=medplatform-headless'));
+	exit;
+}
+add_action('admin_post_mp_headless_manual_push_update', 'mp_headless_manual_push_update');
+
 function mp_headless_redirect_homepage_admin_views() {
 	if (! is_admin()) {
 		return;
@@ -4258,6 +4276,16 @@ function mp_headless_register_settings() {
 			'default'           => '.hostinger/deploy-trigger.json',
 		)
 	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_github_auto_push_enabled',
+		array(
+			'type'              => 'boolean',
+			'sanitize_callback' => 'mp_headless_sanitize_bool_value',
+			'default'           => true,
+		)
+	);
 }
 add_action('admin_init', 'mp_headless_register_settings');
 
@@ -4267,6 +4295,7 @@ function mp_headless_render_settings_page() {
 	$github_branch      = (string) get_option('mp_headless_github_branch', 'main');
 	$github_token       = (string) get_option('mp_headless_github_token', '');
 	$github_trigger_path = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
+	$github_auto_push_enabled = mp_headless_github_auto_push_enabled();
 	$github_last_status = get_option('mp_headless_github_last_status', array());
 	$seed_import_status = get_transient('mp_headless_seed_import_status');
 	if ($seed_import_status) {
@@ -4352,6 +4381,17 @@ function mp_headless_render_settings_page() {
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><?php esc_html_e('Automatic GitHub Pushes', 'medplatform-headless'); ?></th>
+					<td>
+						<input type="hidden" name="mp_headless_github_auto_push_enabled" value="0" />
+						<label>
+							<input type="checkbox" name="mp_headless_github_auto_push_enabled" value="1" <?php checked($github_auto_push_enabled); ?> />
+							<?php esc_html_e('Automatically push GitHub deploy updates after CMS changes', 'medplatform-headless'); ?>
+						</label>
+						<p class="description"><?php esc_html_e('Turn this off if you want WordPress content changes to wait until you manually click Push Update.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><?php esc_html_e('Last GitHub Trigger', 'medplatform-headless'); ?></th>
 					<td>
 						<?php if (is_array($github_last_status) && ! empty($github_last_status['timestamp'])) : ?>
@@ -4377,6 +4417,16 @@ function mp_headless_render_settings_page() {
 			</table>
 			<?php submit_button(); ?>
 		</form>
+
+		<div style="margin-top:28px; max-width:900px; background:#fff; border:1px solid #dcdcde; padding:24px;">
+			<h2 style="margin-top:0;"><?php esc_html_e('Manual Push Update', 'medplatform-headless'); ?></h2>
+			<p style="margin-top:0; color:#50575e;"><?php esc_html_e('Use this to push a fresh deploy-trigger commit to GitHub whenever you want to redeploy the frontend manually. This works even when automatic GitHub pushes are turned off.', 'medplatform-headless'); ?></p>
+			<form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+				<?php wp_nonce_field('mp_headless_manual_push_update', 'mp_headless_manual_push_nonce'); ?>
+				<input type="hidden" name="action" value="mp_headless_manual_push_update" />
+				<?php submit_button(__('Push Update', 'medplatform-headless'), 'secondary', 'submit', false); ?>
+			</form>
+		</div>
 
 		<div style="margin-top:28px; max-width:900px; background:#fff; border:1px solid #dcdcde; padding:24px;">
 			<h2 style="margin-top:0;"><?php esc_html_e('Bundled Seed Import', 'medplatform-headless'); ?></h2>
@@ -4534,7 +4584,7 @@ function mp_headless_register_dashboard_widgets() {
 }
 add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');
 
-function mp_headless_trigger_build($reason) {
+function mp_headless_trigger_build($reason, $force_github_push = false) {
 	if (! empty($GLOBALS['mp_headless_suspend_build_trigger'])) {
 		return;
 	}
@@ -4559,7 +4609,7 @@ function mp_headless_trigger_build($reason) {
 		);
 	}
 
-	mp_headless_trigger_github_deploy($reason);
+	mp_headless_trigger_github_deploy($reason, $force_github_push);
 }
 
 function mp_headless_get_github_deploy_settings() {
@@ -4572,8 +4622,13 @@ function mp_headless_get_github_deploy_settings() {
 	);
 }
 
-function mp_headless_trigger_github_deploy($reason) {
+function mp_headless_trigger_github_deploy($reason, $force = false) {
 	$settings = mp_headless_get_github_deploy_settings();
+
+	if (! $force && ! mp_headless_github_auto_push_enabled()) {
+		mp_headless_set_github_deploy_status('skipped', 'Automatic GitHub pushes are disabled. Use Push Update to redeploy manually.', $reason);
+		return;
+	}
 
 	if ($settings['owner'] === '' || $settings['repo'] === '' || $settings['token'] === '') {
 		mp_headless_set_github_deploy_status('skipped', 'GitHub auto deploy is not fully configured yet.', $reason);
@@ -4597,7 +4652,7 @@ function mp_headless_trigger_github_deploy($reason) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $settings['token'],
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.2',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.3',
 	);
 	$existing_sha       = '';
 	$lookup_response    = wp_remote_get(
