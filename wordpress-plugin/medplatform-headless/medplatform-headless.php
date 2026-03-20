@@ -152,6 +152,20 @@ function mp_headless_sanitize_repo_path_value($value) {
 	return ltrim($value, '/');
 }
 
+function mp_headless_set_github_deploy_status($status, $message, $reason = '') {
+	update_option(
+		'mp_headless_github_last_status',
+		array(
+			'status'     => sanitize_text_field((string) $status),
+			'message'    => sanitize_textarea_field((string) $message),
+			'reason'     => sanitize_text_field((string) $reason),
+			'timestamp'  => time(),
+			'updated_at' => gmdate('c'),
+		),
+		false
+	);
+}
+
 function mp_headless_trim_words($value, $limit) {
 	$limit = max(1, intval($limit));
 	$value = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags((string) $value)));
@@ -3858,6 +3872,7 @@ function mp_headless_render_settings_page() {
 	$github_branch      = (string) get_option('mp_headless_github_branch', 'main');
 	$github_token       = (string) get_option('mp_headless_github_token', '');
 	$github_trigger_path = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
+	$github_last_status = get_option('mp_headless_github_last_status', array());
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e('Med Platform Headless', 'medplatform-headless'); ?></h1>
@@ -3914,6 +3929,29 @@ function mp_headless_render_settings_page() {
 					<td>
 						<input id="mp_headless_github_trigger_path" type="text" class="regular-text code" name="mp_headless_github_trigger_path" value="<?php echo esc_attr($github_trigger_path); ?>" placeholder=".hostinger/deploy-trigger.json" />
 						<p class="description"><?php esc_html_e('WordPress updates this file in GitHub to force a Hostinger redeploy. Leave the default unless you have a reason to change it.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e('Last GitHub Trigger', 'medplatform-headless'); ?></th>
+					<td>
+						<?php if (is_array($github_last_status) && ! empty($github_last_status['timestamp'])) : ?>
+							<p style="margin:0 0 6px;"><strong><?php echo esc_html(ucfirst((string) ($github_last_status['status'] ?? 'unknown'))); ?></strong></p>
+							<p style="margin:0 0 6px;"><?php echo esc_html((string) ($github_last_status['message'] ?? '')); ?></p>
+							<p style="margin:0; color:#646970;">
+								<?php
+								echo esc_html(
+									sprintf(
+										/* translators: 1: reason, 2: datetime */
+										__('Reason: %1$s | Time: %2$s', 'medplatform-headless'),
+										(string) ($github_last_status['reason'] ?? 'n/a'),
+										(string) ($github_last_status['updated_at'] ?? '')
+									)
+								);
+								?>
+							</p>
+						<?php else : ?>
+							<p style="margin:0; color:#646970;"><?php esc_html_e('No GitHub auto-deploy attempt has been recorded yet.', 'medplatform-headless'); ?></p>
+						<?php endif; ?>
 					</td>
 				</tr>
 			</table>
@@ -4103,11 +4141,13 @@ function mp_headless_trigger_github_deploy($reason) {
 	$settings = mp_headless_get_github_deploy_settings();
 
 	if ($settings['owner'] === '' || $settings['repo'] === '' || $settings['token'] === '') {
+		mp_headless_set_github_deploy_status('skipped', 'GitHub auto deploy is not fully configured yet.', $reason);
 		return;
 	}
 
 	$last_trigger_at = (int) get_option('mp_headless_github_last_trigger_at', 0);
 	if ($last_trigger_at > 0 && (time() - $last_trigger_at) < 30) {
+		mp_headless_set_github_deploy_status('skipped', 'GitHub auto deploy was throttled to avoid duplicate commits within 30 seconds.', $reason);
 		return;
 	}
 
@@ -4134,6 +4174,7 @@ function mp_headless_trigger_github_deploy($reason) {
 	);
 
 	if (is_wp_error($lookup_response)) {
+		mp_headless_set_github_deploy_status('error', 'GitHub lookup failed: ' . $lookup_response->get_error_message(), $reason);
 		error_log('Med Platform Headless GitHub deploy lookup failed: ' . $lookup_response->get_error_message());
 		return;
 	}
@@ -4143,6 +4184,7 @@ function mp_headless_trigger_github_deploy($reason) {
 		$lookup_body = json_decode(wp_remote_retrieve_body($lookup_response), true);
 		$existing_sha = isset($lookup_body['sha']) ? sanitize_text_field((string) $lookup_body['sha']) : '';
 	} elseif ($lookup_status !== 404) {
+		mp_headless_set_github_deploy_status('error', 'GitHub lookup returned unexpected status ' . $lookup_status . '.', $reason);
 		error_log('Med Platform Headless GitHub deploy lookup returned status ' . $lookup_status);
 		return;
 	}
@@ -4171,22 +4213,26 @@ function mp_headless_trigger_github_deploy($reason) {
 			'method'  => 'PUT',
 			'timeout' => 20,
 			'headers' => $headers,
+			'data_format' => 'body',
 			'body'    => wp_json_encode($request_body),
 		)
 	);
 
 	if (is_wp_error($commit_response)) {
+		mp_headless_set_github_deploy_status('error', 'GitHub commit failed: ' . $commit_response->get_error_message(), $reason);
 		error_log('Med Platform Headless GitHub deploy commit failed: ' . $commit_response->get_error_message());
 		return;
 	}
 
 	$commit_status = (int) wp_remote_retrieve_response_code($commit_response);
 	if (! in_array($commit_status, array(200, 201), true)) {
+		mp_headless_set_github_deploy_status('error', 'GitHub commit returned status ' . $commit_status . '.', $reason);
 		error_log('Med Platform Headless GitHub deploy commit returned status ' . $commit_status . ' with body: ' . wp_remote_retrieve_body($commit_response));
 		return;
 	}
 
 	update_option('mp_headless_github_last_trigger_at', time(), false);
+	mp_headless_set_github_deploy_status('success', 'GitHub deploy trigger commit created successfully.', $reason);
 }
 
 function mp_headless_filter_post_type_link($post_link, $post) {
