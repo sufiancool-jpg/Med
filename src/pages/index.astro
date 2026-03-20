@@ -19,9 +19,26 @@ const landingIntro = {
 const joinNetworkText = "Join the network";
 const homepageSelections = await getHomepageSelections();
 const projects = await getProjects();
+const projectsById = new Map(
+  projects.map((project) => [Number(project.id), project] as const),
+);
+const selectedHomepageProjects = homepageSelections.projectIds
+  .map((projectId) => projectsById.get(Number(projectId)))
+  .filter((project): project is (typeof projects)[number] => Boolean(project));
+const homepageProjectPool =
+  selectedHomepageProjects.length > 0 ? selectedHomepageProjects : projects;
+const homepageProjectCount =
+  homepageSelections.projectCount > 0
+    ? homepageSelections.projectCount
+    : homepageProjectPool.length;
+const homepageProjects = homepageProjectPool.slice(0, homepageProjectCount);
 
 const audioPublication = homepageSelections.featuredPodcast;
-const audioRelease = audioPublication
+const audioReleaseSource = audioPublication
+  ? audioPublication.audioHref ||
+    (audioPublication.source === "local" ? audioPublication.downloadHref : "")
+  : "";
+const audioRelease = audioPublication && audioReleaseSource
   ? {
       type: audioPublication.outputType,
       series: "Mediterranean Platform Audio Brief",
@@ -31,7 +48,7 @@ const audioRelease = audioPublication
       date: getPublicationCardDate(audioPublication),
       href: audioPublication.href,
       ctaText: "Open release page",
-      audioSrc: audioPublication.audioHref || audioPublication.downloadHref || "/audio/mock-red-sea-brief.mp3",
+      audioSrc: audioReleaseSource,
     }
   : undefined;
 
@@ -57,7 +74,7 @@ const featuredPublications = homepageSelections.latestPublications.map((publicat
   tags: publication.hashtags.slice(0, 3).map((tag) => `#${tag.label}`),
 }));
 
-const activityThemes = projects.map((project) => ({
+const activityThemes = homepageProjects.map((project) => ({
   title: project.title,
   summary: project.description,
   meta: "Project",
@@ -113,7 +130,7 @@ const metadata = {
                 href="/about"
                 class="mt-2.5 inline-flex cursor-pointer items-center gap-2 text-left text-[0.92rem] font-semibold tracking-[0.04em] text-primary transition-colors hover:text-hover"
               >
-                <span>About us</span>
+                <span data-ui-i18n="home.aboutUs">About us</span>
                 <svg
                   viewBox="0 0 20 12"
                   class="h-3 w-5"
@@ -137,7 +154,10 @@ const metadata = {
                     alt="Mediterranean Platform"
                     class="absolute inset-0 h-full w-full -translate-x-[3%] object-contain transition-opacity duration-200 group-hover:opacity-0"
                   />
-                  <p class="pointer-events-none absolute inset-0 flex items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                  <p
+                    data-ui-i18n="home.joinNetwork"
+                    class="pointer-events-none absolute inset-0 flex items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  >
                     {joinNetworkText}
                   </p>
                 </div>
@@ -202,6 +222,8 @@ const metadata = {
       __articleLenisBridgeBound?: boolean;
       __articleHighlightCleanup?: (() => void) | null;
       __articleHighlightDisabled?: boolean;
+      __mpTranslateUi?: (key: string, language?: string, value?: string) => string;
+      __mpGetUiLanguage?: () => string;
     };
 
     const clearArticleTriggers = () => {
@@ -324,19 +346,31 @@ const metadata = {
       if (!(toggle instanceof HTMLButtonElement)) return;
 
       const isDisabled = articleWindow.__articleHighlightDisabled === true;
+      const translateUi = (key: string, fallback: string) =>
+        articleWindow.__mpTranslateUi?.(key, articleWindow.__mpGetUiLanguage?.()) ??
+        fallback;
       toggle.setAttribute("aria-pressed", String(isDisabled));
       toggle.setAttribute(
         "aria-label",
-        isDisabled ? "Enable scroll text highlight" : "Disable scroll text highlight",
+        translateUi(
+          isDisabled ? "home.enableHighlight" : "home.disableHighlight",
+          isDisabled
+            ? "Enable scroll text highlight"
+            : "Disable scroll text highlight",
+        ),
       );
       toggle.title = isDisabled
-        ? "Enable scroll text highlight"
-        : "Disable scroll text highlight";
+        ? translateUi("home.enableHighlight", "Enable scroll text highlight")
+        : translateUi("home.disableHighlight", "Disable scroll text highlight");
       toggle.classList.toggle("bg-black", isDisabled);
       toggle.classList.toggle("text-white", isDisabled);
 
       if (label instanceof HTMLElement) {
-        label.textContent = isDisabled ? "Highlight off" : "Highlight on";
+        label.textContent =
+          translateUi(
+            isDisabled ? "home.highlightOff" : "home.highlightOn",
+            isDisabled ? "Highlight off" : "Highlight on",
+          );
       }
     };
 
@@ -348,6 +382,7 @@ const metadata = {
         return;
       }
       toggle.dataset.bound = "true";
+      document.addEventListener("mp:ui-language-change", syncArticleToggleUI);
 
       syncArticleToggleUI();
 
@@ -484,13 +519,13 @@ const metadata = {
   <section
     id="home-latest-slider"
     style="background-color:#d8e9e3;background-image:linear-gradient(180deg,#d8e9e3 0%,#d8e9e3 calc(100% - 88px),#eaf3f0 calc(100% - 34px),#ffffff 100%);"
-    class="flex h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] flex-col overflow-hidden bg-[#d8e9e3] pb-[var(--announce-h,48px)]"
+    class="flex flex-col overflow-hidden bg-[#d8e9e3] pb-4 md:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:pb-[var(--announce-h,48px)]"
   >
     {audioRelease && (
-      <div class="min-h-0 flex-1 basis-0 bg-[#d8e9e3]">
-        <div class="h-full w-full overflow-hidden px-4 py-4 sm:px-6 md:py-5 lg:px-8">
-          <article class="grid h-full min-h-0 grid-cols-1 gap-6 md:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] md:items-center md:gap-8">
-            <div class="flex min-h-0 flex-col justify-center md:pr-4">
+      <div class="bg-[#d8e9e3] md:min-h-0 md:flex-1 md:basis-0">
+        <div class="w-full px-4 py-4 sm:px-6 md:h-full md:overflow-hidden md:py-5 lg:px-8">
+          <article class="grid grid-cols-1 gap-5 md:h-full md:min-h-0 md:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] md:items-center md:gap-8">
+            <div class="flex min-h-0 flex-col justify-start md:justify-center md:pr-4">
               <div>
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
@@ -500,20 +535,20 @@ const metadata = {
                     {audioRelease.date}
                   </p>
                 </div>
-                <h3 class="mt-2 max-w-3xl text-left text-[1.82rem] font-bold leading-[0.95] tracking-tight text-primary md:text-[2.1rem] lg:text-[2.45rem]">
+                <h3 class="mt-2 max-w-3xl text-left text-[1.5rem] font-bold leading-[0.96] tracking-tight text-primary sm:text-[1.7rem] md:text-[2.1rem] lg:text-[2.45rem]">
                   {audioRelease.title}
                 </h3>
-                <p class="mt-3 max-w-2xl text-left text-[0.95rem] font-semibold leading-[1.48] text-primary/76 md:text-[1rem]">
+                <p class="mt-2.5 max-w-2xl text-left text-[0.9rem] font-semibold leading-[1.5] text-primary/76 md:mt-3 md:text-[1rem]">
                   {audioRelease.summary}
                 </p>
               </div>
 
-              <div class="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+              <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5 md:mt-5">
                 <a
                   href={audioRelease.href}
-                  class="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover"
+                  class="inline-flex cursor-pointer items-center gap-2 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover sm:text-sm"
                 >
-                  {audioRelease.ctaText}
+                  <span data-ui-i18n="home.openReleasePage">Open release page</span>
                   <svg
                     viewBox="0 0 20 12"
                     class="h-3 w-5"
@@ -528,7 +563,7 @@ const metadata = {
                     <path d="m11 2 4 4-4 4"></path>
                   </svg>
                 </a>
-                <p class="text-sm font-semibold text-primary/58">
+                <p data-ui-i18n="home.audioReleaseHint" class="text-[0.82rem] font-semibold text-primary/58 sm:text-sm">
                   Opens the full audio release page.
                 </p>
               </div>
@@ -539,6 +574,7 @@ const metadata = {
               title={audioRelease.title}
               series={audioRelease.series}
               initialDuration={audioRelease.duration}
+              containerClass="w-full"
             />
           </article>
         </div>
@@ -549,7 +585,11 @@ const metadata = {
       autoplayMs={4000}
       fitParentHeight={true}
       contentPosition={audioRelease ? "center" : "bottom"}
-      class={audioRelease ? "min-h-0 flex-1 basis-0 border-t border-primary/12" : "h-full min-h-0 flex-1 basis-0"}
+      class={
+        audioRelease
+          ? "h-[21.5rem] shrink-0 border-t border-primary/12 sm:h-[24rem] md:min-h-0 md:flex-1 md:basis-0"
+          : "h-[23rem] shrink-0 sm:h-[25rem] md:h-full md:min-h-0 md:flex-1 md:basis-0"
+      }
     />
   </section>
 
@@ -562,6 +602,8 @@ const metadata = {
           aria-pressed="false"
           aria-label="Disable scroll text highlight"
           title="Disable scroll text highlight"
+          data-ui-i18n-aria-label="home.disableHighlight"
+          data-ui-i18n-title="home.disableHighlight"
           class="inline-flex h-8 w-8 cursor-pointer items-center justify-center border border-black text-primary transition-colors hover:bg-black hover:text-white"
         >
           <svg
@@ -580,6 +622,7 @@ const metadata = {
         </button>
         <span
           data-highlight-toggle-label
+          data-ui-i18n="home.highlightOn"
           class="text-[0.72rem] font-light uppercase tracking-[0.08em] text-primary/70"
         >
           Highlight on
@@ -611,7 +654,7 @@ const metadata = {
         href={featuredArticle.href}
         class="clear-both mt-10 inline-flex cursor-pointer border border-black px-5 py-2 text-sm font-semibold uppercase tracking-[0.06em] text-primary transition-colors hover:bg-black hover:text-white"
       >
-        More
+        <span data-ui-i18n="home.more">More</span>
       </a>
     </article>
   </section>
@@ -620,7 +663,7 @@ const metadata = {
     <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-12 lg:px-8">
       <div class="mb-5">
         <h2 class="text-3xl font-semibold leading-tight md:text-4xl">
-          Publications
+          <span data-ui-i18n="home.publications">Publications</span>
         </h2>
       </div>
 
@@ -673,19 +716,19 @@ const metadata = {
           href="/blog"
           class="inline-flex cursor-pointer text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
         >
-          View all publications
+          <span data-ui-i18n="home.viewAllPublications">View all publications</span>
         </a>
       </div>
     </div>
   </section>
 
   <section>
-    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
-      <div class="mb-10">
-        <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
-          Projects
+      <div class="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-20 lg:px-8">
+      <div class="mb-8 md:mb-10">
+        <h2 class="text-[2rem] font-semibold leading-tight md:text-5xl">
+          <span data-ui-i18n="home.projects">Projects</span>
         </h2>
-        <p class="mt-4 max-w-2xl text-base text-muted-foreground">
+        <p class="mt-3 max-w-2xl text-[0.96rem] text-muted-foreground md:mt-4 md:text-base">
           Core platforms focused on research, policy dialogue, and regional cooperation.
         </p>
       </div>
@@ -695,12 +738,12 @@ const metadata = {
           <article
             data-project-card
             style={`--project-hover-bg:${item.hoverBg};--project-hover-title:${item.hoverTitle};--project-hover-meta:${item.hoverMeta};--project-hover-summary:${item.hoverSummary};`}
-            class="flex bg-background p-6 transition-colors duration-300"
+            class="flex bg-background p-5 transition-colors duration-300 md:p-6"
           >
             <a href={item.href} class="flex h-full w-full flex-col">
               <h3
                 data-project-title
-                class="text-2xl font-semibold leading-tight transition-colors duration-300"
+                class="text-[1.32rem] font-semibold leading-tight transition-colors duration-300 md:text-2xl"
               >
                 {item.title}
               </h3>
@@ -708,7 +751,7 @@ const metadata = {
                 data-project-meta
                 class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85 transition-colors duration-300"
               >
-                {item.meta}
+                <span data-ui-i18n="home.projectMeta">Project</span>
               </p>
               <p
                 data-project-summary
@@ -720,7 +763,7 @@ const metadata = {
                 data-project-summary
                 class="mt-auto pt-5 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors duration-300"
               >
-                Open project →
+                <span data-ui-i18n="home.openProject">Open project</span> →
               </p>
             </a>
           </article>

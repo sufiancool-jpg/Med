@@ -3,12 +3,21 @@ export interface ProjectPage {
   href: string;
   title: string;
   description: string;
+  cardIcon?: string;
+  parentProjectSlug?: string;
+  alignedProjectSlug?: string;
+  hideFromProjectScreens?: boolean;
   color: string;
   currentStage: string;
   stagePoints: string[];
   hideProjectBar: boolean;
   overview: string[];
   updates: string[];
+  leads?: Array<{
+    name: string;
+    role: string;
+    image: string;
+  }>;
   lead: {
     name: string;
     role: string;

@@ -50,6 +50,11 @@ for (const fileName of markdownFiles) {
     date: String(data.pubDate),
     authorName: String(data.author ?? "Mediterranean Platform"),
     authorPersonSlug: data.authorPersonSlug ? String(data.authorPersonSlug) : "",
+    authorPersonSlugs: Array.isArray(data.authorPersonSlugs)
+      ? data.authorPersonSlugs.map(String)
+      : data.authorPersonSlug
+        ? [String(data.authorPersonSlug)]
+        : [],
     authorRole: data.authorRole ? String(data.authorRole) : "",
     category: normalizeOutputType(String(data.category ?? "")),
     topics: tags.length > 0 ? [toTopicLabel(tags[0])] : ["General"],

@@ -10,10 +10,13 @@ import {
   getPublicationBySlug,
   getPublicationCardDate,
   getPublications,
+  getSiteSettings,
   getSimilarPublications,
   isDefaultProfileImage,
   shouldShowPublicationLead,
 } from "../../lib/site-data";
+
+export const prerender = import.meta.env.PROD;
 
 export async function getStaticPaths() {
   const publications = await getPublications();
@@ -25,9 +28,10 @@ export async function getStaticPaths() {
 
 const slug = Astro.params.slug ?? "";
 const publication = await getPublicationBySlug(slug);
+const siteSettings = await getSiteSettings();
 
 if (!publication) {
-  throw new Error(`Publication not found for slug "${slug}"`);
+  return Astro.redirect("/404");
 }
 
 let LocalContent = undefined;
@@ -49,18 +53,41 @@ const formattedDate = publication.pubDate.toLocaleDateString("en-US", {
 
 const resolvedAuthorRole = publication.authorRole || `${publication.outputType} contributor`;
 const isPodcast = publication.outputTypeSlug === "pod-cast";
-const podcastAudioHref = publication.audioHref || (isPodcast ? publication.downloadHref : undefined);
-const fileDownloadHref =
-  publication.downloadHref && publication.downloadHref !== podcastAudioHref
-    ? publication.downloadHref
+const podcastAudioHref = isPodcast ? publication.audioHref : undefined;
+const fileDownloadHref = !isPodcast ? publication.downloadHref : undefined;
+const trackedDownloadHref = !isPodcast
+  ? publication.downloadTrackedHref || publication.downloadHref
+  : undefined;
+const downloadCountApiHref =
+  !isPodcast &&
+  fileDownloadHref &&
+  siteSettings.showPublicDownloadCounts &&
+  publication.source === "wordpress"
+    ? publication.downloadCountApiHref
     : undefined;
 const resolvedDownloadLabel =
   publication.downloadLabel ||
   (fileDownloadHref?.toLowerCase().endsWith(".pdf")
     ? "Download PDF"
     : "Download publication");
-const authorProfileHref = publication.authorPerson?.href;
 const showLeadPreview = shouldShowPublicationLead(publication);
+const publicationAuthors =
+  publication.authorPeople.length > 0
+    ? publication.authorPeople.map((author) => ({
+        ...author,
+        role: author.role || publication.authorRole || resolvedAuthorRole,
+        image: author.image || DEFAULT_PROFILE_IMAGE,
+      }))
+    : [
+        {
+          name: publication.author,
+          role: resolvedAuthorRole,
+          image: publication.authorImage || DEFAULT_PROFILE_IMAGE,
+          href: publication.authorPerson?.href,
+          linked: Boolean(publication.authorPerson?.href),
+        },
+      ];
+const authorSectionLabel = publicationAuthors.length === 1 ? "Author" : "Authors";
 const similarPublications = (await getSimilarPublications(publication, 5)).map((item) => ({
   href: item.href,
   title: item.title,
@@ -104,6 +131,7 @@ type SidebarAction = {
   download?: boolean;
   target?: "_blank";
   rel?: string;
+  downloadCountApiHref?: string;
 };
 
 const sidebarActions: SidebarAction[] = [];
@@ -128,33 +156,15 @@ if (isPodcast && podcastAudioHref) {
   });
 }
 
-if (!isPodcast && publication.downloadHref) {
-  pushSidebarAction({
-    href: publication.downloadHref,
-    label: resolvedDownloadLabel,
-    icon: "download",
-    download: true,
-    target: "_blank",
-    rel: "noreferrer",
-  });
-}
-
-if (!isPodcast && !publication.downloadHref) {
-  pushSidebarAction({
-    href: "#publication-body",
-    label: "View publication",
-    icon: "arrow-down-right",
-  });
-}
-
 if (fileDownloadHref) {
   pushSidebarAction({
-    href: fileDownloadHref,
+    href: trackedDownloadHref || fileDownloadHref,
     label: resolvedDownloadLabel,
     icon: "download",
     download: true,
     target: "_blank",
     rel: "noreferrer",
+    downloadCountApiHref,
   });
 }
 
@@ -220,7 +230,17 @@ const metadata = {
                     download={action.download}
                     class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
                   >
-                    <span>{action.label}</span>
+                    <span class="flex min-w-0 flex-col items-start gap-1">
+                      <span>{action.label}</span>
+                      {action.downloadCountApiHref && (
+                        <span
+                          data-download-count
+                          data-download-count-endpoint={action.downloadCountApiHref}
+                          hidden
+                          class="text-[0.72rem] font-medium normal-case tracking-normal text-primary/58"
+                        ></span>
+                      )}
+                    </span>
                     <Icon
                       name={`lucide:${action.icon}`}
                       class="h-4 w-4"
@@ -293,35 +313,41 @@ const metadata = {
           <div class="space-y-8">
             <section>
               <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
-                Author
+                {authorSectionLabel}
               </h2>
               <div class="mt-4 border-t border-black/10 pt-4">
-                <div class="flex items-start gap-4">
-                  <img
-                    src={publication.authorImage || DEFAULT_PROFILE_IMAGE}
-                    alt={publication.author}
-                    class:list={[
-                      "h-20 w-20 shrink-0",
-                      isDefaultProfileImage(publication.authorImage)
-                        ? "border border-black/10 bg-[#eef2ef] object-contain p-2.5 opacity-75"
-                        : "object-cover",
-                    ]}
-                  />
-                  <div class="min-w-0">
-                    <p class="text-[1.4rem] font-semibold leading-tight text-primary">
-                      {authorProfileHref ? (
-                        <a href={authorProfileHref} class="transition-colors hover:text-hover">
-                          {publication.author}
-                        </a>
-                      ) : (
-                        publication.author
-                      )}
-                    </p>
-                    <p class="mt-2 text-[1rem] leading-7 text-primary/72">
-                      {resolvedAuthorRole}
-                    </p>
+                <div class="grid gap-4">
+                  {publicationAuthors.map((author) => (
+                    <div class="flex items-start gap-4">
+                      <img
+                        src={author.image}
+                        alt={author.name}
+                        class:list={[
+                          "h-20 w-20 shrink-0",
+                          isDefaultProfileImage(author.image)
+                            ? "border border-black/10 bg-[#eef2ef] object-contain p-2.5 opacity-75"
+                            : "object-cover",
+                        ]}
+                      />
+                      <div class="min-w-0">
+                        <p class="text-[1.4rem] font-semibold leading-tight text-primary">
+                          {author.href ? (
+                            <a href={author.href} class="transition-colors hover:text-hover">
+                              {author.name}
+                            </a>
+                          ) : (
+                            author.name
+                          )}
+                        </p>
+                        {author.role && (
+                          <p class="mt-2 text-[1rem] leading-7 text-primary/72">
+                            {author.role}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                   </div>
-                </div>
               </div>
             </section>
 
@@ -439,7 +465,17 @@ const metadata = {
                     download={action.download}
                     class="inline-flex items-center justify-between border border-black/12 px-5 py-4 text-[0.95rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:border-black hover:text-hover"
                   >
-                    <span>{action.label}</span>
+                    <span class="flex min-w-0 flex-col items-start gap-1">
+                      <span>{action.label}</span>
+                      {action.downloadCountApiHref && (
+                        <span
+                          data-download-count
+                          data-download-count-endpoint={action.downloadCountApiHref}
+                          hidden
+                          class="text-[0.72rem] font-medium normal-case tracking-normal text-primary/58"
+                        ></span>
+                      )}
+                    </span>
                     <Icon
                       name={`lucide:${action.icon}`}
                       class="h-4 w-4"
@@ -460,6 +496,54 @@ const metadata = {
       title="Related Topics"
       subtitle="Other publications connected through overlapping hashtags."
     />
+  )}
+  {downloadCountApiHref && (
+    <script is:inline define:vars={{ downloadCountApiHref }}>
+      const formatDownloadCount = (count) =>
+        count === 1 ? "1 download" : `${count} downloads`;
+
+      const syncDownloadCounts = () => {
+        const countNodes = Array.from(
+          document.querySelectorAll("[data-download-count]"),
+        );
+
+        if (!countNodes.length) {
+          return;
+        }
+
+        fetch(downloadCountApiHref, {
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((payload) => {
+            if (!payload || typeof payload.downloadCount !== "number") {
+              return;
+            }
+
+            countNodes.forEach((node) => {
+              if (!(node instanceof HTMLElement)) {
+                return;
+              }
+
+              node.textContent = formatDownloadCount(payload.downloadCount);
+              node.hidden = false;
+            });
+          })
+          .catch(() => {});
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", syncDownloadCounts, {
+          once: true,
+        });
+      } else {
+        syncDownloadCounts();
+      }
+
+      document.addEventListener("astro:after-swap", syncDownloadCounts);
+    </script>
   )}
 </BaseLayout>
 

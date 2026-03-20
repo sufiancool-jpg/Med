@@ -1,5 +1,6 @@
 ---
 import { siteConfig } from "../../config/site";
+import { getSiteSettings } from "../../lib/site-data";
 
 interface Props {
   type: "WebSite" | "BlogPosting" | "BreadcrumbList";
@@ -14,6 +15,12 @@ interface Props {
 }
 
 const { type, data } = Astro.props;
+const siteSettings = await getSiteSettings();
+const sameAs = [
+  siteSettings.socialLinks.linkedin,
+  siteSettings.socialLinks.youtube,
+  siteSettings.socialLinks.instagram,
+].filter(Boolean);
 
 let schema = {};
 
@@ -28,7 +35,7 @@ if (type === "WebSite") {
       "@type": "Person",
       name: siteConfig.author,
     },
-    sameAs: [siteConfig.socialLinks.linkedin, siteConfig.socialLinks.youtube],
+    sameAs,
   };
 } else if (type === "BlogPosting") {
   schema = {

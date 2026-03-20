@@ -13,6 +13,7 @@ export const siteConfig = {
   socialLinks: {
     linkedin: "https://www.linkedin.com/",
     youtube: "https://www.youtube.com/",
+    instagram: "",
     contact: "/contact",
   },
   navLinks: [

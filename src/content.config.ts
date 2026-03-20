@@ -16,6 +16,7 @@ const blog = defineCollection({
     downloadHref: z.string().optional(),
     downloadLabel: z.string().optional(),
     authorPersonSlug: z.string().optional(),
+    authorPersonSlugs: z.array(z.string()).optional(),
     contributorPersonSlugs: z.array(z.string()).optional(),
     contributorNames: z.array(z.string()).optional(),
     relatedProjectSlugs: z.array(z.string()).optional(),

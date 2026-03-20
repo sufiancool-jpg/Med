@@ -20,6 +20,10 @@ interface Props {
   emptyMessage?: string;
   resultsId?: string;
   searchPlaceholder?: string;
+  searchPlaceholderKey?: string;
+  searchPlaceholderValue?: string;
+  emptyMessageKey?: string;
+  emptyMessageValue?: string;
   typeOptions?: string[];
 }
 
@@ -29,6 +33,10 @@ const {
   emptyMessage = "No articles match the current search and filter combination.",
   resultsId = "archive-results",
   searchPlaceholder = "Search articles",
+  searchPlaceholderKey = "archive.searchArticles",
+  searchPlaceholderValue,
+  emptyMessageKey = "archive.noArticlesMatch",
+  emptyMessageValue,
   typeOptions,
 } = Astro.props;
 
@@ -48,25 +56,27 @@ const filterGridClass = hasTypeFilter
     <form class={filterGridClass}>
       <label class="flex flex-col gap-2">
         <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
-          Search
+          <span data-ui-i18n="archive.search">Search</span>
         </span>
         <input
           data-filter-search
           type="search"
           placeholder={searchPlaceholder}
+          data-ui-i18n-placeholder={searchPlaceholderKey}
+          data-ui-i18n-value={searchPlaceholderValue}
           class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors placeholder:text-primary/35 focus:border-black"
         />
       </label>
 
       <label class="flex flex-col gap-2">
         <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
-          Topic
+          <span data-ui-i18n="archive.topic">Topic</span>
         </span>
         <select
           data-filter-topic
           class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors focus:border-black"
         >
-          <option value="">All topics</option>
+          <option value="" data-ui-i18n="archive.allTopics">All topics</option>
           {topics.map((topic) => (
             <option value={topic.toLowerCase()}>{topic}</option>
           ))}
@@ -75,13 +85,13 @@ const filterGridClass = hasTypeFilter
 
       <label class="flex flex-col gap-2">
         <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
-          Hashtag
+          <span data-ui-i18n="archive.hashtag">Hashtag</span>
         </span>
         <select
           data-filter-hashtag
           class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors focus:border-black"
         >
-          <option value="">All hashtags</option>
+          <option value="" data-ui-i18n="archive.allHashtags">All hashtags</option>
           {hashtags.map((hashtag) => (
             <option value={hashtag.toLowerCase()}>#{hashtag}</option>
           ))}
@@ -91,13 +101,13 @@ const filterGridClass = hasTypeFilter
       {hasTypeFilter && (
         <label class="flex flex-col gap-2">
           <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
-            Type
+            <span data-ui-i18n="archive.type">Type</span>
           </span>
           <select
             data-filter-type
             class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors focus:border-black"
           >
-            <option value="">All types</option>
+            <option value="" data-ui-i18n="archive.allTypes">All types</option>
             {resolvedTypeOptions.map((type) => (
               <option value={type.toLowerCase()}>{type}</option>
             ))}
@@ -113,7 +123,7 @@ const filterGridClass = hasTypeFilter
         type="button"
         class="inline-flex w-fit border-b border-black/20 pb-0.5 text-[0.82rem] font-semibold uppercase tracking-[0.1em] text-primary transition-colors hover:border-black hover:text-hover"
       >
-        Reset filters
+        <span data-ui-i18n="archive.resetFilters">Reset filters</span>
       </button>
     </div>
 
@@ -172,13 +182,22 @@ const filterGridClass = hasTypeFilter
       ))}
     </div>
 
-    <p data-filter-empty-state class="hidden py-16 text-center text-[0.98rem] text-primary/58">
+    <p
+      data-filter-empty-state
+      data-ui-i18n={emptyMessageKey}
+      data-ui-i18n-value={emptyMessageValue}
+      class="hidden py-16 text-center text-[0.98rem] text-primary/58"
+    >
       {emptyMessage}
     </p>
   </div>
 </section>
 
 <script>
+  const runtime = window as Window & {
+    __mpTranslateUi?: (key: string, language?: string, value?: string) => string;
+    __mpGetUiLanguage?: () => string;
+  };
   const archiveRoots = Array.from(
     document.querySelectorAll("[data-filter-archive-root]"),
   );
@@ -196,6 +215,10 @@ const filterGridClass = hasTypeFilter
     const resultsCount = root.querySelector("[data-filter-results-count]");
     const emptyState = root.querySelector("[data-filter-empty-state]");
     const articleCards = Array.from(root.querySelectorAll("[data-filter-article]"));
+    const translateUi = (key: string, fallback: string) =>
+      runtime.__mpTranslateUi?.(key, runtime.__mpGetUiLanguage?.()) ?? fallback;
+    const formatResultsLabel = (count: number) =>
+      `${count} ${translateUi(count === 1 ? "archive.article" : "archive.articles", count === 1 ? "article" : "articles")}`;
 
     const updateResults = () => {
       const query =
@@ -235,7 +258,7 @@ const filterGridClass = hasTypeFilter
       });
 
       if (resultsCount instanceof HTMLElement) {
-        resultsCount.textContent = `${visibleCount} article${visibleCount === 1 ? "" : "s"}`;
+        resultsCount.textContent = formatResultsLabel(visibleCount);
       }
 
       if (emptyState instanceof HTMLElement) {
@@ -270,6 +293,7 @@ const filterGridClass = hasTypeFilter
       updateResults();
     });
 
+    document.addEventListener("mp:ui-language-change", updateResults);
     updateResults();
   });
 </script>

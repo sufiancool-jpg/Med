@@ -26,6 +26,7 @@ import Analytics from "@vercel/analytics/astro";
 
 import { siteConfig } from "../config/site";
 import { getAnnouncementBarSettings } from "../lib/site-data";
+import { defaultUiLanguage, uiTranslations } from "../lib/ui-i18n";
 
 const { title, description, ogImage, canonical, metadata, hideAnnouncementBar = false } = Astro.props;
 
@@ -70,6 +71,170 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
         document.documentElement.setAttribute("data-theme", "dark");
       }
       window.localStorage.setItem("theme", theme);
+    </script>
+    <script is:inline define:vars={{ defaultUiLanguage, uiTranslations }}>
+      (() => {
+        const runtime = window;
+        const storageKey = "medplatform-ui-language";
+        const cookieKey = "mp_ui_lang";
+
+        const isUiLanguage = (value) =>
+          typeof value === "string" && Object.prototype.hasOwnProperty.call(uiTranslations, value);
+
+        const readLanguageCookie = () => {
+          const match = document.cookie.match(new RegExp(`(?:^|; )${cookieKey}=([^;]+)`));
+          return match ? decodeURIComponent(match[1]) : "";
+        };
+
+        const getStoredLanguage = () => {
+          try {
+            const storedLanguage = runtime.localStorage?.getItem(storageKey) || "";
+            if (isUiLanguage(storedLanguage)) {
+              return storedLanguage;
+            }
+          } catch {}
+
+          const cookieLanguage = readLanguageCookie();
+          return isUiLanguage(cookieLanguage) ? cookieLanguage : defaultUiLanguage;
+        };
+
+        const translateText = (key, language, value) => {
+          const resolvedLanguage = isUiLanguage(language) ? language : defaultUiLanguage;
+          const fallbackLanguage = uiTranslations[defaultUiLanguage] || {};
+          const template =
+            uiTranslations[resolvedLanguage]?.[key] ??
+            fallbackLanguage[key] ??
+            "";
+
+          if (typeof template !== "string") {
+            return "";
+          }
+
+          return typeof value === "string" && value !== ""
+            ? template.replace(/\{\{value\}\}/g, value)
+            : template;
+        };
+
+        const applyAttributeTranslations = (
+          selector,
+          dataAttributeName,
+          attributeName,
+          language,
+        ) => {
+          document.querySelectorAll(selector).forEach((element) => {
+            const key = element.getAttribute(dataAttributeName);
+            if (!key) {
+              return;
+            }
+
+            const value = element.getAttribute("data-ui-i18n-value") || "";
+            const translated = translateText(key, language, value);
+
+            if (translated !== "") {
+              element.setAttribute(attributeName, translated);
+            }
+          });
+        };
+
+        const applyUiLanguage = () => {
+          const language = getStoredLanguage();
+          document.documentElement.dataset.uiLanguage = language;
+
+          document.querySelectorAll("[data-ui-i18n]").forEach((element) => {
+            const key = element.getAttribute("data-ui-i18n");
+            if (!key) {
+              return;
+            }
+
+            const value = element.getAttribute("data-ui-i18n-value") || "";
+            const translated = translateText(key, language, value);
+
+            if (translated !== "") {
+              element.textContent = translated;
+            }
+          });
+
+          applyAttributeTranslations(
+            "[data-ui-i18n-placeholder]",
+            "data-ui-i18n-placeholder",
+            "placeholder",
+            language,
+          );
+          applyAttributeTranslations(
+            "[data-ui-i18n-aria-label]",
+            "data-ui-i18n-aria-label",
+            "aria-label",
+            language,
+          );
+          applyAttributeTranslations(
+            "[data-ui-i18n-title]",
+            "data-ui-i18n-title",
+            "title",
+            language,
+          );
+
+          document.querySelectorAll("[data-ui-lang-button]").forEach((button) => {
+            const buttonLanguage = button.getAttribute("data-ui-lang-code");
+            const isActive = buttonLanguage === language;
+            button.dataset.active = isActive ? "true" : "false";
+            button.setAttribute("aria-pressed", String(isActive));
+            button.classList.toggle("font-semibold", isActive);
+            button.classList.toggle("text-primary", isActive);
+            button.classList.toggle("text-primary/45", !isActive);
+          });
+        };
+
+        const setUiLanguage = (language) => {
+          if (!isUiLanguage(language)) {
+            return;
+          }
+
+          try {
+            runtime.localStorage?.setItem(storageKey, language);
+          } catch {}
+
+          document.cookie = `${cookieKey}=${encodeURIComponent(language)}; path=/; max-age=31536000; SameSite=Lax`;
+          applyUiLanguage();
+          document.dispatchEvent(
+            new CustomEvent("mp:ui-language-change", {
+              detail: { language },
+            }),
+          );
+        };
+
+        runtime.__mpGetUiLanguage = getStoredLanguage;
+        runtime.__mpSetUiLanguage = setUiLanguage;
+        runtime.__mpApplyUiLanguage = applyUiLanguage;
+        runtime.__mpTranslateUi = (key, language, value) =>
+          translateText(key, language || getStoredLanguage(), value);
+
+        if (!runtime.__mpUiLanguageListenersBound) {
+          document.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+              return;
+            }
+
+            const button = target.closest("[data-ui-lang-button]");
+            if (!(button instanceof HTMLButtonElement)) {
+              return;
+            }
+
+            event.preventDefault();
+            setUiLanguage(button.getAttribute("data-ui-lang-code") || defaultUiLanguage);
+          });
+
+          document.addEventListener("astro:page-load", applyUiLanguage);
+          document.addEventListener("astro:after-swap", applyUiLanguage);
+          runtime.__mpUiLanguageListenersBound = true;
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", applyUiLanguage, { once: true });
+        } else {
+          applyUiLanguage();
+        }
+      })();
     </script>
   </head>
   <body

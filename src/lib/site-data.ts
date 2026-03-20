@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import { projectArticles as localProjectArticles, projectPages as localProjectPages, projectStages } from "../data/projects";
 import { localPeople } from "../data/people";
+import { siteConfig } from "../config/site";
 
 const wordpressApiUrl = (import.meta.env.WORDPRESS_API_URL ?? process.env.WORDPRESS_API_URL ?? "").replace(/\/$/, "");
 const cacheWordPressResults = import.meta.env.PROD;
@@ -16,6 +17,13 @@ export interface PublicationTag {
 export interface PublicationReference {
   name: string;
   url: string;
+}
+
+export interface ProjectLink {
+  id: number | string;
+  slug: string;
+  href: string;
+  title: string;
 }
 
 export interface PersonSummary {
@@ -57,6 +65,7 @@ export interface PublicationSummary {
   authorRole?: string;
   authorImage?: string;
   authorPerson?: PublicationPerson;
+  authorPeople: PublicationPerson[];
   image?: string;
   audioHref?: string;
   outputType: string;
@@ -74,6 +83,8 @@ export interface PublicationSummary {
     href: string;
     color: string;
   }>;
+  downloadTrackedHref?: string;
+  downloadCountApiHref?: string;
   downloadHref?: string;
   downloadLabel?: string;
   source: "wordpress" | "local";
@@ -99,10 +110,21 @@ export interface ProjectSummary {
   href: string;
   title: string;
   description: string;
+  cardIcon?: string;
+  parentProject?: ProjectLink;
+  alignedProject?: ProjectLink;
   color: string;
+  progressColor: string;
   currentStage: string;
   stagePoints: string[];
   hideProjectBar: boolean;
+  leads: Array<{
+    name: string;
+    role: string;
+    image: string;
+    href?: string;
+    linked: boolean;
+  }>;
   lead: {
     name: string;
     role: string;
@@ -133,12 +155,24 @@ export interface HomepageSelections {
   featuredArticle?: PublicationDetail;
   sliderPublications: PublicationSummary[];
   latestPublications: PublicationSummary[];
+  projectCount: number;
+  projectIds: number[];
 }
 
 export interface AnnouncementBarSettings {
   text: string;
   linkLabel: string;
   linkHref: string;
+}
+
+export interface SiteSettings {
+  socialLinks: {
+    linkedin?: string;
+    youtube?: string;
+    instagram?: string;
+    contact?: string;
+  };
+  showPublicDownloadCounts: boolean;
 }
 
 interface WordPressTerm {
@@ -197,6 +231,7 @@ const stripHtml = (value: string) =>
   decodeHtml(value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
 const PUBLICATION_PREVIEW_WORD_LIMIT = 12;
+const PROJECT_DESCRIPTION_WORD_LIMIT = 25;
 
 const normalizeComparableText = (value: string) =>
   stripHtml(value)
@@ -218,6 +253,19 @@ const clampPreviewText = (value: string, limit = PUBLICATION_PREVIEW_WORD_LIMIT)
 
   return `${words.slice(0, limit).join(" ")}...`;
 };
+
+const clampWordCount = (value: string, limit: number) => {
+  const words = stripHtml(value).split(/\s+/).filter(Boolean);
+
+  if (words.length <= limit) {
+    return words.join(" ");
+  }
+
+  return words.slice(0, limit).join(" ");
+};
+
+const clampProjectDescription = (value: string) =>
+  clampWordCount(value, PROJECT_DESCRIPTION_WORD_LIMIT);
 
 const buildPublicationPreviewText = (...candidates: Array<string | undefined>) => {
   const preferredSource =
@@ -282,11 +330,22 @@ const defaultAnnouncementBarSettings: AnnouncementBarSettings = {
   linkHref: "/widgets",
 };
 
+const defaultSiteSettings: SiteSettings = {
+  socialLinks: {
+    linkedin: siteConfig.socialLinks.linkedin,
+    youtube: siteConfig.socialLinks.youtube,
+    instagram: siteConfig.socialLinks.instagram,
+    contact: siteConfig.socialLinks.contact,
+  },
+  showPublicDownloadCounts: false,
+};
+
 let wordpressProjectCache: Promise<ProjectSummary[] | null> | undefined;
 let wordpressPeopleCache: Promise<PersonSummary[] | null> | undefined;
 let wordpressPublicationCache: Promise<PublicationSummary[] | null> | undefined;
 let wordpressHomepageRecordCache: Promise<WordPressRecord | null> | undefined;
 let wordpressHomepageCache: Promise<HomepageSelections | null> | undefined;
+let wordpressSiteSettingsCache: Promise<SiteSettings | null> | undefined;
 let localPublicationCache: Promise<PublicationSummary[]> | undefined;
 let localDetailCache: Promise<Map<string, PublicationDetail>> | undefined;
 
@@ -317,6 +376,8 @@ const localPeopleBySlug = new Map(localPeopleSummaries.map((person) => [person.s
 const localPeopleByName = new Map(
   localPeopleSummaries.map((person) => [person.name.toLowerCase(), person]),
 );
+const localVisibleProjectPages = localProjectPages.filter((project) => !project.hideFromProjectScreens);
+const localVisibleProjectsBySlug = new Map(localVisibleProjectPages.map((project) => [project.slug, project]));
 
 const toPublicationPerson = (person: PersonSummary): PublicationPerson => ({
   id: person.id,
@@ -376,6 +437,44 @@ const fetchWordPressJson = async <T>(endpoint: string): Promise<T | null> => {
     clearTimeout(timeout);
   }
 };
+
+const getWordPressSiteBaseUrl = () => {
+  if (!wordpressApiUrl) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(wordpressApiUrl);
+    url.pathname = url.pathname.replace(/\/wp-json\/?$/, "/");
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+};
+
+const buildWordPressAdminActionUrl = (params: Record<string, string | number>) => {
+  const baseUrl = getWordPressSiteBaseUrl();
+
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL("wp-admin/admin-post.php", baseUrl);
+
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.set(key, String(value));
+    });
+
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+};
+
+const buildWordPressApiEndpoint = (endpoint: string) => (wordpressApiUrl ? `${wordpressApiUrl}${endpoint}` : undefined);
 
 const getTermsByTaxonomy = (record: WordPressRecord, taxonomy: string) =>
   (record._embedded?.["wp:term"] ?? [])
@@ -459,13 +558,35 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
         (people ?? localPeopleSummaries).map((person) => [String(person.id), person]),
       );
 
-      return records
+      const projectRows = records
         .map((record) => {
+          const leadPersonIds = Array.isArray(record.meta?.mp_lead_person_ids)
+            ? record.meta?.mp_lead_person_ids.map((item) => Number(item)).filter((item) => item > 0)
+            : [];
           const leadPersonId = Number(record.meta?.mp_lead_person_id ?? 0);
-          const leadPersonRecord = leadPersonId ? peopleById.get(String(leadPersonId)) : undefined;
-          const leadName = String(record.meta?.mp_lead_name ?? leadPersonRecord?.name ?? "").trim();
-          const leadRole = String(record.meta?.mp_lead_role ?? leadPersonRecord?.role ?? "");
-          const leadImage = String(record.meta?.mp_lead_image ?? leadPersonRecord?.image ?? "");
+          const resolvedLeadPersonIds =
+            leadPersonIds.length > 0
+              ? leadPersonIds
+              : leadPersonId > 0
+                ? [leadPersonId]
+                : [];
+          const leadPersonRecords = resolvedLeadPersonIds
+            .map((id) => peopleById.get(String(id)))
+            .filter(Boolean) as PersonSummary[];
+          const primaryLeadPersonRecord = leadPersonRecords[0];
+          const leadName = String(record.meta?.mp_lead_name ?? primaryLeadPersonRecord?.name ?? "").trim();
+          const leadRole = String(record.meta?.mp_lead_role ?? primaryLeadPersonRecord?.role ?? "");
+          const leadImage = String(record.meta?.mp_lead_image ?? primaryLeadPersonRecord?.image ?? "");
+          const leads = leadPersonRecords.map((person) =>
+            buildProjectPerson(person.name, peopleByName, {
+              role: leadRole || person.role,
+              image: person.image,
+            }),
+          );
+          const fallbackLead = buildProjectPerson(leadName, peopleByName, {
+            role: leadRole,
+            image: leadImage,
+          });
           const stagePoints = Array.isArray(record.meta?.mp_stage_points)
             ? record.meta?.mp_stage_points.map((item) => String(item)).filter(Boolean)
             : [];
@@ -484,19 +605,22 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
               : legacyTeamMembers.map((item) => buildProjectPerson(item, peopleByName));
 
           return {
+            parentProjectId: Number(record.meta?.mp_parent_project_id ?? 0),
+            alignedProjectId: Number(record.meta?.mp_aligned_project_id ?? 0),
+            hiddenFromProjectScreens: Boolean(record.meta?.mp_hide_project_currently),
             id: record.id,
             slug: record.slug,
             href: `/services/${record.slug}`,
             title: decodeHtml(record.title.rendered),
-            description: stripHtml(record.excerpt.rendered),
+            description: clampProjectDescription(record.excerpt.rendered),
+            cardIcon: String(record.meta?.mp_card_icon ?? ""),
             color: String(record.meta?.mp_color ?? "#15243a"),
+            progressColor: String(record.meta?.mp_progress_color ?? record.meta?.mp_color ?? "#15243a"),
             currentStage: String(record.meta?.mp_current_stage ?? projectStages[0]),
             stagePoints: stagePoints.length > 0 ? stagePoints : projectStages,
             hideProjectBar: Boolean(record.meta?.mp_hide_project_bar),
-            lead: buildProjectPerson(leadName, peopleByName, {
-              role: leadRole,
-              image: leadImage,
-            }),
+            leads: leads.length > 0 ? leads : fallbackLead.name ? [fallbackLead] : [],
+            lead: fallbackLead,
             team: teamMembers,
             donors: Array.isArray(record.meta?.mp_donors)
               ? record.meta?.mp_donors.map((item) => ({
@@ -516,7 +640,33 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
             contentHtml: record.content.rendered,
             source: "wordpress" as const,
           };
-        })
+        });
+
+      const visibleProjectRows = projectRows.filter((project) => !project.hiddenFromProjectScreens);
+      const projectLookup = new Map(visibleProjectRows.map((project) => [Number(project.id), project]));
+
+      return visibleProjectRows
+        .map(({ parentProjectId, alignedProjectId, hiddenFromProjectScreens: _hidden, ...project }) => ({
+          ...project,
+          parentProject:
+            parentProjectId > 0 && projectLookup.has(parentProjectId)
+              ? {
+                  id: projectLookup.get(parentProjectId)!.id,
+                  slug: projectLookup.get(parentProjectId)!.slug,
+                  href: projectLookup.get(parentProjectId)!.href,
+                  title: projectLookup.get(parentProjectId)!.title,
+                }
+              : undefined,
+          alignedProject:
+            alignedProjectId > 0 && projectLookup.has(alignedProjectId)
+              ? {
+                  id: projectLookup.get(alignedProjectId)!.id,
+                  slug: projectLookup.get(alignedProjectId)!.slug,
+                  href: projectLookup.get(alignedProjectId)!.href,
+                  title: projectLookup.get(alignedProjectId)!.title,
+                }
+              : undefined,
+        }))
         .sort((a, b) => a.title.localeCompare(b.title));
     })();
   }
@@ -535,8 +685,21 @@ const buildWordPressPublicationSummary = (
   const relatedProjectIds = Array.isArray(record.meta?.mp_related_project_ids)
     ? record.meta?.mp_related_project_ids.map((item) => Number(item))
     : [];
+  const authorPersonIds = Array.isArray(record.meta?.mp_author_person_ids)
+    ? record.meta?.mp_author_person_ids.map((item) => Number(item)).filter((item) => item > 0)
+    : [];
   const authorPersonId = Number(record.meta?.mp_author_person_id ?? 0);
-  const authorPersonRecord = authorPersonId ? peopleLookup.get(authorPersonId) : undefined;
+  const resolvedAuthorPersonIds =
+    authorPersonIds.length > 0
+      ? authorPersonIds
+      : authorPersonId > 0
+        ? [authorPersonId]
+        : [];
+  const authorPersonRecords = resolvedAuthorPersonIds
+    .map((id) => peopleLookup.get(id))
+    .filter(Boolean) as PersonSummary[];
+  const primaryAuthorPersonRecord = authorPersonRecords[0];
+  const authorPeople = authorPersonRecords.map((person) => toPublicationPerson(person));
   const contributorPersonIds = Array.isArray(record.meta?.mp_contributor_person_ids)
     ? record.meta?.mp_contributor_person_ids.map((item) => Number(item))
     : [];
@@ -554,9 +717,10 @@ const buildWordPressPublicationSummary = (
         }))
         .filter((item) => item.name || item.url)
     : [];
+  const isPodcastOutput = outputTypeTerm?.slug === "pod-cast";
   const contributors = [
     ...contributorPersonIds
-      .filter((id) => id !== authorPersonId)
+      .filter((id) => !resolvedAuthorPersonIds.includes(id))
       .map((id) => peopleLookup.get(id))
       .filter(Boolean)
       .map((person) => toPublicationPerson(person as PersonSummary)),
@@ -582,10 +746,14 @@ const buildWordPressPublicationSummary = (
       record.title.rendered,
     ),
     pubDate: new Date(record.date),
-    author: String(authorPersonRecord?.name ?? record.meta?.mp_author_name ?? "Mediterranean Platform"),
-    authorRole: String(record.meta?.mp_author_role ?? authorPersonRecord?.role ?? ""),
-    authorImage: String(authorPersonRecord?.image ?? record.meta?.mp_author_image ?? "") || DEFAULT_PROFILE_IMAGE,
-    authorPerson: authorPersonRecord ? toPublicationPerson(authorPersonRecord) : undefined,
+    author:
+      authorPeople.length > 0
+        ? authorPeople.map((person) => person.name).join(", ")
+        : String(record.meta?.mp_author_name ?? "Mediterranean Platform"),
+    authorRole: String(record.meta?.mp_author_role ?? primaryAuthorPersonRecord?.role ?? ""),
+    authorImage: String(primaryAuthorPersonRecord?.image ?? record.meta?.mp_author_image ?? "") || DEFAULT_PROFILE_IMAGE,
+    authorPerson: primaryAuthorPersonRecord ? toPublicationPerson(primaryAuthorPersonRecord) : undefined,
+    authorPeople,
     image: String(record.meta?.mp_cover_image ?? ""),
     audioHref: String(record.meta?.mp_audio_url ?? ""),
     outputType: outputTypeTerm?.name ?? "Insights",
@@ -607,7 +775,16 @@ const buildWordPressPublicationSummary = (
       href: project.href,
       color: project.color,
     })),
-    downloadHref: String(record.meta?.mp_download_url ?? ""),
+    downloadTrackedHref: isPodcastOutput
+      ? undefined
+      : buildWordPressAdminActionUrl({
+          action: "mp_headless_track_publication_download",
+          publication_id: record.id,
+        }),
+    downloadCountApiHref: isPodcastOutput
+      ? undefined
+      : buildWordPressApiEndpoint(`/mp-headless/v1/publications/${record.id}/download-stats`),
+    downloadHref: isPodcastOutput ? "" : String(record.meta?.mp_download_url ?? ""),
     downloadLabel: String(record.meta?.mp_download_label ?? ""),
     source: "wordpress",
   };
@@ -666,6 +843,41 @@ const loadWordPressHomepageRecord = async (): Promise<WordPressRecord | null> =>
   return wordpressHomepageRecordCache;
 };
 
+const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
+  if (!cacheWordPressResults) {
+    wordpressSiteSettingsCache = undefined;
+  }
+
+  if (!wordpressSiteSettingsCache) {
+    wordpressSiteSettingsCache = (async () => {
+      const settings = await fetchWordPressJson<{
+        socialLinks?: {
+          linkedin?: string;
+          youtube?: string;
+          instagram?: string;
+        };
+        showPublicDownloadCounts?: boolean;
+      }>("/mp-headless/v1/site-settings");
+
+      if (!settings) {
+        return null;
+      }
+
+      return {
+        socialLinks: {
+          linkedin: String(settings.socialLinks?.linkedin ?? "").trim(),
+          youtube: String(settings.socialLinks?.youtube ?? "").trim(),
+          instagram: String(settings.socialLinks?.instagram ?? "").trim(),
+          contact: siteConfig.socialLinks.contact,
+        },
+        showPublicDownloadCounts: Boolean(settings.showPublicDownloadCounts),
+      };
+    })();
+  }
+
+  return wordpressSiteSettingsCache;
+};
+
 const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | null> => {
   if (!cacheWordPressResults) {
     wordpressHomepageCache = undefined;
@@ -717,6 +929,12 @@ const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | n
         featuredArticle,
         sliderPublications: sliderPublications.length > 0 ? sliderPublications : publications.slice(0, 4),
         latestPublications,
+        projectCount: Math.max(0, Number(homepage.meta?.mp_homepage_project_count ?? 0)),
+        projectIds: Array.isArray(homepage.meta?.mp_homepage_project_ids)
+          ? homepage.meta?.mp_homepage_project_ids
+              .map((id) => Number(id))
+              .filter((id) => Number.isFinite(id) && id > 0)
+          : [],
       };
     })();
   }
@@ -737,11 +955,26 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             name: tag,
             label: formatLocalTagLabel(tag),
           }));
+          const authorPersonSlugs = Array.isArray(entry.data.authorPersonSlugs)
+            ? entry.data.authorPersonSlugs
+            : entry.data.authorPersonSlug
+              ? [entry.data.authorPersonSlug]
+              : [];
+          const authorPeople = authorPersonSlugs
+            .map((slug) => localPeopleBySlug.get(slug))
+            .filter(Boolean)
+            .map((person) => toPublicationPerson(person as PersonSummary));
           const authorPerson =
-            (entry.data.authorPersonSlug && localPeopleBySlug.get(entry.data.authorPersonSlug)) ||
-            localPeopleByName.get(entry.data.author.toLowerCase());
+            authorPeople[0] ??
+            ((entry.data.authorPersonSlug && localPeopleBySlug.get(entry.data.authorPersonSlug))
+              ? toPublicationPerson(localPeopleBySlug.get(entry.data.authorPersonSlug) as PersonSummary)
+              : localPeopleByName.get(entry.data.author.toLowerCase())
+                ? toPublicationPerson(localPeopleByName.get(entry.data.author.toLowerCase()) as PersonSummary)
+                : undefined);
+          const authorPersonSlugsSet = new Set(authorPeople.map((person) => person.slug).filter(Boolean));
           const contributors = [
             ...((entry.data.contributorPersonSlugs ?? [])
+              .filter((slug) => !authorPersonSlugsSet.has(slug))
               .map((slug) => localPeopleBySlug.get(slug))
               .filter(Boolean)
               .map((person) => toPublicationPerson(person as PersonSummary))),
@@ -752,7 +985,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             }))),
           ];
           const relatedProjects = (entry.data.relatedProjectSlugs ?? [])
-            .map((projectSlug) => localProjectPages.find((project) => project.slug === projectSlug))
+            .map((projectSlug) => localVisibleProjectsBySlug.get(projectSlug))
             .filter(Boolean)
             .map((project) => ({
               slug: project!.slug,
@@ -770,10 +1003,14 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             excerpt: entry.data.description,
             previewText: buildPublicationPreviewText(entry.data.description, entry.body, entry.data.title),
             pubDate: entry.data.pubDate,
-            author: entry.data.author,
+            author:
+              authorPeople.length > 0
+                ? authorPeople.map((person) => person.name).join(", ")
+                : entry.data.author,
             authorRole: entry.data.authorRole ?? authorPerson?.role,
             authorImage: entry.data.authorImage ?? authorPerson?.image ?? DEFAULT_PROFILE_IMAGE,
-            authorPerson: authorPerson ? toPublicationPerson(authorPerson) : undefined,
+            authorPerson,
+            authorPeople,
             image: entry.data.image,
             audioHref: outputType === "Pod-Cast" ? entry.data.downloadHref : undefined,
             outputType,
@@ -792,6 +1029,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             relatedProjectSlugs: relatedProjects.map((project) => project.slug),
             relatedProjectTitles: relatedProjects.map((project) => project.title),
             relatedProjects,
+            downloadTrackedHref: entry.data.downloadHref,
             downloadHref: entry.data.downloadHref,
             downloadLabel: entry.data.downloadLabel,
             source: "local" as const,
@@ -834,21 +1072,62 @@ export const getProjects = async (): Promise<ProjectSummary[]> => {
   }
 
   const peopleByName = new Map(localPeopleSummaries.map((person) => [person.name.toLowerCase(), person]));
+  const localProjectsBySlug = new Map(localVisibleProjectPages.map((project) => [project.slug, project]));
 
-  return localProjectPages.map((project) => ({
+  return localVisibleProjectPages.map((project) => ({
     id: project.slug,
     slug: project.slug,
     href: project.href,
     title: project.title,
-    description: project.description,
+    description: clampProjectDescription(project.description),
+    cardIcon: project.cardIcon,
+    parentProject: project.parentProjectSlug
+      ? (() => {
+          const parentProject = localProjectsBySlug.get(project.parentProjectSlug);
+
+          return parentProject
+            ? {
+                id: parentProject.slug,
+                slug: parentProject.slug,
+                href: parentProject.href,
+                title: parentProject.title,
+              }
+            : undefined;
+        })()
+      : undefined,
+    alignedProject: project.alignedProjectSlug
+      ? (() => {
+          const alignedProject = localProjectsBySlug.get(project.alignedProjectSlug);
+
+          return alignedProject
+            ? {
+                id: alignedProject.slug,
+                slug: alignedProject.slug,
+                href: alignedProject.href,
+                title: alignedProject.title,
+              }
+            : undefined;
+        })()
+      : undefined,
     color: project.color,
+    progressColor: project.color,
     currentStage: project.currentStage,
     stagePoints: project.stagePoints,
     hideProjectBar: project.hideProjectBar,
-    lead: buildProjectPerson(project.lead.name, peopleByName, {
-      role: project.lead.role,
-      image: project.lead.image,
-    }),
+    leads: ((project.leads?.length ? project.leads : [project.lead]) ?? []).map((lead) =>
+      buildProjectPerson(lead.name, peopleByName, {
+        role: lead.role,
+        image: lead.image,
+      }),
+    ),
+    lead: buildProjectPerson(
+      (project.leads?.[0] ?? project.lead).name,
+      peopleByName,
+      {
+        role: (project.leads?.[0] ?? project.lead).role,
+        image: (project.leads?.[0] ?? project.lead).image,
+      },
+    ),
     team: project.team.map((member) => buildProjectPerson(member, peopleByName)),
     donors: project.donors,
     updates: project.updates,
@@ -968,7 +1247,7 @@ export const getPublicationsForProject = async (projectSlug: string) => {
     return filtered;
   }
 
-  const localProject = localProjectPages.find((project) => project.slug === projectSlug);
+  const localProject = localVisibleProjectPages.find((project) => project.slug === projectSlug);
   if (!localProject) {
     return [];
   }
@@ -985,6 +1264,7 @@ export const getPublicationsForProject = async (projectSlug: string) => {
       previewText: buildPublicationPreviewText(article.summary, article.title),
       pubDate: new Date(),
       author: article.author,
+      authorPeople: [],
       contributors: [],
       references: [],
       image: article.image,
@@ -1016,6 +1296,7 @@ export const getPublicationsForPerson = async (personSlug: string) => {
 
   return publications.filter(
     (publication) =>
+      publication.authorPeople.some((author) => author.slug === personSlug) ||
       publication.authorPerson?.slug === personSlug ||
       publication.contributors.some((contributor) => contributor.slug === personSlug),
   );
@@ -1039,7 +1320,19 @@ export const getHomepageSelections = async (): Promise<HomepageSelections> => {
     featuredArticle,
     sliderPublications: publications.slice(0, 4),
     latestPublications: publications.slice(0, 5),
+    projectCount: 0,
+    projectIds: [],
   };
+};
+
+export const getSiteSettings = async (): Promise<SiteSettings> => {
+  const wordpressSettings = await loadWordPressSiteSettings();
+
+  if (wordpressSettings) {
+    return wordpressSettings;
+  }
+
+  return defaultSiteSettings;
 };
 
 export const getAnnouncementBarSettings = async (): Promise<AnnouncementBarSettings | undefined> => {

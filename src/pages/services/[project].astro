@@ -8,6 +8,8 @@ import {
   getPublicationsForProject,
 } from "../../lib/site-data";
 
+export const prerender = import.meta.env.PROD;
+
 export async function getStaticPaths() {
   const projects = await getProjects();
 
@@ -20,7 +22,7 @@ const slug = Astro.params.project ?? "";
 const project = await getProjectBySlug(slug);
 
 if (!project) {
-  throw new Error(`Project not found for slug "${slug}"`);
+  return Astro.redirect("/404");
 }
 
 const currentStageIndex = Math.max(project.stagePoints.indexOf(project.currentStage), 0);
@@ -31,7 +33,10 @@ const stageItems = project.stagePoints.map((stage, index) => ({
   isActive: index <= currentStageIndex,
   isCurrent: index === currentStageIndex,
 }));
-const leadUsesDefaultImage = isDefaultProfileImage(project.lead.image);
+const visibleProjectLeads = project.leads.filter((lead) => lead.name.trim().length > 0);
+const projectLeadLabel = visibleProjectLeads.length === 1 ? "Program Lead" : "Program Leads";
+const projectLeadLabelKey =
+  visibleProjectLeads.length === 1 ? "project.programLead" : "project.programLeads";
 
 const relatedArticles = (await getPublicationsForProject(project.slug)).map((publication) => ({
   title: publication.title,
@@ -62,7 +67,7 @@ const metadata = {
     <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:py-12 lg:px-8">
       <div class="mx-auto max-w-5xl text-center">
         <p class="text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-primary/58">
-          Project
+          <span data-ui-i18n="project.label">Project</span>
         </p>
         <h1 class="mt-3 text-[clamp(2.5rem,5vw,4.9rem)] font-bold leading-[0.94] tracking-[-0.04em] text-primary">
           {project.title}
@@ -82,7 +87,7 @@ const metadata = {
           <div class="absolute left-0 right-0 top-[0.6rem] h-[3px] bg-black/10"></div>
           <div
             class="absolute left-0 top-[0.6rem] h-[3px]"
-            style={`width:${timelineProgress}%;background:${project.color};`}
+            style={`width:${timelineProgress}%;background:${project.progressColor};`}
           ></div>
           <div
             class="relative grid gap-4 overflow-x-auto pb-1"
@@ -95,7 +100,7 @@ const metadata = {
                     "mx-auto h-5 w-5 rounded-full border-2 bg-white",
                     item.isActive ? "border-transparent" : "border-black/18",
                   ]}
-                  style={item.isActive ? `background:${project.color};` : undefined}
+                  style={item.isActive ? `background:${project.progressColor};` : undefined}
                 ></div>
                 <p
                   class:list={[
@@ -112,51 +117,62 @@ const metadata = {
         </div>
       )}
 
-      <div class="mt-14 grid gap-10 lg:grid-cols-[20%_1px_minmax(0,1fr)] lg:gap-8">
-        <aside class="space-y-8">
-          <section>
+      <div class="mt-10 grid gap-8 lg:mt-14 lg:grid-cols-[20%_1px_minmax(0,1fr)] lg:gap-8">
+        <aside class="order-2 space-y-6 lg:col-start-1 lg:order-none lg:space-y-8">
+          {visibleProjectLeads.length > 0 && (
+            <section>
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              Program Lead
+              <span data-ui-i18n={projectLeadLabelKey}>{projectLeadLabel}</span>
             </p>
-            <div class="mt-3">
-              {project.lead.linked && project.lead.href ? (
-                <a href={project.lead.href} class="group/lead block">
-                  <img
-                    src={project.lead.image}
-                    alt={project.lead.name}
-                    class:list={[
-                      "aspect-[4/5] w-full transition-transform duration-300 group-hover/lead:scale-[1.01]",
-                      leadUsesDefaultImage
-                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
-                        : "object-cover",
-                    ]}
-                  />
-                  <p class="mt-3 text-[1rem] font-semibold text-primary transition-colors duration-200 group-hover/lead:text-hover">
-                    {project.lead.name}
-                  </p>
-                </a>
-              ) : (
-                <>
-                  <img
-                    src={project.lead.image}
-                    alt={project.lead.name}
-                    class:list={[
-                      "aspect-[4/5] w-full",
-                      leadUsesDefaultImage
-                        ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
-                        : "object-cover",
-                    ]}
-                  />
-                  <p class="mt-3 text-[1rem] font-semibold text-primary">{project.lead.name}</p>
-                </>
-              )}
-              <p class="mt-1 text-[0.88rem] leading-6 text-primary/66">{project.lead.role}</p>
+            <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:gap-6">
+              {visibleProjectLeads.map((lead) => (
+                <div>
+                  {lead.linked && lead.href ? (
+                    <a href={lead.href} class="group/lead grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 items-start lg:block">
+                      <img
+                        src={lead.image}
+                        alt={lead.name}
+                        class:list={[
+                          "h-[7rem] w-full transition-transform duration-300 group-hover/lead:scale-[1.01] lg:aspect-[4/5] lg:h-auto",
+                          isDefaultProfileImage(lead.image)
+                            ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
+                            : "object-cover",
+                        ]}
+                      />
+                      <div class="min-w-0">
+                        <p class="text-[0.96rem] font-semibold text-primary transition-colors duration-200 group-hover/lead:text-hover lg:mt-3 lg:text-[1rem]">
+                          {lead.name}
+                        </p>
+                        <p class="mt-1 text-[0.84rem] leading-6 text-primary/66 lg:text-[0.88rem]">{lead.role}</p>
+                      </div>
+                    </a>
+                  ) : (
+                    <div class="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-4 items-start lg:block">
+                      <img
+                        src={lead.image}
+                        alt={lead.name}
+                        class:list={[
+                          "h-[7rem] w-full lg:aspect-[4/5] lg:h-auto",
+                          isDefaultProfileImage(lead.image)
+                            ? "border border-black/12 bg-[#f4f5f3] object-contain p-2 opacity-75"
+                            : "object-cover",
+                        ]}
+                      />
+                      <div class="min-w-0">
+                        <p class="text-[0.96rem] font-semibold text-primary lg:mt-3 lg:text-[1rem]">{lead.name}</p>
+                        <p class="mt-1 text-[0.84rem] leading-6 text-primary/66 lg:text-[0.88rem]">{lead.role}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </section>
+            </section>
+          )}
 
           <section class="border-t border-black/8 pt-5">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              Working Team
+              <span data-ui-i18n="project.workingTeam">Working Team</span>
             </p>
             <ul class="mt-3 space-y-2 text-[0.92rem] leading-6 text-primary/72">
               {project.team.map((member) => (
@@ -178,7 +194,7 @@ const metadata = {
 
           <section class="border-t border-black/8 pt-5">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              Donors
+              <span data-ui-i18n="project.donors">Donors</span>
             </p>
             <div class="mt-4 grid grid-cols-2 gap-3">
               {project.donors.map((donor) => (
@@ -193,19 +209,61 @@ const metadata = {
               ))}
             </div>
           </section>
+
+          {(project.parentProject || project.alignedProject) && (
+            <section class="border-t border-black/8 pt-5">
+              <div class="grid gap-4">
+                {project.parentProject && (
+                  <section class="border border-black/10 bg-[#f5f0e7] p-4 lg:p-5">
+                    <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
+                      <span data-ui-i18n="project.parentProject">Parent Project</span>
+                    </p>
+                    <p class="mt-3 text-[0.92rem] leading-6 text-primary/72">
+                      <span data-ui-i18n="project.parentPrefix">This project sits under the</span>
+                      <a
+                        href={project.parentProject.href}
+                        class="ml-1 font-semibold text-primary underline decoration-black/20 underline-offset-4 transition-colors duration-200 hover:text-hover"
+                      >
+                        {project.parentProject.title}
+                      </a>
+                      <span class="ml-1" data-ui-i18n="project.parentSuffix">project.</span>
+                    </p>
+                  </section>
+                )}
+
+                {project.alignedProject && (
+                  <section class="border border-black/10 bg-[#eef3ea] p-4 lg:p-5">
+                    <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
+                      <span data-ui-i18n="project.alignedProject">Aligned Project</span>
+                    </p>
+                    <p class="mt-3 text-[0.92rem] leading-6 text-primary/72">
+                      <span data-ui-i18n="project.alignedPrefix">This project is aligned with the</span>
+                      <a
+                        href={project.alignedProject.href}
+                        class="ml-1 font-semibold text-primary underline decoration-black/20 underline-offset-4 transition-colors duration-200 hover:text-hover"
+                      >
+                        {project.alignedProject.title}
+                      </a>
+                      <span class="ml-1" data-ui-i18n="project.alignedSuffix">project.</span>
+                    </p>
+                  </section>
+                )}
+              </div>
+            </section>
+          )}
         </aside>
 
-        <div class="hidden border-l border-dotted border-black/20 lg:block"></div>
+        <div class="order-3 hidden border-l border-dotted border-black/20 lg:col-start-2 lg:block"></div>
 
-        <div>
+        <div class="order-1 lg:col-start-3 lg:order-none">
           <div
-            class="project-prose max-w-4xl text-[1rem] leading-8 text-primary/74"
+            class="project-prose max-w-4xl text-[0.96rem] leading-7 text-primary/74 md:text-[1rem] md:leading-8"
             set:html={project.contentHtml}
           ></div>
 
           <section class="mt-10">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              Current Updates
+              <span data-ui-i18n="project.currentUpdates">Current Updates</span>
             </p>
             <ul class="mt-4 space-y-3 text-[0.98rem] leading-7 text-primary/74">
               {project.updates.map((update) => (
@@ -222,11 +280,11 @@ const metadata = {
 
           <section class="mt-10">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              Workstreams
+              <span data-ui-i18n="project.workstreams">Workstreams</span>
             </p>
-            <div class="mt-4 grid gap-5 md:grid-cols-3">
+            <div class="mt-4 grid gap-4 md:grid-cols-3 md:gap-5">
               {project.focusAreas.map((area) => (
-                <article class="border border-black/10 bg-white p-5">
+                <article class="border border-black/10 bg-white p-4 md:p-5">
                   <h2 class="text-[1.02rem] font-semibold leading-tight text-primary">
                     {area.title}
                   </h2>
@@ -249,6 +307,10 @@ const metadata = {
       resultsId={`${project.slug}-results`}
       searchPlaceholder={`Search ${project.title} articles`}
       emptyMessage={`No ${project.title} articles match the current search and filter combination.`}
+      searchPlaceholderKey="archive.searchProjectArticles"
+      searchPlaceholderValue={project.title}
+      emptyMessageKey="archive.noProjectArticlesMatch"
+      emptyMessageValue={project.title}
       typeOptions={["Publication", "Policy Paper", "Research Report", "Policy Brief", "E-Book", "Insights", "Pod-Cast"]}
     />
   </div>

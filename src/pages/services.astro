@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import FilteredArticleArchive from "../components/widgets/FilteredArticleArchive.astro";
+import { Icon } from "astro-icon/components";
 import { getProjects, getPublications } from "../lib/site-data";
 
 const projectVisuals = {
@@ -24,6 +25,8 @@ const projectVisuals = {
   },
 } as const;
 
+const defaultProjectCardIcon = "lucide:network";
+
 const projects = await getProjects();
 const publications = await getPublications();
 
@@ -37,7 +40,16 @@ const topProjects = projects.map((project) => ({
   hoverBody: "rgba(255,255,255,0.88)",
   hoverIcon: "rgba(255,255,255,0.94)",
   href: project.href,
-  ...(projectVisuals[project.slug as keyof typeof projectVisuals] ?? projectVisuals["libya-platform"]),
+  visual:
+    project.slug in projectVisuals
+      ? {
+          kind: "custom" as const,
+          ...projectVisuals[project.slug as keyof typeof projectVisuals],
+        }
+      : {
+          kind: "icon" as const,
+          name: project.cardIcon || defaultProjectCardIcon,
+        },
 }));
 
 const archiveArticles = publications
@@ -82,38 +94,46 @@ const metadata = {
               data-project-card-bgicon
               class="pointer-events-none absolute -right-4 -top-4 select-none text-primary opacity-[0.08] transition-transform group-hover:scale-110 group-hover:rotate-6"
             >
-              <svg
-                viewBox={project.viewBox}
-                class="h-32 w-32 fill-none stroke-current stroke-[1.2]"
-                aria-hidden="true"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                {project.paths.map((path) => (
-                  <path d={path} vector-effect="non-scaling-stroke"></path>
-                ))}
-              </svg>
-            </div>
-
-            <div class="relative z-10 flex h-full flex-col text-left">
-              <div data-project-card-icon class="mb-6 text-primary">
+              {project.visual.kind === "custom" ? (
                 <svg
-                  viewBox={project.viewBox}
-                  class="h-11 w-11 fill-none stroke-current stroke-[1.7]"
+                  viewBox={project.visual.viewBox}
+                  class="h-32 w-32 fill-none stroke-current stroke-[1.2]"
                   aria-hidden="true"
                   stroke-linecap="round"
                   stroke-linejoin="round"
                 >
-                  {project.paths.map((path) => (
+                  {project.visual.paths.map((path) => (
                     <path d={path} vector-effect="non-scaling-stroke"></path>
                   ))}
                 </svg>
+              ) : (
+                <Icon name={project.visual.name} class="h-32 w-32 stroke-[1.2]" aria-hidden="true" />
+              )}
+            </div>
+
+            <div class="relative z-10 flex h-full flex-col text-left">
+              <div data-project-card-icon class="mb-6 text-primary">
+                {project.visual.kind === "custom" ? (
+                  <svg
+                    viewBox={project.visual.viewBox}
+                    class="h-11 w-11 fill-none stroke-current stroke-[1.7]"
+                    aria-hidden="true"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    {project.visual.paths.map((path) => (
+                      <path d={path} vector-effect="non-scaling-stroke"></path>
+                    ))}
+                  </svg>
+                ) : (
+                  <Icon name={project.visual.name} class="h-11 w-11 stroke-[1.7]" aria-hidden="true" />
+                )}
               </div>
               <p
                 data-project-card-meta
                 class="mb-2 text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-primary/55"
               >
-                {project.meta}
+                <span data-ui-i18n="project.label">Project</span>
               </p>
               <h2 data-project-card-title class="mb-4 text-2xl font-bold text-foreground">
                 {project.title}
@@ -126,7 +146,7 @@ const metadata = {
                 data-project-card-cta
                 class="mt-auto inline-flex items-center gap-2 pt-8 font-semibold text-primary transition-all hover:underline"
               >
-                View details
+                <span data-ui-i18n="project.viewDetails">View details</span>
                 <span class="transition-transform group-hover:translate-x-1">→</span>
               </a>
             </div>
@@ -141,6 +161,7 @@ const metadata = {
     containerClass="mx-auto max-w-7xl px-4 pt-0 pb-10 sm:px-6 md:pb-12 lg:px-8"
     resultsId="projects-results"
     searchPlaceholder="Search project articles"
+    searchPlaceholderKey="archive.searchProjectArticlesGeneric"
   />
 </BaseLayout>
 

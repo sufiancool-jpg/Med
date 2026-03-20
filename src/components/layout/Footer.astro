@@ -1,74 +1,124 @@
 ---
 import { siteConfig } from "../../config/site";
+import { getSiteSettings } from "../../lib/site-data";
 
 const footerSections = [
   {
     title: "Explore",
+    titleKey: "footer.explore",
     links: [
-      { text: "Home", href: "/" },
-      { text: "About", href: "/about" },
-      { text: "Projects", href: "/services" },
-      { text: "Publications", href: "/blog" },
-      { text: "Media", href: "/widgets" },
-      { text: "Contact", href: "/contact" },
+      { text: "Home", href: "/", key: "nav.home" },
+      { text: "About", href: "/about", key: "nav.about" },
+      { text: "Projects", href: "/services", key: "nav.projects" },
+      { text: "Publications", href: "/blog", key: "nav.publications" },
+      { text: "Media", href: "/widgets", key: "nav.media" },
+      { text: "Contact", href: "/contact", key: "nav.contact" },
     ],
   },
   {
     title: "Get Involved",
+    titleKey: "footer.getInvolved",
     links: [
-      { text: "Career", href: "/career" },
-      { text: "Volunteer", href: "/volunteer" },
+      { text: "Career", href: "/career", key: "footer.career" },
+      { text: "Volunteer", href: "/volunteer", key: "footer.volunteer" },
     ],
   },
   {
     title: "Legal",
+    titleKey: "footer.legal",
     links: [
-      { text: "Imprint", href: "/imprint" },
-      { text: "Privacy Policy", href: "/privacy-policy" },
-      { text: "Terms of Use", href: "/terms-of-use" },
+      { text: "Imprint", href: "/imprint", key: "footer.imprint" },
+      { text: "Privacy Policy", href: "/privacy-policy", key: "footer.privacy" },
+      { text: "Terms of Use", href: "/terms-of-use", key: "footer.terms" },
     ],
   },
 ];
 
+const mobileFooterSections = [
+  footerSections[0],
+  {
+    title: "Get Involved",
+    titleKey: "footer.getInvolved",
+    links: [...footerSections[1].links, ...footerSections[2].links],
+  },
+];
+
+const siteSettings = await getSiteSettings();
 const socialLinks = [
   {
     text: "LinkedIn",
-    href: siteConfig.socialLinks.linkedin,
+    href: siteSettings.socialLinks.linkedin,
   },
   {
     text: "YouTube",
-    href: siteConfig.socialLinks.youtube,
+    href: siteSettings.socialLinks.youtube,
   },
-];
+  {
+    text: "Instagram",
+    href: siteSettings.socialLinks.instagram,
+  },
+].filter((link) => Boolean(link.href));
 
 const footerHoverText = "Join the Network";
 ---
 
 <footer class="border-t border-black/10 bg-white">
-  <div class="mx-auto max-w-7xl bg-white px-4 py-10 sm:px-6 md:py-12 lg:px-8">
-    <div class="border-b border-black pb-8 md:pb-10">
-      <div class="grid items-stretch gap-6 md:min-h-[10.5rem] md:grid-cols-[32%_68%] md:gap-8">
-        <div class="w-full md:border-r md:border-black md:pr-8">
+  <div class="mx-auto max-w-7xl bg-white px-4 py-7 sm:px-6 md:py-12 lg:px-8">
+    <div class="border-b border-black pb-5 md:pb-10">
+      <div class="grid items-start gap-5 grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:min-h-[10.5rem] md:grid-cols-[32%_68%] md:gap-8">
+        <div class="w-full pr-3 md:border-r md:border-black md:pr-8">
           <div class="group relative flex h-full w-full items-center justify-start">
-            <div class="relative w-full max-w-[22rem] aspect-[235/76]">
+            <div class="relative w-full max-w-[11.5rem] sm:max-w-[13rem] md:max-w-[22rem] aspect-[235/76]">
               <img
                 src="/Logo3.png"
                 alt="Mediterranean Platform"
                 class="absolute inset-0 h-full w-full -translate-x-[3%] object-contain transition-opacity duration-200 group-hover:opacity-0"
               />
-              <p class="pointer-events-none absolute inset-0 flex items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <p
+                data-ui-i18n="footer.joinNetwork"
+                class="pointer-events-none absolute inset-0 hidden items-center justify-end text-right text-[clamp(1.7rem,4.45vw,3.85rem)] font-bold uppercase leading-[0.9] tracking-tight text-[#70c8e0] opacity-0 transition-opacity duration-200 group-hover:opacity-100 md:flex"
+              >
                 {footerHoverText}
               </p>
             </div>
           </div>
         </div>
 
-        <div class="flex h-full w-full items-center md:pl-0">
-          <div class="grid w-full gap-x-8 gap-y-5 sm:grid-cols-3">
+        <div class="flex h-full w-full items-start md:items-center md:pl-0">
+          <div class="grid w-full grid-cols-2 gap-x-4 gap-y-4 md:hidden">
+            {
+              mobileFooterSections.map((section) => (
+                <div>
+                  <h2
+                    data-ui-i18n={section.titleKey}
+                    class="text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-primary"
+                  >
+                    {section.title}
+                  </h2>
+                  <ul class="mt-2 space-y-1 text-[0.8rem] leading-[1.35] text-primary/75">
+                    {section.links.map((link) => (
+                      <li>
+                        <a
+                          href={link.href}
+                          class="cursor-pointer transition-colors hover:text-hover"
+                        >
+                          <span data-ui-i18n={link.key}>{link.text}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            }
+          </div>
+          <div class="hidden w-full md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-5">
             {
               footerSections.map((section) => (
                 <div>
-                  <h2 class="text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-primary">
+                  <h2
+                    data-ui-i18n={section.titleKey}
+                    class="text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-primary"
+                  >
                     {section.title}
                   </h2>
                   <ul class="mt-2.5 space-y-1.5 text-[0.92rem] leading-5 text-primary/75">
@@ -78,7 +128,7 @@ const footerHoverText = "Join the Network";
                           href={link.href}
                           class="cursor-pointer transition-colors hover:text-hover"
                         >
-                          {link.text}
+                          <span data-ui-i18n={link.key}>{link.text}</span>
                         </a>
                       </li>
                     ))}
@@ -90,7 +140,7 @@ const footerHoverText = "Join the Network";
         </div>
       </div>
     </div>
-    <div class="flex flex-col gap-4 pt-6 text-sm text-primary/70 md:flex-row md:items-center md:justify-between">
+    <div class="flex flex-col gap-2.5 pt-4 text-[0.78rem] leading-5 text-primary/70 sm:text-sm md:flex-row md:items-center md:justify-between">
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         {
           socialLinks.map((link) => (

@@ -71,6 +71,7 @@ const getTitleSizeClass = (title: string) => {
       data-fit-parent-height={fitParentHeight ? "true" : "false"}
       aria-roledescription="carousel"
       aria-label="Featured blog articles"
+      data-ui-i18n-aria-label="hero.carousel"
       tabindex="0"
     >
       <div
@@ -90,6 +91,8 @@ const getTitleSizeClass = (title: string) => {
                 href={item.href}
                 class="absolute inset-0 z-20"
                 aria-label={`Open ${item.title}`}
+                data-ui-i18n-aria-label="hero.openItem"
+                data-ui-i18n-value={item.title}
               ></a>
               <img
                 src={item.image}
@@ -102,7 +105,7 @@ const getTitleSizeClass = (title: string) => {
                 class:list={[
                   "pointer-events-none absolute inset-0 z-30 flex justify-start",
                   contentPosition === "bottom"
-                    ? "items-end px-5 pt-5 pb-12 sm:px-6 sm:pt-6 sm:pb-14 md:px-8 md:pt-8 md:pb-16"
+                    ? "items-end px-4 pt-4 pb-10 sm:px-6 sm:pt-6 sm:pb-14 md:px-8 md:pt-8 md:pb-16"
                     : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
                 ]}
               >
@@ -120,7 +123,7 @@ const getTitleSizeClass = (title: string) => {
                     )}
                   </div>
                   <p class="mt-2 text-[13px] font-sans font-light uppercase tracking-[0.08em] leading-none text-white sm:text-sm">
-                    By {item.author}
+                    <span data-ui-i18n="hero.by">By</span> {item.author}
                   </p>
                   <h3
                     class:list={[
@@ -143,12 +146,13 @@ const getTitleSizeClass = (title: string) => {
             <button
               type="button"
               data-slider-prev
-              class="absolute left-1 top-1/2 z-40 inline-flex h-16 w-16 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:left-2 sm:h-20 sm:w-20"
+              class="absolute left-1 top-1/2 z-40 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:left-2 sm:h-20 sm:w-20"
               aria-label="Previous highlighted article"
+              data-ui-i18n-aria-label="hero.prev"
             >
               <svg
                 viewBox="0 0 24 24"
-                class="h-10 w-10"
+                class="h-7 w-7 sm:h-10 sm:w-10"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="3.2"
@@ -162,12 +166,13 @@ const getTitleSizeClass = (title: string) => {
             <button
               type="button"
               data-slider-next
-              class="absolute right-1 top-1/2 z-40 inline-flex h-16 w-16 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:right-2 sm:h-20 sm:w-20"
+              class="absolute right-1 top-1/2 z-40 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:right-2 sm:h-20 sm:w-20"
               aria-label="Next highlighted article"
+              data-ui-i18n-aria-label="hero.next"
             >
               <svg
                 viewBox="0 0 24 24"
-                class="h-10 w-10"
+                class="h-7 w-7 sm:h-10 sm:w-10"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="3.2"
@@ -183,7 +188,7 @@ const getTitleSizeClass = (title: string) => {
       }
     </section>
   ) : (
-    <p class="p-5 text-sm text-muted-foreground">
+    <p data-ui-i18n="hero.empty" class="p-5 text-sm text-muted-foreground">
       No featured articles available.
     </p>
   )
@@ -213,9 +218,11 @@ const getTitleSizeClass = (title: string) => {
       let centerOffset = 0;
       let timerId = 0;
       let isTransitioning = false;
+      let isMobileSingle = false;
 
       const setHighlight = () => {
-        const centerIndex = baseCount <= 1 ? index : index + 1;
+        const centerIndex =
+          baseCount <= 1 || isMobileSingle ? index : index + 1;
         slides.forEach((slide, currentIndex) => {
           const isCenter = currentIndex === centerIndex;
           slide.dataset.active = isCenter ? "true" : "false";
@@ -227,10 +234,12 @@ const getTitleSizeClass = (title: string) => {
         const styles = window.getComputedStyle(track);
         const gap =
           Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
-        const baseSlideWidth = ((slider.clientWidth - gap * 2) / 3) * 1.1;
+        const sliderWidth = slider.clientWidth;
+        const baseSlideWidth = ((sliderWidth - gap * 2) / 3) * 1.1;
+        isMobileSingle = window.matchMedia("(max-width: 767px)").matches;
 
-        if (baseCount <= 1) {
-          slideWidth = slider.clientWidth;
+        if (baseCount <= 1 || isMobileSingle) {
+          slideWidth = sliderWidth;
           slideStep = slideWidth;
           centerOffset = 0;
         } else {

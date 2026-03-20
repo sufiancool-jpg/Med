@@ -74,6 +74,31 @@ function mp_headless_project_focus_areas_by_slug() {
 	return $options;
 }
 
+function mp_headless_project_card_icon_options() {
+	return array(
+		'lucide:network'                => __('Network', 'medplatform-headless'),
+		'lucide:globe-2'                => __('Globe', 'medplatform-headless'),
+		'lucide:messages-square'        => __('Dialogue', 'medplatform-headless'),
+		'lucide:book-open'              => __('Research', 'medplatform-headless'),
+		'lucide:shield'                 => __('Security', 'medplatform-headless'),
+		'lucide:chart-no-axes-combined' => __('Data', 'medplatform-headless'),
+		'lucide:file-text'              => __('Publication', 'medplatform-headless'),
+		'lucide:calendar-days'          => __('Convening', 'medplatform-headless'),
+	);
+}
+
+function mp_headless_sanitize_project_card_icon($value) {
+	$value = sanitize_text_field(wp_unslash($value));
+
+	if ($value === '') {
+		return '';
+	}
+
+	$options = mp_headless_project_card_icon_options();
+
+	return isset($options[$value]) ? $value : '';
+}
+
 function mp_headless_sanitize_string_array($value) {
 	if (! is_array($value)) {
 		return array();
@@ -102,8 +127,103 @@ function mp_headless_sanitize_int_value($value) {
 	return intval($value);
 }
 
+function mp_headless_sanitize_nonnegative_int_value($value) {
+	return max(0, intval($value));
+}
+
 function mp_headless_sanitize_bool_value($value) {
 	return ! empty($value);
+}
+
+function mp_headless_sanitize_hex_color_value($value) {
+	$sanitized = sanitize_hex_color(wp_unslash($value));
+
+	return is_string($sanitized) ? $sanitized : '';
+}
+
+function mp_headless_trim_words($value, $limit) {
+	$limit = max(1, intval($limit));
+	$value = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags((string) $value)));
+
+	if ($value === '') {
+		return '';
+	}
+
+	$words = preg_split('/\s+/', $value);
+
+	if (! is_array($words) || count($words) <= $limit) {
+		return $value;
+	}
+
+	return implode(' ', array_slice($words, 0, $limit));
+}
+
+function mp_headless_project_parent_would_create_cycle($project_id, $candidate_parent_id) {
+	$project_id          = intval($project_id);
+	$candidate_parent_id = intval($candidate_parent_id);
+
+	if ($project_id < 1 || $candidate_parent_id < 1) {
+		return false;
+	}
+
+	$visited_ids = array();
+
+	while ($candidate_parent_id > 0 && ! in_array($candidate_parent_id, $visited_ids, true)) {
+		if ($candidate_parent_id === $project_id) {
+			return true;
+		}
+
+		$visited_ids[] = $candidate_parent_id;
+		$parent_post   = get_post($candidate_parent_id);
+
+		if (! $parent_post instanceof WP_Post || $parent_post->post_type !== 'mp_project') {
+			return false;
+		}
+
+		$candidate_parent_id = intval(get_post_meta($candidate_parent_id, 'mp_parent_project_id', true));
+	}
+
+	return false;
+}
+
+function mp_headless_normalize_parent_project_id($project_id, $parent_project_id) {
+	$project_id        = intval($project_id);
+	$parent_project_id = intval($parent_project_id);
+
+	if ($parent_project_id < 1 || ($project_id > 0 && $parent_project_id === $project_id)) {
+		return 0;
+	}
+
+	$parent_project = get_post($parent_project_id);
+	if (! $parent_project instanceof WP_Post || $parent_project->post_type !== 'mp_project') {
+		return 0;
+	}
+
+	if ($project_id > 0 && mp_headless_project_parent_would_create_cycle($project_id, $parent_project_id)) {
+		return 0;
+	}
+
+	return $parent_project_id;
+}
+
+function mp_headless_normalize_project_reference_id($project_id, $reference_project_id) {
+	$project_id           = intval($project_id);
+	$reference_project_id = intval($reference_project_id);
+
+	if ($reference_project_id < 1 || ($project_id > 0 && $reference_project_id === $project_id)) {
+		return 0;
+	}
+
+	$reference_project = get_post($reference_project_id);
+	if (! $reference_project instanceof WP_Post || $reference_project->post_type !== 'mp_project') {
+		return 0;
+	}
+
+	return $reference_project_id;
+}
+
+function mp_headless_normalize_aligned_project_id($project_id, $aligned_project_id) {
+	return mp_headless_normalize_project_reference_id($project_id, $aligned_project_id);
 }
 
 function mp_headless_sanitize_named_assets($value) {
@@ -181,6 +301,37 @@ function mp_headless_sanitize_focus_areas($value) {
 	return array_values($clean);
 }
 
+function mp_headless_sanitize_custom_focus_areas($value) {
+	if (! is_array($value)) {
+		return array();
+	}
+
+	$clean = array();
+	foreach ($value as $item) {
+		if (! is_array($item)) {
+			continue;
+		}
+
+		$title       = isset($item['title']) ? sanitize_text_field(wp_unslash($item['title'])) : '';
+		$description = isset($item['description'])
+			? mp_headless_trim_words(sanitize_textarea_field(wp_unslash($item['description'])), 25)
+			: '';
+		$enabled     = array_key_exists('enabled', $item)
+			? ! empty($item['enabled'])
+			: ($title !== '' || $description !== '');
+
+		if ($title !== '' || $description !== '' || $enabled) {
+			$clean[] = array(
+				'enabled'     => $enabled,
+				'title'       => $title,
+				'description' => $description,
+			);
+		}
+	}
+
+	return array_values($clean);
+}
+
 function mp_headless_get_frontend_base_url() {
 	$configured_url = trim((string) get_option('mp_headless_frontend_url', ''));
 	if ($configured_url !== '') {
@@ -205,6 +356,38 @@ function mp_headless_get_frontend_url($path = '/') {
 	}
 
 	return $base_url . '/' . ltrim($path, '/');
+}
+
+function mp_headless_get_site_settings_payload() {
+	return array(
+		'socialLinks'              => array(
+			'linkedin'  => trim((string) get_option('mp_headless_site_linkedin_url', '')),
+			'youtube'   => trim((string) get_option('mp_headless_site_youtube_url', '')),
+			'instagram' => trim((string) get_option('mp_headless_site_instagram_url', '')),
+		),
+		'showPublicDownloadCounts' => (bool) get_option('mp_headless_show_public_download_counts', false),
+	);
+}
+
+function mp_headless_get_publication_download_count($publication_id) {
+	return max(0, (int) get_post_meta((int) $publication_id, 'mp_download_count', true));
+}
+
+function mp_headless_increment_publication_download_count($publication_id) {
+	$publication_id = (int) $publication_id;
+	$new_count      = mp_headless_get_publication_download_count($publication_id) + 1;
+
+	update_post_meta($publication_id, 'mp_download_count', $new_count);
+	clean_post_cache($publication_id);
+
+	return $new_count;
+}
+
+function mp_headless_get_publication_download_stats_payload($publication_id) {
+	return array(
+		'publicationId' => (int) $publication_id,
+		'downloadCount' => mp_headless_get_publication_download_count($publication_id),
+	);
 }
 
 function mp_headless_get_frontend_post_path($post) {
@@ -623,6 +806,25 @@ function mp_headless_register_meta() {
 			},
 		)
 	);
+	register_post_meta(
+		'mp_publication',
+		'mp_author_person_ids',
+		array(
+			'single'            => true,
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'mp_headless_sanitize_int_array',
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array('type' => 'integer'),
+				),
+			),
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
 
 	register_post_meta(
 		'mp_publication',
@@ -730,7 +932,63 @@ function mp_headless_register_meta() {
 	);
 
 	register_post_meta('mp_project', 'mp_color', $rest_string);
+	register_post_meta(
+		'mp_project',
+		'mp_progress_color',
+		array(
+			'single'            => true,
+			'type'              => 'string',
+			'default'           => '',
+			'sanitize_callback' => 'mp_headless_sanitize_hex_color_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_project',
+		'mp_card_icon',
+		array(
+			'single'            => true,
+			'type'              => 'string',
+			'default'           => '',
+			'sanitize_callback' => 'mp_headless_sanitize_project_card_icon',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
 	register_post_meta('mp_project', 'mp_current_stage', $rest_string);
+	register_post_meta(
+		'mp_project',
+		'mp_parent_project_id',
+		array(
+			'single'            => true,
+			'type'              => 'integer',
+			'default'           => 0,
+			'sanitize_callback' => 'mp_headless_sanitize_int_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_project',
+		'mp_aligned_project_id',
+		array(
+			'single'            => true,
+			'type'              => 'integer',
+			'default'           => 0,
+			'sanitize_callback' => 'mp_headless_sanitize_int_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
 	register_post_meta(
 		'mp_project',
 		'mp_lead_person_id',
@@ -747,7 +1005,40 @@ function mp_headless_register_meta() {
 	);
 	register_post_meta(
 		'mp_project',
+		'mp_lead_person_ids',
+		array(
+			'single'            => true,
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'mp_headless_sanitize_int_array',
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array('type' => 'integer'),
+				),
+			),
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_project',
 		'mp_hide_project_bar',
+		array(
+			'single'            => true,
+			'type'              => 'boolean',
+			'default'           => false,
+			'sanitize_callback' => 'mp_headless_sanitize_bool_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_project',
+		'mp_hide_project_currently',
 		array(
 			'single'            => true,
 			'type'              => 'boolean',
@@ -911,6 +1202,32 @@ function mp_headless_register_meta() {
 			},
 		)
 	);
+	register_post_meta(
+		'mp_project',
+		'mp_custom_focus_areas',
+		array(
+			'single'            => true,
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'mp_headless_sanitize_custom_focus_areas',
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'enabled'     => array('type' => 'boolean'),
+							'title'       => array('type' => 'string'),
+							'description' => array('type' => 'string'),
+						),
+					),
+				),
+			),
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
 
 	register_post_meta(
 		'mp_homepage',
@@ -935,6 +1252,39 @@ function mp_headless_register_meta() {
 			'default'           => 0,
 			'sanitize_callback' => 'mp_headless_sanitize_int_value',
 			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_homepage',
+		'mp_homepage_project_count',
+		array(
+			'single'            => true,
+			'type'              => 'integer',
+			'default'           => 0,
+			'sanitize_callback' => 'mp_headless_sanitize_nonnegative_int_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_homepage',
+		'mp_homepage_project_ids',
+		array(
+			'single'            => true,
+			'type'              => 'array',
+			'default'           => array(),
+			'sanitize_callback' => 'mp_headless_sanitize_int_array',
+			'show_in_rest'      => array(
+				'schema' => array(
+					'type'  => 'array',
+					'items' => array('type' => 'integer'),
+				),
+			),
 			'auth_callback'     => function() {
 				return current_user_can('edit_posts');
 			},
@@ -1117,6 +1467,17 @@ function mp_headless_find_person_id_by_name($name) {
 	return $person instanceof WP_Post ? (int) $person->ID : 0;
 }
 
+function mp_headless_normalize_selected_person_ids($selected_ids, $fallback_id = 0) {
+	$person_ids = is_array($selected_ids) ? mp_headless_sanitize_int_array($selected_ids) : array();
+	$fallback_id = intval($fallback_id);
+
+	if ($fallback_id > 0 && ! in_array($fallback_id, $person_ids, true)) {
+		$person_ids[] = $fallback_id;
+	}
+
+	return array_values(array_unique(array_filter(array_map('intval', $person_ids))));
+}
+
 function mp_headless_generate_logo_label_from_url($url, $index = 0) {
 	$path = wp_parse_url((string) $url, PHP_URL_PATH);
 	$file = $path ? wp_basename($path) : '';
@@ -1196,6 +1557,10 @@ function mp_headless_render_publication_meta_box($post) {
 	$people   = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
 	$output_type_options = mp_headless_get_output_type_options();
 	$author_person_id = (int) get_post_meta($post->ID, 'mp_author_person_id', true);
+	$author_person_ids = mp_headless_normalize_selected_person_ids(
+		get_post_meta($post->ID, 'mp_author_person_ids', true),
+		$author_person_id
+	);
 	$related_project_ids = get_post_meta($post->ID, 'mp_related_project_ids', true);
 	$contributor_person_ids = get_post_meta($post->ID, 'mp_contributor_person_ids', true);
 	$contributor_names = get_post_meta($post->ID, 'mp_contributor_names', true);
@@ -1225,15 +1590,14 @@ function mp_headless_render_publication_meta_box($post) {
 	<span class="description" style="display:block; margin-top:6px;">
 		<?php esc_html_e('Choose the publication type here. Use Pod-Cast for audio releases so the homepage and the public page both use the audio player correctly.', 'medplatform-headless'); ?>
 	</span></p>
-	<p><label><strong><?php esc_html_e('Displayed Author', 'medplatform-headless'); ?></strong></label><br />
-	<select class="widefat" name="mp_author_person_id">
-		<option value="0"><?php esc_html_e('Select a person', 'medplatform-headless'); ?></option>
+	<p><label><strong><?php esc_html_e('Main Authors', 'medplatform-headless'); ?></strong></label><br />
+	<select class="widefat" name="mp_author_person_ids[]" size="8" multiple style="min-height:220px;">
 		<?php foreach ($people as $person) : ?>
-			<option value="<?php echo esc_attr($person->ID); ?>" <?php selected($author_person_id, (int) $person->ID); ?>><?php echo esc_html($person->post_title); ?></option>
+			<option value="<?php echo esc_attr($person->ID); ?>" <?php selected(in_array((int) $person->ID, $author_person_ids, true)); ?>><?php echo esc_html($person->post_title); ?></option>
 		<?php endforeach; ?>
 	</select>
 	<span class="description" style="display:block; margin-top:6px;">
-		<?php esc_html_e('The publication author name and profile photo are pulled automatically from the selected person profile.', 'medplatform-headless'); ?>
+		<?php esc_html_e('Selected people are shown as the main authors on the frontend. Hold Command or Ctrl to choose multiple authors.', 'medplatform-headless'); ?>
 	</span></p>
 	<p><label><strong><?php esc_html_e('Author Role', 'medplatform-headless'); ?></strong></label><br />
 	<input type="text" class="widefat" name="mp_author_role" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_author_role', true)); ?>" /></p>
@@ -1266,21 +1630,23 @@ function mp_headless_render_publication_meta_box($post) {
 			<?php esc_html_e('This file powers the public audio player on the publication page and the featured podcast player on the homepage.', 'medplatform-headless'); ?>
 		</p>
 	</div>
-	<?php
-	mp_headless_render_media_field(
-			array(
-				'label'        => __('Publication File URL', 'medplatform-headless'),
-				'name'         => 'mp_download_url',
-				'value'        => get_post_meta($post->ID, 'mp_download_url', true),
-				'button_label' => __('Upload PDF or document', 'medplatform-headless'),
-				'library_type' => 'application/pdf',
-				'description'  => __('Use a WordPress media upload or local public path. PDF and document files are limited to 5 MB.', 'medplatform-headless'),
-				'max_size_mb'  => 5,
-			)
-		);
-		?>
-	<p><label><strong><?php esc_html_e('File Button Label', 'medplatform-headless'); ?></strong></label><br />
-	<input type="text" class="widefat" name="mp_download_label" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_download_label', true)); ?>" /></p>
+	<div data-mp-publication-download-fields>
+		<?php
+		mp_headless_render_media_field(
+				array(
+					'label'        => __('Publication File URL', 'medplatform-headless'),
+					'name'         => 'mp_download_url',
+					'value'        => get_post_meta($post->ID, 'mp_download_url', true),
+					'button_label' => __('Upload PDF or document', 'medplatform-headless'),
+					'library_type' => 'application/pdf',
+					'description'  => __('Leave this empty if the publication should not show a download button on the frontend. Podcast entries do not use this field.', 'medplatform-headless'),
+					'max_size_mb'  => 5,
+				)
+			);
+			?>
+		<p><label><strong><?php esc_html_e('File Button Label', 'medplatform-headless'); ?></strong></label><br />
+		<input type="text" class="widefat" name="mp_download_label" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_download_label', true)); ?>" /></p>
+	</div>
 	<p><label><strong><?php esc_html_e('References', 'medplatform-headless'); ?></strong></label><br />
 	<textarea class="widefat" rows="5" name="mp_references" placeholder="One reference per line: Reference Name | https://example.com"><?php
 		if (is_array($references)) {
@@ -1302,6 +1668,9 @@ function mp_headless_render_publication_meta_box($post) {
 			</label>
 		<?php endforeach; ?>
 	</div>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('Anyone selected above as a main author is automatically left out of the contributors list on the frontend.', 'medplatform-headless'); ?>
+	</p>
 	<p><label><strong><?php esc_html_e('Additional People Names', 'medplatform-headless'); ?></strong></label><br />
 	<textarea class="widefat" rows="4" name="mp_contributor_names" placeholder="One name per line"><?php echo esc_textarea(implode("\n", $contributor_names)); ?></textarea></p>
 	<p><strong><?php esc_html_e('Related Projects', 'medplatform-headless'); ?></strong></p>
@@ -1355,17 +1724,78 @@ function mp_headless_render_person_meta_box($post) {
 
 function mp_headless_render_project_meta_box($post) {
 	wp_nonce_field('mp_headless_save_meta', 'mp_headless_meta_nonce');
-	$team_members = get_post_meta($post->ID, 'mp_team_members', true);
-	$updates      = get_post_meta($post->ID, 'mp_updates', true);
-	$donors       = get_post_meta($post->ID, 'mp_donors', true);
-	$focus_areas  = get_post_meta($post->ID, 'mp_focus_areas', true);
-	$stage_points = get_post_meta($post->ID, 'mp_stage_points', true);
-	$current_stage = get_post_meta($post->ID, 'mp_current_stage', true);
-	$hide_project_bar = (bool) get_post_meta($post->ID, 'mp_hide_project_bar', true);
-	$stage_points = is_array($stage_points) && ! empty($stage_points) ? $stage_points : mp_headless_project_stages();
+	$people                    = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
+	$project_card_icon_options = mp_headless_project_card_icon_options();
+	$team_members              = get_post_meta($post->ID, 'mp_team_members', true);
+	$team_member_ids           = get_post_meta($post->ID, 'mp_team_member_ids', true);
+	$updates                   = get_post_meta($post->ID, 'mp_updates', true);
+	$donors                    = get_post_meta($post->ID, 'mp_donors', true);
+	$focus_areas               = get_post_meta($post->ID, 'mp_focus_areas', true);
+	$stage_points              = get_post_meta($post->ID, 'mp_stage_points', true);
+	$current_stage             = get_post_meta($post->ID, 'mp_current_stage', true);
+	$parent_project_id         = (int) get_post_meta($post->ID, 'mp_parent_project_id', true);
+	$lead_person_id            = (int) get_post_meta($post->ID, 'mp_lead_person_id', true);
+	$lead_person_ids           = mp_headless_normalize_selected_person_ids(
+		get_post_meta($post->ID, 'mp_lead_person_ids', true),
+		$lead_person_id
+	);
+	$lead_role                 = (string) get_post_meta($post->ID, 'mp_lead_role', true);
+	$project_card_icon         = (string) get_post_meta($post->ID, 'mp_card_icon', true);
+	$hide_project_bar          = (bool) get_post_meta($post->ID, 'mp_hide_project_bar', true);
+	$available_parent_projects = get_posts(
+		array(
+			'post_type'      => 'mp_project',
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'post__not_in'   => array($post->ID),
+		)
+	);
+	$stage_points              = is_array($stage_points) && ! empty($stage_points) ? $stage_points : mp_headless_project_stages();
+	$team_member_ids           = is_array($team_member_ids) ? array_values(array_filter(array_map('intval', $team_member_ids))) : array();
+	$team_members              = is_array($team_members) ? $team_members : array();
+
+	if (empty($team_member_ids) && ! empty($team_members)) {
+		foreach ($team_members as $member_name) {
+			$member_id = mp_headless_find_person_id_by_name((string) $member_name);
+			if ($member_id > 0) {
+				$team_member_ids[] = $member_id;
+			}
+		}
+		$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
+	}
+
+	foreach ($lead_person_ids as $selected_lead_person_id) {
+		if (! in_array($selected_lead_person_id, $team_member_ids, true)) {
+			$team_member_ids[] = $selected_lead_person_id;
+		}
+	}
+
+	$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
+	$accent_color = (string) get_post_meta($post->ID, 'mp_color', true);
+	$progress_color = (string) get_post_meta($post->ID, 'mp_progress_color', true);
+	$resolved_progress_color = $progress_color !== '' ? $progress_color : ($accent_color !== '' ? $accent_color : '#15243a');
 	?>
 	<p><label><strong><?php esc_html_e('Accent Color', 'medplatform-headless'); ?></strong></label><br />
-	<input type="text" class="widefat" name="mp_color" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_color', true)); ?>" placeholder="#15243a" /></p>
+	<span data-mp-color-field style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+		<input type="color" value="<?php echo esc_attr($accent_color !== '' ? $accent_color : '#15243a'); ?>" data-mp-color-picker style="inline-size:56px; block-size:40px; padding:0; border:0; background:none;" />
+		<input type="text" class="regular-text code" name="mp_color" value="<?php echo esc_attr($accent_color); ?>" data-mp-color-value pattern="^#([A-Fa-f0-9]{6})$" placeholder="#15243a" />
+	</span></p>
+	<p><label><strong><?php esc_html_e('Progress Bar Color', 'medplatform-headless'); ?></strong></label><br />
+	<span data-mp-color-field style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px;">
+		<input type="color" value="<?php echo esc_attr($resolved_progress_color); ?>" data-mp-color-picker style="inline-size:56px; block-size:40px; padding:0; border:0; background:none;" />
+		<input type="text" class="regular-text code" name="mp_progress_color" value="<?php echo esc_attr($progress_color); ?>" data-mp-color-value pattern="^#([A-Fa-f0-9]{6})$" placeholder="#15243a" />
+	</span></p>
+	<p><label><strong><?php esc_html_e('Project Card Icon', 'medplatform-headless'); ?></strong></label><br />
+	<select class="widefat" name="mp_card_icon">
+		<option value=""><?php esc_html_e('Use the default icon', 'medplatform-headless'); ?></option>
+		<?php foreach ($project_card_icon_options as $icon_value => $icon_label) : ?>
+			<option value="<?php echo esc_attr($icon_value); ?>" <?php selected($project_card_icon, $icon_value); ?>><?php echo esc_html($icon_label); ?></option>
+		<?php endforeach; ?>
+	</select></p>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('Used on the /services project cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?>
+	</p>
 	<p>
 		<label>
 			<input type="checkbox" name="mp_hide_project_bar" value="1" <?php checked($hide_project_bar); ?> />
@@ -1376,26 +1806,49 @@ function mp_headless_render_project_meta_box($post) {
 	<textarea class="widefat" rows="5" name="mp_stage_points" placeholder="One progress point per line"><?php echo esc_textarea(implode("\n", $stage_points)); ?></textarea></p>
 	<p><label><strong><?php esc_html_e('Current Progress Point', 'medplatform-headless'); ?></strong></label><br />
 	<input type="text" class="widefat" name="mp_current_stage" value="<?php echo esc_attr((string) $current_stage); ?>" placeholder="<?php echo esc_attr($stage_points[0] ?? 'Conception'); ?>" /></p>
-	<p><label><strong><?php esc_html_e('Lead Name', 'medplatform-headless'); ?></strong></label><br />
-	<input type="text" class="widefat" name="mp_lead_name" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_lead_name', true)); ?>" /></p>
-	<p><label><strong><?php esc_html_e('Lead Role', 'medplatform-headless'); ?></strong></label><br />
-	<input type="text" class="widefat" name="mp_lead_role" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_lead_role', true)); ?>" /></p>
-	<?php
-	mp_headless_render_media_field(
-		array(
-			'label'        => __('Lead Image URL', 'medplatform-headless'),
-			'name'         => 'mp_lead_image',
-			'value'        => get_post_meta($post->ID, 'mp_lead_image', true),
-			'button_label' => __('Upload lead image', 'medplatform-headless'),
-			'library_type' => 'image',
-		)
-	);
-	?>
-	<p class="description" style="margin-top:-8px;">
-		<?php esc_html_e('Use Progress Points to define the labels shown on the public project page. The Current Progress Point should match one of those labels.', 'medplatform-headless'); ?>
-	</p>
 	<p><label><strong><?php esc_html_e('Team Members', 'medplatform-headless'); ?></strong></label><br />
-	<textarea class="widefat" rows="5" name="mp_team_members" placeholder="One member per line"><?php echo esc_textarea(is_array($team_members) ? implode("\n", $team_members) : ''); ?></textarea></p>
+	<select class="widefat" name="mp_team_member_ids[]" size="8" multiple data-mp-team-select style="min-height:220px;">
+		<?php foreach ($people as $person) : ?>
+			<option value="<?php echo esc_attr($person->ID); ?>" <?php selected(in_array((int) $person->ID, $team_member_ids, true)); ?>><?php echo esc_html($person->post_title); ?></option>
+		<?php endforeach; ?>
+	</select></p>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('Hold Command or Ctrl to choose multiple team members.', 'medplatform-headless'); ?>
+	</p>
+	<p><label><strong><?php esc_html_e('Lead Team Members', 'medplatform-headless'); ?></strong></label><br />
+	<select class="widefat" name="mp_lead_person_ids[]" size="8" multiple data-mp-lead-select style="min-height:220px;">
+		<?php foreach ($people as $person) : ?>
+			<?php $is_in_team = empty($team_member_ids) || in_array((int) $person->ID, $team_member_ids, true); ?>
+			<option
+				value="<?php echo esc_attr($person->ID); ?>"
+				<?php selected(in_array((int) $person->ID, $lead_person_ids, true)); ?>
+				<?php disabled(! $is_in_team && ! in_array((int) $person->ID, $lead_person_ids, true)); ?>
+			>
+				<?php echo esc_html($person->post_title); ?>
+			</option>
+		<?php endforeach; ?>
+	</select></p>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('Choose one or more program leads. Selected leads are kept inside the team list automatically.', 'medplatform-headless'); ?>
+	</p>
+	<p><label><strong><?php esc_html_e('Lead Role', 'medplatform-headless'); ?></strong></label><br />
+	<input type="text" class="widefat" name="mp_lead_role" value="<?php echo esc_attr($lead_role); ?>" /></p>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('This label is reused for each selected program lead on the public project page. Use Progress Points to define the labels shown on the public project page. The Current Progress Point should match one of those labels.', 'medplatform-headless'); ?>
+	</p>
+	<p>
+		<label>
+			<input type="checkbox" name="mp_has_parent_project" value="1" <?php checked($parent_project_id > 0); ?> />
+			<?php esc_html_e('This project sits under another project', 'medplatform-headless'); ?>
+		</label>
+	</p>
+	<p><label><strong><?php esc_html_e('Parent Project', 'medplatform-headless'); ?></strong></label><br />
+	<select class="widefat" name="mp_parent_project_id">
+		<option value="0"><?php esc_html_e('Select a parent project', 'medplatform-headless'); ?></option>
+		<?php foreach ($available_parent_projects as $parent_project) : ?>
+			<option value="<?php echo esc_attr($parent_project->ID); ?>" <?php selected($parent_project_id, (int) $parent_project->ID); ?>><?php echo esc_html($parent_project->post_title); ?></option>
+		<?php endforeach; ?>
+	</select></p>
 	<p><label><strong><?php esc_html_e('Current Updates', 'medplatform-headless'); ?></strong></label><br />
 	<textarea class="widefat" rows="5" name="mp_updates" placeholder="One update per line"><?php echo esc_textarea(is_array($updates) ? implode("\n", $updates) : ''); ?></textarea></p>
 	<p><label><strong><?php esc_html_e('Donors', 'medplatform-headless'); ?></strong></label><br />
@@ -1422,18 +1875,22 @@ function mp_headless_render_project_meta_box($post) {
 			echo esc_textarea(implode("\n", $focus_lines));
 		}
 	?></textarea></p>
-	<p style="margin-top:8px;"><?php esc_html_e('Use the main editor for the right-column project body text and the excerpt for the short project description.', 'medplatform-headless'); ?></p>
+	<p style="margin-top:8px;"><?php esc_html_e('Use the main editor for the right-column project body text and the excerpt for the short project description. Project short descriptions are capped at 25 words.', 'medplatform-headless'); ?></p>
 	<?php
 }
 
 function mp_headless_render_homepage_meta_box($post) {
 	wp_nonce_field('mp_headless_save_meta', 'mp_headless_meta_nonce');
 	$publications           = get_posts(array('post_type' => 'mp_publication', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC'));
+	$projects               = get_posts(array('post_type' => 'mp_project', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
 	$podcast_publications   = mp_headless_get_podcast_publications();
 	$featured_podcast_id    = (int) get_post_meta($post->ID, 'mp_featured_podcast_id', true);
 	$featured_article_id    = (int) get_post_meta($post->ID, 'mp_featured_article_id', true);
+	$homepage_project_count = max(0, (int) get_post_meta($post->ID, 'mp_homepage_project_count', true));
+	$homepage_project_ids   = get_post_meta($post->ID, 'mp_homepage_project_ids', true);
 	$slider_publication_ids = get_post_meta($post->ID, 'mp_slider_publication_ids', true);
 	$latest_publication_ids = get_post_meta($post->ID, 'mp_latest_publication_ids', true);
+	$homepage_project_ids   = is_array($homepage_project_ids) ? array_map('intval', $homepage_project_ids) : array();
 	$slider_publication_ids = is_array($slider_publication_ids) ? $slider_publication_ids : array();
 	$latest_publication_ids = is_array($latest_publication_ids) ? $latest_publication_ids : array();
 	?>
@@ -1451,6 +1908,24 @@ function mp_headless_render_homepage_meta_box($post) {
 			<option value="<?php echo esc_attr($publication->ID); ?>" <?php selected($featured_article_id, (int) $publication->ID); ?>><?php echo esc_html($publication->post_title); ?></option>
 		<?php endforeach; ?>
 	</select></p>
+	<p><label><strong><?php esc_html_e('Homepage Project Count', 'medplatform-headless'); ?></strong></label><br />
+	<input type="number" class="small-text" min="0" max="24" step="1" name="mp_homepage_project_count" value="<?php echo esc_attr((string) $homepage_project_count); ?>" /></p>
+	<p class="description" style="margin-top:-8px;">
+		<?php esc_html_e('Sets the maximum number of homepage projects shown from the selected project list below. Use 0 to show all selected projects, or all visible projects if no specific projects are selected.', 'medplatform-headless'); ?>
+	</p>
+	<p><strong><?php esc_html_e('Homepage Featured Projects', 'medplatform-headless'); ?></strong></p>
+	<div style="max-height: 180px; overflow:auto; border:1px solid #ddd; padding:10px; margin-bottom:14px;">
+		<?php if (empty($projects)) : ?>
+			<p style="margin:0; color:#50575e;"><?php esc_html_e('No projects available yet.', 'medplatform-headless'); ?></p>
+		<?php else : ?>
+			<?php foreach ($projects as $project) : ?>
+				<label style="display:block; margin-bottom:6px;">
+					<input type="checkbox" name="mp_homepage_project_ids[]" value="<?php echo esc_attr($project->ID); ?>" <?php checked(in_array((int) $project->ID, $homepage_project_ids, true)); ?> />
+					<?php echo esc_html($project->post_title); ?>
+				</label>
+			<?php endforeach; ?>
+		<?php endif; ?>
+	</div>
 	<p><strong><?php esc_html_e('Slider Publications', 'medplatform-headless'); ?></strong></p>
 	<div style="max-height: 180px; overflow:auto; border:1px solid #ddd; padding:10px; margin-bottom:14px;">
 		<?php foreach ($publications as $publication) : ?>
@@ -1537,25 +2012,62 @@ function mp_headless_save_meta_boxes($post_id) {
 
 	if ($post_type === 'mp_publication') {
 		$selected_output_type = sanitize_title(wp_unslash($_POST['mp_output_type_term'] ?? 'insights'));
-		$author_person_id = intval($_POST['mp_author_person_id'] ?? 0);
-		$author_post = $author_person_id ? get_post($author_person_id) : null;
-		$author_name = $author_post ? $author_post->post_title : '';
-		$author_image = $author_person_id ? (string) get_post_meta($author_person_id, 'mp_photo', true) : '';
+		$author_person_ids = mp_headless_normalize_selected_person_ids(
+			wp_unslash($_POST['mp_author_person_ids'] ?? array()),
+			intval($_POST['mp_author_person_id'] ?? 0)
+		);
+		$author_people = array();
+
+		foreach ($author_person_ids as $person_id) {
+			$author_post = get_post($person_id);
+			if ($author_post instanceof WP_Post && $author_post->post_type === 'mp_person') {
+				$author_people[] = $author_post;
+			}
+		}
+
+		$primary_author = ! empty($author_people) ? $author_people[0] : null;
+		$author_person_id = $primary_author instanceof WP_Post ? (int) $primary_author->ID : 0;
+		$author_name = ! empty($author_people)
+			? implode(', ', array_map(
+				function($author_post) {
+					return $author_post->post_title;
+				},
+				$author_people
+			))
+			: '';
+		$author_image = $author_person_id > 0 ? (string) get_post_meta($author_person_id, 'mp_photo', true) : '';
+		$contributor_person_ids = mp_headless_sanitize_int_array(wp_unslash($_POST['mp_contributor_person_ids'] ?? array()));
+		$contributor_person_ids = array_values(
+			array_filter(
+				$contributor_person_ids,
+				function($person_id) use ($author_person_ids) {
+					return ! in_array((int) $person_id, $author_person_ids, true);
+				}
+			)
+		);
 
 		if ($selected_output_type === '') {
 			$selected_output_type = 'insights';
 		}
 
+		$download_url = $selected_output_type === 'pod-cast'
+			? ''
+			: esc_url_raw(wp_unslash($_POST['mp_download_url'] ?? ''));
+		$download_label = $selected_output_type === 'pod-cast'
+			? ''
+			: sanitize_text_field(wp_unslash($_POST['mp_download_label'] ?? ''));
+
 		wp_set_object_terms($post_id, array($selected_output_type), 'mp_output_type', false);
 		update_post_meta($post_id, 'mp_author_name', sanitize_text_field($author_name));
 		update_post_meta($post_id, 'mp_author_person_id', $author_person_id);
+		update_post_meta($post_id, 'mp_author_person_ids', $author_person_ids);
 		update_post_meta($post_id, 'mp_author_role', sanitize_text_field(wp_unslash($_POST['mp_author_role'] ?? '')));
 		update_post_meta($post_id, 'mp_author_image', esc_url_raw($author_image));
 		update_post_meta($post_id, 'mp_cover_image', esc_url_raw(wp_unslash($_POST['mp_cover_image'] ?? '')));
 		update_post_meta($post_id, 'mp_audio_url', esc_url_raw(wp_unslash($_POST['mp_audio_url'] ?? '')));
-		update_post_meta($post_id, 'mp_download_url', esc_url_raw(wp_unslash($_POST['mp_download_url'] ?? '')));
-		update_post_meta($post_id, 'mp_download_label', sanitize_text_field(wp_unslash($_POST['mp_download_label'] ?? '')));
-		update_post_meta($post_id, 'mp_contributor_person_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_contributor_person_ids'] ?? array())));
+		update_post_meta($post_id, 'mp_download_url', $download_url);
+		update_post_meta($post_id, 'mp_download_label', $download_label);
+		update_post_meta($post_id, 'mp_contributor_person_ids', $contributor_person_ids);
 		update_post_meta($post_id, 'mp_contributor_names', mp_headless_parse_lines($_POST['mp_contributor_names'] ?? ''));
 		update_post_meta($post_id, 'mp_related_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_related_project_ids'] ?? array())));
 		update_post_meta($post_id, 'mp_references', mp_headless_parse_named_links($_POST['mp_references'] ?? ''));
@@ -1573,14 +2085,65 @@ function mp_headless_save_meta_boxes($post_id) {
 	}
 
 	if ($post_type === 'mp_project') {
-		update_post_meta($post_id, 'mp_color', sanitize_text_field(wp_unslash($_POST['mp_color'] ?? '')));
+		if (array_key_exists('mp_parent_project_id', $_POST) || array_key_exists('mp_has_parent_project', $_POST)) {
+			$parent_project_id = ! empty($_POST['mp_has_parent_project'])
+				? mp_headless_normalize_parent_project_id($post_id, intval($_POST['mp_parent_project_id'] ?? 0))
+				: 0;
+
+			update_post_meta($post_id, 'mp_parent_project_id', $parent_project_id);
+		}
+
+		$team_member_ids = mp_headless_sanitize_int_array(wp_unslash($_POST['mp_team_member_ids'] ?? array()));
+		$lead_person_ids = mp_headless_normalize_selected_person_ids(
+			wp_unslash($_POST['mp_lead_person_ids'] ?? array()),
+			intval($_POST['mp_lead_person_id'] ?? 0)
+		);
+
+		foreach ($lead_person_ids as $selected_lead_person_id) {
+			if ($selected_lead_person_id > 0 && ! in_array($selected_lead_person_id, $team_member_ids, true)) {
+				$team_member_ids[] = $selected_lead_person_id;
+			}
+		}
+
+		$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
+		$team_member_names = array();
+		foreach ($team_member_ids as $person_id) {
+			$person = get_post($person_id);
+			if ($person instanceof WP_Post && $person->post_type === 'mp_person') {
+				$team_member_names[] = $person->post_title;
+			}
+		}
+
+		$primary_lead_post = ! empty($lead_person_ids) ? get_post($lead_person_ids[0]) : null;
+		$lead_person_id = $primary_lead_post instanceof WP_Post ? (int) $primary_lead_post->ID : 0;
+		$lead_name = $primary_lead_post instanceof WP_Post ? $primary_lead_post->post_title : sanitize_text_field(wp_unslash($_POST['mp_lead_name'] ?? ''));
+		$lead_image = $lead_person_id > 0
+			? (string) get_post_meta($lead_person_id, 'mp_photo', true)
+			: esc_url_raw(wp_unslash($_POST['mp_lead_image'] ?? ''));
+		$accent_color = mp_headless_sanitize_hex_color_value($_POST['mp_color'] ?? '');
+		$progress_color = mp_headless_sanitize_hex_color_value($_POST['mp_progress_color'] ?? '');
+
+		if ($accent_color === '') {
+			$accent_color = '#15243a';
+		}
+
+		if ($progress_color === '') {
+			$progress_color = $accent_color;
+		}
+
+		update_post_meta($post_id, 'mp_color', $accent_color);
+		update_post_meta($post_id, 'mp_progress_color', $progress_color);
+		update_post_meta($post_id, 'mp_card_icon', mp_headless_sanitize_project_card_icon(wp_unslash($_POST['mp_card_icon'] ?? '')));
 		update_post_meta($post_id, 'mp_hide_project_bar', ! empty($_POST['mp_hide_project_bar']));
 		update_post_meta($post_id, 'mp_stage_points', mp_headless_parse_lines($_POST['mp_stage_points'] ?? ''));
 		update_post_meta($post_id, 'mp_current_stage', sanitize_text_field(wp_unslash($_POST['mp_current_stage'] ?? '')));
-		update_post_meta($post_id, 'mp_lead_name', sanitize_text_field(wp_unslash($_POST['mp_lead_name'] ?? '')));
+		update_post_meta($post_id, 'mp_lead_person_id', $lead_person_id);
+		update_post_meta($post_id, 'mp_lead_person_ids', $lead_person_ids);
+		update_post_meta($post_id, 'mp_lead_name', $lead_name);
 		update_post_meta($post_id, 'mp_lead_role', sanitize_text_field(wp_unslash($_POST['mp_lead_role'] ?? '')));
-		update_post_meta($post_id, 'mp_lead_image', esc_url_raw(wp_unslash($_POST['mp_lead_image'] ?? '')));
-		update_post_meta($post_id, 'mp_team_members', mp_headless_parse_lines($_POST['mp_team_members'] ?? ''));
+		update_post_meta($post_id, 'mp_lead_image', esc_url_raw($lead_image));
+		update_post_meta($post_id, 'mp_team_member_ids', $team_member_ids);
+		update_post_meta($post_id, 'mp_team_members', $team_member_names);
 		update_post_meta($post_id, 'mp_updates', mp_headless_parse_lines($_POST['mp_updates'] ?? ''));
 		update_post_meta($post_id, 'mp_donors', mp_headless_parse_named_assets($_POST['mp_donors'] ?? ''));
 		update_post_meta($post_id, 'mp_focus_areas', mp_headless_parse_focus_areas($_POST['mp_focus_areas'] ?? ''));
@@ -1590,35 +2153,72 @@ function mp_headless_save_meta_boxes($post_id) {
 		$featured_podcast_id = intval($_POST['mp_featured_podcast_id'] ?? 0);
 		update_post_meta($post_id, 'mp_featured_podcast_id', mp_headless_publication_is_podcast($featured_podcast_id) ? $featured_podcast_id : 0);
 		update_post_meta($post_id, 'mp_featured_article_id', intval($_POST['mp_featured_article_id'] ?? 0));
+		update_post_meta($post_id, 'mp_homepage_project_count', mp_headless_sanitize_nonnegative_int_value($_POST['mp_homepage_project_count'] ?? 0));
+		update_post_meta($post_id, 'mp_homepage_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_homepage_project_ids'] ?? array())));
 		update_post_meta($post_id, 'mp_slider_publication_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_slider_publication_ids'] ?? array())));
 		update_post_meta($post_id, 'mp_latest_publication_ids', array_slice(mp_headless_sanitize_int_array(wp_unslash($_POST['mp_latest_publication_ids'] ?? array())), 0, 5));
 	}
 }
 add_action('save_post', 'mp_headless_save_meta_boxes');
 
-function mp_headless_get_selection_count_label($count) {
+function mp_headless_limit_project_excerpt_length($data, $postarr) {
+	if (($data['post_type'] ?? '') !== 'mp_project') {
+		return $data;
+	}
+
+	$data['post_excerpt'] = mp_headless_trim_words($data['post_excerpt'] ?? '', 25);
+
+	return $data;
+}
+add_filter('wp_insert_post_data', 'mp_headless_limit_project_excerpt_length', 10, 2);
+
+function mp_headless_get_selection_count_text($count, $empty_label, $singular_label, $plural_label) {
 	$count = (int) $count;
 
 	if ($count < 1) {
-		return __('No publications selected', 'medplatform-headless');
+		return (string) $empty_label;
 	}
 
-	return sprintf(
-		_n('%s publication selected', '%s publications selected', $count, 'medplatform-headless'),
-		number_format_i18n($count)
+	return number_format_i18n($count) . ' ' . ($count === 1 ? (string) $singular_label : (string) $plural_label);
+}
+
+function mp_headless_get_selection_count_label($count) {
+	return mp_headless_get_selection_count_text(
+		$count,
+		__('No publications selected', 'medplatform-headless'),
+		__('publication selected', 'medplatform-headless'),
+		__('publications selected', 'medplatform-headless')
 	);
 }
 
-function mp_headless_render_publication_selection_list($args) {
+function mp_headless_get_project_selection_count_label($count) {
+	return mp_headless_get_selection_count_text(
+		$count,
+		__('No projects selected', 'medplatform-headless'),
+		__('project selected', 'medplatform-headless'),
+		__('projects selected', 'medplatform-headless')
+	);
+}
+
+function mp_headless_render_post_selection_list($args) {
 	$section_id          = isset($args['section_id']) ? sanitize_html_class((string) $args['section_id']) : wp_unique_id('mp-selection-list-');
 	$field_name          = isset($args['field_name']) ? (string) $args['field_name'] : '';
 	$title               = isset($args['title']) ? (string) $args['title'] : '';
 	$description         = isset($args['description']) ? (string) $args['description'] : '';
-	$search_placeholder  = isset($args['search_placeholder']) ? (string) $args['search_placeholder'] : __('Search publications...', 'medplatform-headless');
-	$empty_search_label  = isset($args['empty_search_label']) ? (string) $args['empty_search_label'] : __('No publications match this search.', 'medplatform-headless');
-	$publications        = isset($args['publications']) && is_array($args['publications']) ? $args['publications'] : array();
+	$search_placeholder  = isset($args['search_placeholder']) ? (string) $args['search_placeholder'] : __('Search items...', 'medplatform-headless');
+	$empty_search_label  = isset($args['empty_search_label']) ? (string) $args['empty_search_label'] : __('No items match this search.', 'medplatform-headless');
+	$empty_list_label    = isset($args['empty_list_label']) ? (string) $args['empty_list_label'] : __('No items available yet.', 'medplatform-headless');
+	$posts               = isset($args['posts']) && is_array($args['posts']) ? $args['posts'] : array();
 	$selected_ids        = isset($args['selected_ids']) && is_array($args['selected_ids']) ? array_map('intval', $args['selected_ids']) : array();
-	$selected_count_text = mp_headless_get_selection_count_label(count($selected_ids));
+	$selected_count_text = isset($args['selected_count_text']) ? (string) $args['selected_count_text'] : '';
+	$empty_label         = isset($args['empty_selection_label']) ? (string) $args['empty_selection_label'] : __('No items selected', 'medplatform-headless');
+	$singular_label      = isset($args['singular_selection_label']) ? (string) $args['singular_selection_label'] : __('item selected', 'medplatform-headless');
+	$plural_label        = isset($args['plural_selection_label']) ? (string) $args['plural_selection_label'] : __('items selected', 'medplatform-headless');
+	$item_meta_callback  = isset($args['item_meta_callback']) && is_callable($args['item_meta_callback']) ? $args['item_meta_callback'] : null;
+
+	if ($selected_count_text === '') {
+		$selected_count_text = mp_headless_get_selection_count_text(count($selected_ids), $empty_label, $singular_label, $plural_label);
+	}
 	?>
 	<div class="mp-selection-card" style="background:#fff; border:1px solid #dcdcde; padding:20px;">
 		<div style="display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;">
@@ -1628,9 +2228,9 @@ function mp_headless_render_publication_selection_list($args) {
 			</div>
 			<span
 				class="mp-selection-count"
-				data-empty-label="<?php echo esc_attr(__('No publications selected', 'medplatform-headless')); ?>"
-				data-singular-label="<?php echo esc_attr(__('publication selected', 'medplatform-headless')); ?>"
-				data-plural-label="<?php echo esc_attr(__('publications selected', 'medplatform-headless')); ?>"
+				data-empty-label="<?php echo esc_attr($empty_label); ?>"
+				data-singular-label="<?php echo esc_attr($singular_label); ?>"
+				data-plural-label="<?php echo esc_attr($plural_label); ?>"
 				style="display:inline-flex; align-items:center; min-height:32px; padding:0 12px; border:1px solid #dcdcde; background:#f6f7f7; color:#1d2327; font-weight:600;"
 			><?php echo esc_html($selected_count_text); ?></span>
 		</div>
@@ -1647,25 +2247,30 @@ function mp_headless_render_publication_selection_list($args) {
 				class="mp-selection-list"
 				style="margin-top:12px; max-height:320px; overflow:auto; border:1px solid #dcdcde; background:#fff;"
 			>
-				<?php if (empty($publications)) : ?>
-					<p style="margin:0; padding:14px 16px; color:#50575e;"><?php esc_html_e('No publications available yet.', 'medplatform-headless'); ?></p>
+				<?php if (empty($posts)) : ?>
+					<p style="margin:0; padding:14px 16px; color:#50575e;"><?php echo esc_html($empty_list_label); ?></p>
 				<?php else : ?>
-					<?php foreach ($publications as $publication) : ?>
+					<?php foreach ($posts as $post_item) : ?>
+						<?php
+						$item_meta_text = $item_meta_callback ? call_user_func($item_meta_callback, $post_item) : '';
+						?>
 						<label
 							class="mp-selection-item"
-							data-selection-label="<?php echo esc_attr(function_exists('mb_strtolower') ? mb_strtolower($publication->post_title) : strtolower($publication->post_title)); ?>"
+							data-selection-label="<?php echo esc_attr(function_exists('mb_strtolower') ? mb_strtolower($post_item->post_title) : strtolower($post_item->post_title)); ?>"
 							style="display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border-top:1px solid #f0f0f1;"
 						>
 							<input
 								class="mp-selection-checkbox"
 								type="checkbox"
 								name="<?php echo esc_attr($field_name); ?>[]"
-								value="<?php echo esc_attr($publication->ID); ?>"
-								<?php checked(in_array((int) $publication->ID, $selected_ids, true)); ?>
+								value="<?php echo esc_attr($post_item->ID); ?>"
+								<?php checked(in_array((int) $post_item->ID, $selected_ids, true)); ?>
 							/>
 							<span style="display:block; line-height:1.35;">
-								<strong style="display:block; font-weight:600;"><?php echo esc_html($publication->post_title); ?></strong>
-								<span style="display:block; margin-top:2px; color:#646970; font-size:12px;"><?php echo esc_html(get_the_date(get_option('date_format'), $publication)); ?></span>
+								<strong style="display:block; font-weight:600;"><?php echo esc_html($post_item->post_title); ?></strong>
+								<?php if ($item_meta_text !== '') : ?>
+									<span style="display:block; margin-top:2px; color:#646970; font-size:12px;"><?php echo esc_html($item_meta_text); ?></span>
+								<?php endif; ?>
 							</span>
 						</label>
 					<?php endforeach; ?>
@@ -1675,6 +2280,53 @@ function mp_headless_render_publication_selection_list($args) {
 		</div>
 	</div>
 	<?php
+}
+
+function mp_headless_render_publication_selection_list($args) {
+	$args['posts']                     = isset($args['publications']) && is_array($args['publications']) ? $args['publications'] : array();
+	$args['search_placeholder']        = isset($args['search_placeholder']) ? (string) $args['search_placeholder'] : __('Search publications...', 'medplatform-headless');
+	$args['empty_search_label']        = isset($args['empty_search_label']) ? (string) $args['empty_search_label'] : __('No publications match this search.', 'medplatform-headless');
+	$args['empty_list_label']          = isset($args['empty_list_label']) ? (string) $args['empty_list_label'] : __('No publications available yet.', 'medplatform-headless');
+	$args['empty_selection_label']     = isset($args['empty_selection_label']) ? (string) $args['empty_selection_label'] : __('No publications selected', 'medplatform-headless');
+	$args['singular_selection_label']  = isset($args['singular_selection_label']) ? (string) $args['singular_selection_label'] : __('publication selected', 'medplatform-headless');
+	$args['plural_selection_label']    = isset($args['plural_selection_label']) ? (string) $args['plural_selection_label'] : __('publications selected', 'medplatform-headless');
+	$args['selected_count_text']       = isset($args['selected_count_text']) ? (string) $args['selected_count_text'] : mp_headless_get_selection_count_label(count($args['selected_ids'] ?? array()));
+	$args['item_meta_callback']        = isset($args['item_meta_callback']) && is_callable($args['item_meta_callback'])
+		? $args['item_meta_callback']
+		: function($publication) {
+			return get_the_date(get_option('date_format'), $publication);
+		};
+
+	mp_headless_render_post_selection_list($args);
+}
+
+function mp_headless_render_project_selection_list($args) {
+	$args['posts']                     = isset($args['projects']) && is_array($args['projects']) ? $args['projects'] : array();
+	$args['search_placeholder']        = isset($args['search_placeholder']) ? (string) $args['search_placeholder'] : __('Search projects...', 'medplatform-headless');
+	$args['empty_search_label']        = isset($args['empty_search_label']) ? (string) $args['empty_search_label'] : __('No projects match this search.', 'medplatform-headless');
+	$args['empty_list_label']          = isset($args['empty_list_label']) ? (string) $args['empty_list_label'] : __('No projects available yet.', 'medplatform-headless');
+	$args['empty_selection_label']     = isset($args['empty_selection_label']) ? (string) $args['empty_selection_label'] : __('No projects selected', 'medplatform-headless');
+	$args['singular_selection_label']  = isset($args['singular_selection_label']) ? (string) $args['singular_selection_label'] : __('project selected', 'medplatform-headless');
+	$args['plural_selection_label']    = isset($args['plural_selection_label']) ? (string) $args['plural_selection_label'] : __('projects selected', 'medplatform-headless');
+	$args['selected_count_text']       = isset($args['selected_count_text']) ? (string) $args['selected_count_text'] : mp_headless_get_project_selection_count_label(count($args['selected_ids'] ?? array()));
+	$args['item_meta_callback']        = isset($args['item_meta_callback']) && is_callable($args['item_meta_callback'])
+		? $args['item_meta_callback']
+		: function($project) {
+			$meta = array();
+
+			if (! empty(get_post_meta($project->ID, 'mp_hide_project_currently', true))) {
+				$meta[] = __('Currently hidden from project screens', 'medplatform-headless');
+			}
+
+			$lead_name = trim((string) get_post_meta($project->ID, 'mp_lead_name', true));
+			if ($lead_name !== '') {
+				$meta[] = sprintf(__('Lead: %s', 'medplatform-headless'), $lead_name);
+			}
+
+			return implode(' · ', $meta);
+		};
+
+	mp_headless_render_post_selection_list($args);
 }
 
 function mp_headless_render_project_donor_logo_row($logo = '') {
@@ -1954,8 +2606,18 @@ function mp_headless_render_project_settings_page() {
 	$is_editing            = $project instanceof WP_Post;
 	$updated               = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
 	$people                = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
+	$available_parent_projects = get_posts(
+		array(
+			'post_type'      => 'mp_project',
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+			'post__not_in'   => $is_editing ? array($project->ID) : array(),
+		)
+	);
 	$projects_list_url     = admin_url('edit.php?post_type=mp_project');
 	$focus_area_options    = mp_headless_project_focus_area_options();
+	$project_card_icon_options = mp_headless_project_card_icon_options();
 	$focus_area_titles     = array();
 	$project_name          = $is_editing ? $project->post_title : '';
 	$project_slug          = $is_editing ? $project->post_name : '';
@@ -1977,10 +2639,18 @@ function mp_headless_render_project_settings_page() {
 		)
 		: '';
 	$project_color         = $is_editing ? (string) get_post_meta($project->ID, 'mp_color', true) : '#15243a';
+	$project_progress_color = $is_editing ? (string) get_post_meta($project->ID, 'mp_progress_color', true) : '';
+	$project_card_icon     = $is_editing ? (string) get_post_meta($project->ID, 'mp_card_icon', true) : '';
 	$hide_project_bar      = $is_editing ? (bool) get_post_meta($project->ID, 'mp_hide_project_bar', true) : false;
+	$hide_project_currently = $is_editing ? (bool) get_post_meta($project->ID, 'mp_hide_project_currently', true) : false;
 	$stage_points          = $is_editing ? get_post_meta($project->ID, 'mp_stage_points', true) : array();
 	$current_stage         = $is_editing ? (string) get_post_meta($project->ID, 'mp_current_stage', true) : '';
+	$parent_project_id     = $is_editing ? intval(get_post_meta($project->ID, 'mp_parent_project_id', true)) : 0;
+	$aligned_project_id    = $is_editing ? intval(get_post_meta($project->ID, 'mp_aligned_project_id', true)) : 0;
 	$lead_person_id        = $is_editing ? intval(get_post_meta($project->ID, 'mp_lead_person_id', true)) : 0;
+	$lead_person_ids       = $is_editing
+		? mp_headless_normalize_selected_person_ids(get_post_meta($project->ID, 'mp_lead_person_ids', true), $lead_person_id)
+		: array();
 	$lead_name             = $is_editing ? (string) get_post_meta($project->ID, 'mp_lead_name', true) : '';
 	$lead_role             = $is_editing ? (string) get_post_meta($project->ID, 'mp_lead_role', true) : 'Program Lead';
 	$team_member_ids       = $is_editing ? get_post_meta($project->ID, 'mp_team_member_ids', true) : array();
@@ -1989,12 +2659,15 @@ function mp_headless_render_project_settings_page() {
 	$donors                = $is_editing ? get_post_meta($project->ID, 'mp_donors', true) : array();
 	$focus_area_slugs      = $is_editing ? get_post_meta($project->ID, 'mp_focus_area_slugs', true) : array();
 	$legacy_focus_areas    = $is_editing ? get_post_meta($project->ID, 'mp_focus_areas', true) : array();
+	$custom_focus_areas    = $is_editing ? get_post_meta($project->ID, 'mp_custom_focus_areas', true) : array();
 	$stage_points          = is_array($stage_points) && ! empty($stage_points) ? array_values(array_filter(array_map('strval', $stage_points))) : mp_headless_project_stages();
 	$team_member_ids       = is_array($team_member_ids) ? array_values(array_filter(array_map('intval', $team_member_ids))) : array();
 	$legacy_team_members   = is_array($legacy_team_members) ? $legacy_team_members : array();
 	$updates               = is_array($updates) ? $updates : array();
 	$donors                = is_array($donors) ? $donors : array();
 	$focus_area_slugs      = is_array($focus_area_slugs) ? array_values(array_filter(array_map('sanitize_title', $focus_area_slugs))) : array();
+	$custom_focus_areas    = is_array($custom_focus_areas) ? mp_headless_sanitize_custom_focus_areas($custom_focus_areas) : array();
+	$project_progress_color = $project_progress_color !== '' ? $project_progress_color : ($project_color !== '' ? $project_color : '#15243a');
 
 	foreach ($focus_area_options as $option) {
 		$focus_area_titles[strtolower($option['title'])] = $option['slug'];
@@ -2010,12 +2683,18 @@ function mp_headless_render_project_settings_page() {
 		$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
 	}
 
-	if ($lead_person_id < 1 && $lead_name !== '') {
+	if (empty($lead_person_ids) && $lead_person_id < 1 && $lead_name !== '') {
 		$lead_person_id = mp_headless_find_person_id_by_name($lead_name);
 	}
 
-	if ($lead_person_id > 0 && ! in_array($lead_person_id, $team_member_ids, true)) {
-		$team_member_ids[] = $lead_person_id;
+	if ($lead_person_id > 0 && empty($lead_person_ids)) {
+		$lead_person_ids[] = $lead_person_id;
+	}
+
+	foreach ($lead_person_ids as $selected_lead_person_id) {
+		if ($selected_lead_person_id > 0 && ! in_array($selected_lead_person_id, $team_member_ids, true)) {
+			$team_member_ids[] = $selected_lead_person_id;
+		}
 	}
 
 	if (empty($focus_area_slugs) && is_array($legacy_focus_areas)) {
@@ -2027,6 +2706,29 @@ function mp_headless_render_project_settings_page() {
 		}
 		$focus_area_slugs = array_values(array_unique($focus_area_slugs));
 	}
+
+	if (empty($custom_focus_areas) && is_array($legacy_focus_areas)) {
+		foreach ($legacy_focus_areas as $focus_area) {
+			$title = trim((string) ($focus_area['title'] ?? ''));
+			$description = trim((string) ($focus_area['description'] ?? ''));
+
+			if ($title === '' && $description === '') {
+				continue;
+			}
+
+			if (isset($focus_area_titles[strtolower($title)])) {
+				continue;
+			}
+
+			$custom_focus_areas[] = array(
+				'enabled'     => true,
+				'title'       => $title,
+				'description' => $description,
+			);
+		}
+	}
+
+	$custom_focus_areas = array_slice($custom_focus_areas, 0, 2);
 
 	$donor_logos = array();
 	foreach ($donors as $donor) {
@@ -2089,15 +2791,41 @@ function mp_headless_render_project_settings_page() {
 						</div>
 						<div style="display:grid; gap:10px;">
 							<label for="mp_color"><strong><?php esc_html_e('Accent Color', 'medplatform-headless'); ?></strong></label>
-							<div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+							<div data-mp-color-field style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
 								<input type="color" value="<?php echo esc_attr($project_color ?: '#15243a'); ?>" data-mp-color-picker style="inline-size:56px; block-size:40px; padding:0; border:0; background:none;" />
 								<input type="text" id="mp_color" name="mp_color" class="regular-text code" value="<?php echo esc_attr($project_color ?: '#15243a'); ?>" data-mp-color-value pattern="^#([A-Fa-f0-9]{6})$" />
 							</div>
 							<p style="margin:0; color:#646970;"><?php esc_html_e('Pick the project accent color. It is reused on the public project page and on related publication project buttons.', 'medplatform-headless'); ?></p>
 						</div>
+						<div style="display:grid; gap:10px;">
+							<label for="mp_progress_color"><strong><?php esc_html_e('Progress Bar Color', 'medplatform-headless'); ?></strong></label>
+							<div data-mp-color-field style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+								<input type="color" value="<?php echo esc_attr($project_progress_color ?: '#15243a'); ?>" data-mp-color-picker style="inline-size:56px; block-size:40px; padding:0; border:0; background:none;" />
+								<input type="text" id="mp_progress_color" name="mp_progress_color" class="regular-text code" value="<?php echo esc_attr($project_progress_color ?: '#15243a'); ?>" data-mp-color-value pattern="^#([A-Fa-f0-9]{6})$" />
+							</div>
+							<p style="margin:0; color:#646970;"><?php esc_html_e('Used only for the project progress bar. Leave it aligned with the accent color or pick a separate timeline color.', 'medplatform-headless'); ?></p>
+						</div>
 						<div>
 							<label for="mp_project_description"><strong><?php esc_html_e('Short Description', 'medplatform-headless'); ?></strong></label>
 							<textarea id="mp_project_description" class="widefat" rows="4" name="mp_project_description" style="margin-top:8px;"><?php echo esc_textarea($project_description); ?></textarea>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Shown on project cards. Anything beyond 25 words is trimmed automatically.', 'medplatform-headless'); ?></p>
+						</div>
+						<div>
+							<label for="mp_card_icon"><strong><?php esc_html_e('Project Card Icon', 'medplatform-headless'); ?></strong></label>
+							<select id="mp_card_icon" name="mp_card_icon" class="widefat" style="margin-top:8px;">
+								<option value=""><?php esc_html_e('Use the default icon', 'medplatform-headless'); ?></option>
+								<?php foreach ($project_card_icon_options as $icon_value => $icon_label) : ?>
+									<option value="<?php echo esc_attr($icon_value); ?>" <?php selected($project_card_icon, $icon_value); ?>><?php echo esc_html($icon_label); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Used on the /services project cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?></p>
+						</div>
+						<div style="grid-column:1 / -1;">
+							<label>
+								<input type="checkbox" name="mp_hide_project_currently" value="1" <?php checked($hide_project_currently); ?> />
+								<?php esc_html_e('Hide this project and its related posts from project screens for now', 'medplatform-headless'); ?>
+							</label>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('This removes the project from frontend project listings and hides its project-linked publications from project screens, while keeping the content in WordPress.', 'medplatform-headless'); ?></p>
 						</div>
 					</div>
 				</div>
@@ -2125,6 +2853,42 @@ function mp_headless_render_project_settings_page() {
 								</label>
 							</p>
 						</div>
+						<div>
+							<p style="margin:0;">
+								<label>
+									<input type="checkbox" name="mp_has_parent_project" value="1" data-mp-parent-project-toggle <?php checked($parent_project_id > 0); ?> />
+									<?php esc_html_e('This project sits under another project', 'medplatform-headless'); ?>
+								</label>
+							</p>
+							<div data-mp-parent-project-fields style="margin-top:14px;">
+								<label for="mp_parent_project_id"><strong><?php esc_html_e('Parent Project', 'medplatform-headless'); ?></strong></label>
+								<select id="mp_parent_project_id" name="mp_parent_project_id" class="widefat" data-mp-parent-project-select style="margin-top:8px;">
+									<option value="0"><?php esc_html_e('Select a parent project', 'medplatform-headless'); ?></option>
+									<?php foreach ($available_parent_projects as $parent_project) : ?>
+										<option value="<?php echo esc_attr($parent_project->ID); ?>" <?php selected($parent_project_id, (int) $parent_project->ID); ?>><?php echo esc_html($parent_project->post_title); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. When selected, the frontend project page will show that this project sits under the chosen parent project.', 'medplatform-headless'); ?></p>
+							</div>
+						</div>
+						<div>
+							<p style="margin:0;">
+								<label>
+									<input type="checkbox" name="mp_has_aligned_project" value="1" data-mp-aligned-project-toggle <?php checked($aligned_project_id > 0); ?> />
+									<?php esc_html_e('This project is aligned with another project', 'medplatform-headless'); ?>
+								</label>
+							</p>
+							<div data-mp-aligned-project-fields style="margin-top:14px;">
+								<label for="mp_aligned_project_id"><strong><?php esc_html_e('Aligned Project', 'medplatform-headless'); ?></strong></label>
+								<select id="mp_aligned_project_id" name="mp_aligned_project_id" class="widefat" data-mp-aligned-project-select style="margin-top:8px;">
+									<option value="0"><?php esc_html_e('Select an aligned project', 'medplatform-headless'); ?></option>
+									<?php foreach ($available_parent_projects as $aligned_project) : ?>
+										<option value="<?php echo esc_attr($aligned_project->ID); ?>" <?php selected($aligned_project_id, (int) $aligned_project->ID); ?>><?php echo esc_html($aligned_project->post_title); ?></option>
+									<?php endforeach; ?>
+								</select>
+								<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. When selected, the frontend project page will show this as an aligned project connection.', 'medplatform-headless'); ?></p>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -2141,22 +2905,21 @@ function mp_headless_render_project_settings_page() {
 							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Select the people involved in this project. Hold Command or Ctrl to choose multiple team members.', 'medplatform-headless'); ?></p>
 						</div>
 						<div>
-							<label for="mp_lead_person_id"><strong><?php esc_html_e('Lead Team Member', 'medplatform-headless'); ?></strong></label>
-							<select id="mp_lead_person_id" name="mp_lead_person_id" class="widefat" data-mp-lead-select style="margin-top:8px;">
-								<option value="0"><?php esc_html_e('Select a lead', 'medplatform-headless'); ?></option>
+							<label for="mp_lead_person_ids"><strong><?php esc_html_e('Lead Team Members', 'medplatform-headless'); ?></strong></label>
+							<select id="mp_lead_person_ids" name="mp_lead_person_ids[]" class="widefat" size="8" multiple data-mp-lead-select style="margin-top:8px; min-height:220px;">
 								<?php foreach ($people as $person) : ?>
 									<?php $is_in_team = empty($team_member_ids) || in_array((int) $person->ID, $team_member_ids, true); ?>
 									<option
 										value="<?php echo esc_attr($person->ID); ?>"
 										data-person-id="<?php echo esc_attr($person->ID); ?>"
-										<?php selected($lead_person_id, (int) $person->ID); ?>
-										<?php disabled(! $is_in_team && $lead_person_id !== (int) $person->ID); ?>
+										<?php selected(in_array((int) $person->ID, $lead_person_ids, true)); ?>
+										<?php disabled(! $is_in_team && ! in_array((int) $person->ID, $lead_person_ids, true)); ?>
 									>
 										<?php echo esc_html($person->post_title); ?>
 									</option>
 								<?php endforeach; ?>
 							</select>
-							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('The lead photo is pulled automatically from the selected team member profile.', 'medplatform-headless'); ?></p>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Choose one or more program leads. Hold Command or Ctrl to select multiple people. Lead photos are pulled automatically from the selected team member profiles.', 'medplatform-headless'); ?></p>
 							<p style="margin:16px 0 0;">
 								<label for="mp_lead_role"><strong><?php esc_html_e('Lead Label', 'medplatform-headless'); ?></strong></label>
 								<input type="text" id="mp_lead_role" name="mp_lead_role" class="widefat" value="<?php echo esc_attr($lead_role); ?>" style="margin-top:8px;" />
@@ -2183,7 +2946,7 @@ function mp_headless_render_project_settings_page() {
 
 				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
 					<h2 style="margin-top:0;"><?php esc_html_e('Focus Areas', 'medplatform-headless'); ?></h2>
-					<p style="margin-top:0; color:#50575e;"><?php esc_html_e('Choose from the predefined focus areas so the public project page stays consistent and mistake-proof.', 'medplatform-headless'); ?></p>
+					<p style="margin-top:0; color:#50575e;"><?php esc_html_e('Choose from the predefined focus areas, then optionally add up to two custom ones for project-specific workstreams.', 'medplatform-headless'); ?></p>
 					<div class="mp-project-focus-grid">
 						<?php foreach ($focus_area_options as $option) : ?>
 							<label class="mp-project-focus-card">
@@ -2192,6 +2955,47 @@ function mp_headless_render_project_settings_page() {
 								<span style="display:block; margin-top:6px; color:#646970;"><?php echo esc_html($option['description']); ?></span>
 							</label>
 						<?php endforeach; ?>
+					</div>
+					<div style="margin-top:20px; display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+						<?php for ($custom_focus_area_index = 0; $custom_focus_area_index < 2; $custom_focus_area_index++) : ?>
+							<?php $custom_focus_area = $custom_focus_areas[$custom_focus_area_index] ?? array(); ?>
+							<?php $custom_focus_area_enabled = ! empty($custom_focus_area['enabled']); ?>
+							<div data-mp-custom-focus-area-card style="border:1px solid #dcdcde; background:#fff; padding:16px;">
+								<h3 style="margin:0 0 12px;"><?php echo esc_html(sprintf(__('Custom Focus Area %d', 'medplatform-headless'), $custom_focus_area_index + 1)); ?></h3>
+								<p style="margin:0 0 14px;">
+									<label>
+										<input
+											type="checkbox"
+											name="<?php echo esc_attr('mp_custom_focus_areas[' . $custom_focus_area_index . '][enabled]'); ?>"
+											value="1"
+											data-mp-custom-focus-area-toggle
+											<?php checked($custom_focus_area_enabled); ?>
+										/>
+										<?php esc_html_e('Show this custom focus area on the project page', 'medplatform-headless'); ?>
+									</label>
+								</p>
+								<div data-mp-custom-focus-area-fields <?php echo $custom_focus_area_enabled ? '' : 'hidden'; ?>>
+								<label for="<?php echo esc_attr('mp_custom_focus_area_title_' . $custom_focus_area_index); ?>"><strong><?php esc_html_e('Title', 'medplatform-headless'); ?></strong></label>
+								<input
+									type="text"
+									id="<?php echo esc_attr('mp_custom_focus_area_title_' . $custom_focus_area_index); ?>"
+									name="<?php echo esc_attr('mp_custom_focus_areas[' . $custom_focus_area_index . '][title]'); ?>"
+									class="widefat"
+									value="<?php echo esc_attr((string) ($custom_focus_area['title'] ?? '')); ?>"
+									style="margin-top:8px;"
+								/>
+								<label for="<?php echo esc_attr('mp_custom_focus_area_description_' . $custom_focus_area_index); ?>" style="display:block; margin-top:14px;"><strong><?php esc_html_e('Description', 'medplatform-headless'); ?></strong></label>
+								<textarea
+									id="<?php echo esc_attr('mp_custom_focus_area_description_' . $custom_focus_area_index); ?>"
+									name="<?php echo esc_attr('mp_custom_focus_areas[' . $custom_focus_area_index . '][description]'); ?>"
+									class="widefat"
+									rows="4"
+									style="margin-top:8px;"
+								><?php echo esc_textarea((string) ($custom_focus_area['description'] ?? '')); ?></textarea>
+								<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Maximum 25 words. Anything longer is trimmed automatically when you save.', 'medplatform-headless'); ?></p>
+								</div>
+							</div>
+						<?php endfor; ?>
 					</div>
 				</div>
 
@@ -2231,16 +3035,32 @@ function mp_headless_save_project_settings() {
 
 	$name              = sanitize_text_field(wp_unslash($_POST['mp_project_name'] ?? ''));
 	$slug              = sanitize_title(wp_unslash($_POST['mp_project_slug'] ?? ''));
-	$description       = sanitize_textarea_field(wp_unslash($_POST['mp_project_description'] ?? ''));
+	$description       = mp_headless_trim_words(sanitize_textarea_field(wp_unslash($_POST['mp_project_description'] ?? '')), 25);
 	$content           = sanitize_textarea_field(wp_unslash($_POST['mp_project_content'] ?? ''));
 	$color             = sanitize_hex_color(wp_unslash($_POST['mp_color'] ?? ''));
+	$progress_color    = sanitize_hex_color(wp_unslash($_POST['mp_progress_color'] ?? ''));
+	$project_card_icon = mp_headless_sanitize_project_card_icon(wp_unslash($_POST['mp_card_icon'] ?? ''));
 	$stage_points      = mp_headless_parse_lines($_POST['mp_stage_points'] ?? '');
 	$current_stage     = sanitize_text_field(wp_unslash($_POST['mp_current_stage'] ?? ''));
+	$parent_project_id = ! empty($_POST['mp_has_parent_project'])
+		? mp_headless_normalize_parent_project_id($project_id, intval($_POST['mp_parent_project_id'] ?? 0))
+		: 0;
+	$aligned_project_id = ! empty($_POST['mp_has_aligned_project'])
+		? mp_headless_normalize_aligned_project_id($project_id, intval($_POST['mp_aligned_project_id'] ?? 0))
+		: 0;
 	$team_member_ids   = mp_headless_sanitize_int_array(wp_unslash($_POST['mp_team_member_ids'] ?? array()));
-	$lead_person_id    = intval($_POST['mp_lead_person_id'] ?? 0);
+	$lead_person_ids   = mp_headless_normalize_selected_person_ids(
+		wp_unslash($_POST['mp_lead_person_ids'] ?? array()),
+		intval($_POST['mp_lead_person_id'] ?? 0)
+	);
 	$lead_role         = sanitize_text_field(wp_unslash($_POST['mp_lead_role'] ?? ''));
 	$updates           = mp_headless_parse_lines($_POST['mp_updates'] ?? '');
 	$focus_area_slugs  = mp_headless_sanitize_string_array(wp_unslash($_POST['mp_focus_area_slugs'] ?? array()));
+	$custom_focus_areas = array_slice(
+		mp_headless_sanitize_custom_focus_areas(wp_unslash($_POST['mp_custom_focus_areas'] ?? array())),
+		0,
+		2
+	);
 	$donor_logo_values = wp_unslash($_POST['mp_donor_logos'] ?? array());
 
 	if ($name === '') {
@@ -2257,6 +3077,10 @@ function mp_headless_save_project_settings() {
 		$color = '#15243a';
 	}
 
+	if ($progress_color === '') {
+		$progress_color = $color;
+	}
+
 	if (empty($stage_points)) {
 		$stage_points = mp_headless_project_stages();
 	}
@@ -2265,8 +3089,10 @@ function mp_headless_save_project_settings() {
 		$current_stage = $stage_points[0];
 	}
 
-	if ($lead_person_id > 0 && ! in_array($lead_person_id, $team_member_ids, true)) {
-		$team_member_ids[] = $lead_person_id;
+	foreach ($lead_person_ids as $selected_lead_person_id) {
+		if ($selected_lead_person_id > 0 && ! in_array($selected_lead_person_id, $team_member_ids, true)) {
+			$team_member_ids[] = $selected_lead_person_id;
+		}
 	}
 
 	$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
@@ -2278,6 +3104,7 @@ function mp_headless_save_project_settings() {
 		}
 	}
 
+	$lead_person_id = ! empty($lead_person_ids) ? (int) $lead_person_ids[0] : 0;
 	$lead_post  = $lead_person_id > 0 ? get_post($lead_person_id) : null;
 	$lead_name  = ($lead_post instanceof WP_Post && $lead_post->post_type === 'mp_person') ? $lead_post->post_title : '';
 	$lead_image = $lead_person_id > 0 ? (string) get_post_meta($lead_person_id, 'mp_photo', true) : '';
@@ -2287,6 +3114,24 @@ function mp_headless_save_project_settings() {
 
 	$focus_area_slugs = array_values(array_unique(array_map('sanitize_title', $focus_area_slugs)));
 	$focus_area_objects = mp_headless_resolve_focus_area_objects($focus_area_slugs);
+
+	foreach ($custom_focus_areas as $custom_focus_area) {
+		if (empty($custom_focus_area['enabled'])) {
+			continue;
+		}
+
+		$title       = (string) ($custom_focus_area['title'] ?? '');
+		$description = (string) ($custom_focus_area['description'] ?? '');
+
+		if ($title === '' && $description === '') {
+			continue;
+		}
+
+		$focus_area_objects[] = array(
+			'title'       => $title,
+			'description' => $description,
+		);
+	}
 
 	$donors = array();
 	if (is_array($donor_logo_values)) {
@@ -2327,10 +3172,16 @@ function mp_headless_save_project_settings() {
 	$project_id = (int) $result;
 
 	update_post_meta($project_id, 'mp_color', $color);
+	update_post_meta($project_id, 'mp_progress_color', $progress_color);
+	update_post_meta($project_id, 'mp_card_icon', $project_card_icon);
 	update_post_meta($project_id, 'mp_hide_project_bar', ! empty($_POST['mp_hide_project_bar']));
+	update_post_meta($project_id, 'mp_hide_project_currently', ! empty($_POST['mp_hide_project_currently']));
 	update_post_meta($project_id, 'mp_stage_points', $stage_points);
 	update_post_meta($project_id, 'mp_current_stage', $current_stage);
+	update_post_meta($project_id, 'mp_parent_project_id', $parent_project_id);
+	update_post_meta($project_id, 'mp_aligned_project_id', $aligned_project_id);
 	update_post_meta($project_id, 'mp_lead_person_id', $lead_person_id);
+	update_post_meta($project_id, 'mp_lead_person_ids', $lead_person_ids);
 	update_post_meta($project_id, 'mp_lead_name', $lead_name);
 	update_post_meta($project_id, 'mp_lead_role', $lead_role);
 	update_post_meta($project_id, 'mp_lead_image', esc_url_raw($lead_image));
@@ -2339,6 +3190,7 @@ function mp_headless_save_project_settings() {
 	update_post_meta($project_id, 'mp_donors', $donors);
 	update_post_meta($project_id, 'mp_updates', $updates);
 	update_post_meta($project_id, 'mp_focus_area_slugs', $focus_area_slugs);
+	update_post_meta($project_id, 'mp_custom_focus_areas', $custom_focus_areas);
 	update_post_meta($project_id, 'mp_focus_areas', $focus_area_objects);
 
 	clean_post_cache($project_id);
@@ -2365,14 +3217,18 @@ function mp_headless_render_homepage_settings_page() {
 
 	$homepage_id              = mp_headless_get_homepage_post_id();
 	$publications             = get_posts(array('post_type' => 'mp_publication', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC'));
+	$projects                 = get_posts(array('post_type' => 'mp_project', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
 	$podcast_publications     = mp_headless_get_podcast_publications();
 	$featured_podcast_id      = (int) get_post_meta($homepage_id, 'mp_featured_podcast_id', true);
 	$featured_article_id      = (int) get_post_meta($homepage_id, 'mp_featured_article_id', true);
+	$homepage_project_count   = max(0, (int) get_post_meta($homepage_id, 'mp_homepage_project_count', true));
+	$homepage_project_ids     = get_post_meta($homepage_id, 'mp_homepage_project_ids', true);
 	$slider_publication_ids   = get_post_meta($homepage_id, 'mp_slider_publication_ids', true);
 	$latest_publication_ids   = get_post_meta($homepage_id, 'mp_latest_publication_ids', true);
 	$announcement_text        = (string) get_post_meta($homepage_id, 'mp_announcement_text', true);
 	$announcement_link_url    = (string) get_post_meta($homepage_id, 'mp_announcement_link_url', true);
 	$announcement_link_label  = (string) get_post_meta($homepage_id, 'mp_announcement_link_label', true);
+	$homepage_project_ids     = is_array($homepage_project_ids) ? array_map('intval', $homepage_project_ids) : array();
 	$slider_publication_ids   = is_array($slider_publication_ids) ? array_map('intval', $slider_publication_ids) : array();
 	$latest_publication_ids   = is_array($latest_publication_ids) ? array_map('intval', $latest_publication_ids) : array();
 	$updated                  = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
@@ -2427,8 +3283,37 @@ function mp_headless_render_homepage_settings_page() {
 								<?php endforeach; ?>
 							</select>
 						</div>
+						<div>
+							<label for="mp_homepage_project_count"><strong><?php esc_html_e('Homepage Project Count', 'medplatform-headless'); ?></strong></label>
+							<input
+								type="number"
+								id="mp_homepage_project_count"
+								name="mp_homepage_project_count"
+								class="small-text"
+								min="0"
+								max="24"
+								step="1"
+								value="<?php echo esc_attr((string) $homepage_project_count); ?>"
+								style="margin-top:8px;"
+							/>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Sets the maximum number of homepage projects shown from the project selection list below. Use 0 to show all selected projects, or all visible projects if you leave the project list empty.', 'medplatform-headless'); ?></p>
+						</div>
 					</div>
 				</div>
+
+				<?php
+				mp_headless_render_project_selection_list(
+					array(
+						'section_id'         => 'mp-homepage-projects-list',
+						'field_name'         => 'mp_homepage_project_ids',
+						'title'              => __('Homepage Projects', 'medplatform-headless'),
+						'description'        => __('Search the project list and tick the exact projects that should appear in the homepage Projects section. Projects appear in the same order as this list, and the project count setting above acts as the display limit.', 'medplatform-headless'),
+						'search_placeholder' => __('Search homepage projects...', 'medplatform-headless'),
+						'projects'           => $projects,
+						'selected_ids'       => $homepage_project_ids,
+					)
+				);
+				?>
 
 				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
 					<h2 style="margin-top:0;"><?php esc_html_e('Bottom Announcement Bar', 'medplatform-headless'); ?></h2>
@@ -2508,6 +3393,69 @@ function mp_headless_render_homepage_settings_page() {
 	<?php
 }
 
+function mp_headless_render_site_settings_page() {
+	if (! current_user_can('edit_posts')) {
+		wp_die(esc_html__('You do not have permission to manage site settings.', 'medplatform-headless'));
+	}
+
+	$site_settings                = mp_headless_get_site_settings_payload();
+	$linkedin_url                 = (string) ($site_settings['socialLinks']['linkedin'] ?? '');
+	$youtube_url                  = (string) ($site_settings['socialLinks']['youtube'] ?? '');
+	$instagram_url                = (string) ($site_settings['socialLinks']['instagram'] ?? '');
+	$show_public_download_counts  = ! empty($site_settings['showPublicDownloadCounts']);
+	$updated                      = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e('Site Settings', 'medplatform-headless'); ?></h1>
+		<p><?php esc_html_e('Control the shared frontend settings used across navigation, footer links, and publication download displays.', 'medplatform-headless'); ?></p>
+
+		<?php if ($updated === '1') : ?>
+			<div class="notice notice-success is-dismissible"><p><?php esc_html_e('Site settings updated.', 'medplatform-headless'); ?></p></div>
+		<?php endif; ?>
+
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+			<?php wp_nonce_field('mp_headless_save_site_settings', 'mp_headless_site_settings_nonce'); ?>
+			<input type="hidden" name="action" value="mp_headless_save_site_settings" />
+
+			<div style="display:grid; gap:20px; margin-top:20px; max-width:1100px;">
+				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
+					<h2 style="margin-top:0;"><?php esc_html_e('Social Links', 'medplatform-headless'); ?></h2>
+					<p style="margin-top:0; color:#50575e;"><?php esc_html_e('These links control the social icons in the top-right main menu and the social links in the footer. Leave any field empty to hide that platform across the frontend.', 'medplatform-headless'); ?></p>
+					<div style="display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+						<div>
+							<label for="mp_site_linkedin_url"><strong><?php esc_html_e('LinkedIn URL', 'medplatform-headless'); ?></strong></label>
+							<input type="url" id="mp_site_linkedin_url" name="mp_site_linkedin_url" class="widefat" value="<?php echo esc_attr($linkedin_url); ?>" style="margin-top:8px;" placeholder="https://www.linkedin.com/company/..." />
+						</div>
+						<div>
+							<label for="mp_site_youtube_url"><strong><?php esc_html_e('YouTube URL', 'medplatform-headless'); ?></strong></label>
+							<input type="url" id="mp_site_youtube_url" name="mp_site_youtube_url" class="widefat" value="<?php echo esc_attr($youtube_url); ?>" style="margin-top:8px;" placeholder="https://www.youtube.com/..." />
+						</div>
+						<div>
+							<label for="mp_site_instagram_url"><strong><?php esc_html_e('Instagram URL', 'medplatform-headless'); ?></strong></label>
+							<input type="url" id="mp_site_instagram_url" name="mp_site_instagram_url" class="widefat" value="<?php echo esc_attr($instagram_url); ?>" style="margin-top:8px;" placeholder="https://www.instagram.com/..." />
+						</div>
+					</div>
+				</div>
+
+				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
+					<h2 style="margin-top:0;"><?php esc_html_e('Download Visibility', 'medplatform-headless'); ?></h2>
+					<p style="margin-top:0; color:#50575e;"><?php esc_html_e('Control whether publication download counts are shown publicly next to downloadable files on the frontend.', 'medplatform-headless'); ?></p>
+					<p style="margin-bottom:0;">
+						<label>
+							<input type="checkbox" name="mp_show_public_download_counts" value="1" <?php checked($show_public_download_counts); ?> />
+							<?php esc_html_e('Show download counts publicly across the website', 'medplatform-headless'); ?>
+						</label>
+					</p>
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('WordPress will keep tracking downloads either way. This setting only controls whether the count is visible to visitors.', 'medplatform-headless'); ?></p>
+				</div>
+			</div>
+
+			<?php submit_button(__('Save Site Settings', 'medplatform-headless')); ?>
+		</form>
+	</div>
+	<?php
+}
+
 function mp_headless_register_settings_page() {
 	add_submenu_page(
 		'edit.php?post_type=mp_publication',
@@ -2544,6 +3492,16 @@ function mp_headless_register_settings_page() {
 		'mp_headless_render_homepage_settings_page',
 		'dashicons-admin-home',
 		21
+	);
+
+	add_menu_page(
+		__('Site Settings', 'medplatform-headless'),
+		__('Site Settings', 'medplatform-headless'),
+		'edit_posts',
+		'mp-site-settings',
+		'mp_headless_render_site_settings_page',
+		'dashicons-admin-generic',
+		22
 	);
 
 	add_options_page(
@@ -2596,6 +3554,8 @@ function mp_headless_save_homepage_settings() {
 	$featured_podcast_id = intval($_POST['mp_featured_podcast_id'] ?? 0);
 	update_post_meta($homepage_id, 'mp_featured_podcast_id', mp_headless_publication_is_podcast($featured_podcast_id) ? $featured_podcast_id : 0);
 	update_post_meta($homepage_id, 'mp_featured_article_id', intval($_POST['mp_featured_article_id'] ?? 0));
+	update_post_meta($homepage_id, 'mp_homepage_project_count', mp_headless_sanitize_nonnegative_int_value($_POST['mp_homepage_project_count'] ?? 0));
+	update_post_meta($homepage_id, 'mp_homepage_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_homepage_project_ids'] ?? array())));
 	update_post_meta($homepage_id, 'mp_slider_publication_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_slider_publication_ids'] ?? array())));
 	update_post_meta($homepage_id, 'mp_latest_publication_ids', array_slice(mp_headless_sanitize_int_array(wp_unslash($_POST['mp_latest_publication_ids'] ?? array())), 0, 5));
 	update_post_meta($homepage_id, 'mp_announcement_text', sanitize_text_field(wp_unslash($_POST['mp_announcement_text'] ?? '')));
@@ -2609,6 +3569,25 @@ function mp_headless_save_homepage_settings() {
 	exit;
 }
 add_action('admin_post_mp_headless_save_homepage_settings', 'mp_headless_save_homepage_settings');
+
+function mp_headless_save_site_settings() {
+	if (! current_user_can('edit_posts')) {
+		wp_die(esc_html__('You do not have permission to manage site settings.', 'medplatform-headless'));
+	}
+
+	check_admin_referer('mp_headless_save_site_settings', 'mp_headless_site_settings_nonce');
+
+	update_option('mp_headless_site_linkedin_url', esc_url_raw(wp_unslash($_POST['mp_site_linkedin_url'] ?? '')));
+	update_option('mp_headless_site_youtube_url', esc_url_raw(wp_unslash($_POST['mp_site_youtube_url'] ?? '')));
+	update_option('mp_headless_site_instagram_url', esc_url_raw(wp_unslash($_POST['mp_site_instagram_url'] ?? '')));
+	update_option('mp_headless_show_public_download_counts', ! empty($_POST['mp_show_public_download_counts']));
+
+	mp_headless_trigger_build('site_settings_update');
+
+	wp_safe_redirect(admin_url('admin.php?page=mp-site-settings&updated=1'));
+	exit;
+}
+add_action('admin_post_mp_headless_save_site_settings', 'mp_headless_save_site_settings');
 
 function mp_headless_redirect_homepage_admin_views() {
 	if (! is_admin()) {
@@ -2839,6 +3818,148 @@ function mp_headless_render_settings_page() {
 	</div>
 	<?php
 }
+
+function mp_headless_register_rest_routes() {
+	register_rest_route(
+		'mp-headless/v1',
+		'/site-settings',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => function() {
+				return rest_ensure_response(mp_headless_get_site_settings_payload());
+			},
+			'permission_callback' => '__return_true',
+		)
+	);
+
+	register_rest_route(
+		'mp-headless/v1',
+		'/publications/(?P<id>\d+)/download-stats',
+		array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => function(WP_REST_Request $request) {
+				$publication_id = (int) $request->get_param('id');
+				$publication    = get_post($publication_id);
+
+				if (! $publication instanceof WP_Post || $publication->post_type !== 'mp_publication' || $publication->post_status !== 'publish') {
+					return new WP_Error('mp_headless_not_found', __('Publication not found.', 'medplatform-headless'), array('status' => 404));
+				}
+
+				return rest_ensure_response(mp_headless_get_publication_download_stats_payload($publication_id));
+			},
+			'permission_callback' => '__return_true',
+		)
+	);
+}
+add_action('rest_api_init', 'mp_headless_register_rest_routes');
+
+function mp_headless_handle_publication_download() {
+	$publication_id = intval($_GET['publication_id'] ?? 0);
+	$fallback_url   = mp_headless_get_frontend_url('/blog');
+
+	if ($publication_id < 1) {
+		wp_safe_redirect($fallback_url);
+		exit;
+	}
+
+	$publication = get_post($publication_id);
+	if (! $publication instanceof WP_Post || $publication->post_type !== 'mp_publication' || $publication->post_status !== 'publish') {
+		wp_safe_redirect($fallback_url);
+		exit;
+	}
+
+	if (mp_headless_publication_is_podcast($publication_id)) {
+		wp_safe_redirect(mp_headless_get_frontend_post_url($publication));
+		exit;
+	}
+
+	$download_url = trim((string) get_post_meta($publication_id, 'mp_download_url', true));
+	if ($download_url === '') {
+		wp_safe_redirect(mp_headless_get_frontend_post_url($publication));
+		exit;
+	}
+
+	if (! preg_match('#^https?://#i', $download_url)) {
+		$download_url = home_url('/' . ltrim($download_url, '/'));
+	}
+
+	mp_headless_increment_publication_download_count($publication_id);
+	wp_redirect($download_url);
+	exit;
+}
+add_action('admin_post_nopriv_mp_headless_track_publication_download', 'mp_headless_handle_publication_download');
+add_action('admin_post_mp_headless_track_publication_download', 'mp_headless_handle_publication_download');
+
+function mp_headless_get_download_dashboard_stats() {
+	$publication_ids = get_posts(
+		array(
+			'post_type'      => 'mp_publication',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+		)
+	);
+
+	$total_downloads    = 0;
+	$top_publication_id = 0;
+	$top_download_count = 0;
+
+	foreach ($publication_ids as $publication_id) {
+		$count            = mp_headless_get_publication_download_count($publication_id);
+		$total_downloads += $count;
+
+		if ($count > $top_download_count) {
+			$top_download_count = $count;
+			$top_publication_id = (int) $publication_id;
+		}
+	}
+
+	return array(
+		'total_downloads'    => $total_downloads,
+		'top_publication_id' => $top_publication_id,
+		'top_download_count' => $top_download_count,
+	);
+}
+
+function mp_headless_render_download_dashboard_widget() {
+	$stats              = mp_headless_get_download_dashboard_stats();
+	$total_downloads    = (int) ($stats['total_downloads'] ?? 0);
+	$top_publication_id = (int) ($stats['top_publication_id'] ?? 0);
+	$top_download_count = (int) ($stats['top_download_count'] ?? 0);
+	$top_publication    = $top_publication_id > 0 ? get_post($top_publication_id) : null;
+	?>
+	<div style="display:grid; gap:14px;">
+		<div style="border:1px solid #dcdcde; background:#fff; padding:14px;">
+			<p style="margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#50575e;"><?php esc_html_e('Total Downloaded Files', 'medplatform-headless'); ?></p>
+			<p style="margin:8px 0 0; font-size:28px; font-weight:700; line-height:1;"><?php echo esc_html(number_format_i18n($total_downloads)); ?></p>
+		</div>
+		<div style="border:1px solid #dcdcde; background:#fff; padding:14px;">
+			<p style="margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#50575e;"><?php esc_html_e('Highest Downloaded Publication', 'medplatform-headless'); ?></p>
+			<?php if ($top_publication instanceof WP_Post && $top_download_count > 0) : ?>
+				<p style="margin:8px 0 0; font-size:18px; font-weight:600; line-height:1.35;">
+					<a href="<?php echo esc_url(get_edit_post_link($top_publication->ID)); ?>"><?php echo esc_html($top_publication->post_title); ?></a>
+				</p>
+				<p style="margin:6px 0 0; color:#50575e;"><?php echo esc_html(sprintf(_n('%s download', '%s downloads', $top_download_count, 'medplatform-headless'), number_format_i18n($top_download_count))); ?></p>
+			<?php else : ?>
+				<p style="margin:8px 0 0; color:#50575e;"><?php esc_html_e('No publication downloads recorded yet.', 'medplatform-headless'); ?></p>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php
+}
+
+function mp_headless_register_dashboard_widgets() {
+	if (! current_user_can('edit_posts')) {
+		return;
+	}
+
+	wp_add_dashboard_widget(
+		'mp_headless_download_stats',
+		__('Publication Download Stats', 'medplatform-headless'),
+		'mp_headless_render_download_dashboard_widget'
+	);
+}
+add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');
 
 function mp_headless_trigger_build($reason) {
 	$hook = get_option('mp_headless_build_hook_url', '');

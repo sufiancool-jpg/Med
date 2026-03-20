@@ -1,24 +1,49 @@
 ---
-import { siteConfig } from "../../config/site";
 import { Icon } from "astro-icon/components";
+import { getSiteSettings } from "../../lib/site-data";
+import { uiLanguages } from "../../lib/ui-i18n";
 
 const mainMenuLinks = [
-  { text: "Home", href: "/" },
+  { text: "Home", href: "/", key: "nav.home" },
   {
     text: "About",
+    key: "nav.about",
     href: "/about",
     children: [
-      { text: "Mission", href: "/about#mission" },
-      { text: "Team", href: "/about#team" },
+      { text: "Mission", href: "/about#mission", key: "nav.mission" },
+      { text: "Team", href: "/about#team", key: "nav.team" },
     ],
   },
-  { text: "Projects", href: "/services" },
-  { text: "Publications", href: "/blog" },
-  { text: "Media", href: "/widgets" },
-  { text: "Contact", href: "/contact" },
+  { text: "Projects", href: "/services", key: "nav.projects" },
+  { text: "Publications", href: "/blog", key: "nav.publications" },
+  { text: "Media", href: "/widgets", key: "nav.media" },
+  { text: "Contact", href: "/contact", key: "nav.contact" },
 ];
 
-const socialLinks = siteConfig.socialLinks;
+const siteSettings = await getSiteSettings();
+const socialLinks = [
+  {
+    label: "LinkedIn",
+    href: siteSettings.socialLinks.linkedin,
+    icon: "lucide:linkedin",
+    className: "h-4 w-4",
+    mobileClassName: "h-[18px] w-[18px]",
+  },
+  {
+    label: "YouTube",
+    href: siteSettings.socialLinks.youtube,
+    icon: "lucide:youtube",
+    className: "h-4 w-4 translate-y-px",
+    mobileClassName: "h-[18px] w-[18px] translate-y-px",
+  },
+  {
+    label: "Instagram",
+    href: siteSettings.socialLinks.instagram,
+    icon: "lucide:instagram",
+    className: "h-4 w-4",
+    mobileClassName: "h-[18px] w-[18px]",
+  },
+].filter((link) => Boolean(link.href));
 ---
 
 <nav
@@ -29,6 +54,14 @@ const socialLinks = siteConfig.socialLinks;
     class="relative flex w-full items-center justify-between overflow-visible px-4 py-2 sm:px-6 lg:px-8"
   >
     <div class="flex items-center">
+      <a href="/" class="mr-3 inline-flex items-center md:hidden" aria-label="Mediterranean Platform home">
+        <img
+          src="/logo_Transparent.png"
+          alt="Mediterranean Platform"
+          class="h-10 w-auto object-contain"
+          loading="eager"
+        />
+      </a>
       <div class="hidden items-center gap-5 md:flex">
         {
           mainMenuLinks.map((link) => (
@@ -37,7 +70,7 @@ const socialLinks = siteConfig.socialLinks;
                 href={link.href}
                 class="inline-flex cursor-pointer items-center px-3 py-2 text-[0.98rem] font-light uppercase tracking-[0.08em] leading-none text-primary transition-colors hover:bg-hover hover:text-white focus-visible:bg-hover focus-visible:text-white"
               >
-                {link.text}
+                <span data-ui-i18n={link.key}>{link.text}</span>
               </a>
               {
                 link.children && (
@@ -50,7 +83,7 @@ const socialLinks = siteConfig.socialLinks;
                           : undefined}
                         class="block cursor-pointer px-3 py-2 text-sm font-light tracking-[0.04em] text-primary transition-colors hover:bg-hover hover:text-white focus-visible:bg-hover focus-visible:text-white"
                       >
-                        {child.text}
+                        <span data-ui-i18n={child.key}>{child.text}</span>
                       </a>
                     ))}
                   </div>
@@ -64,32 +97,39 @@ const socialLinks = siteConfig.socialLinks;
 
     <div class="hidden items-center md:flex">
       <div class="flex items-center text-[0.98rem] font-light uppercase leading-none tracking-[0.08em] text-primary">
-        AR <span class="mx-1 text-primary/60">|</span> FR
+        {uiLanguages.map((language, index) => (
+          <>
+            {index > 0 && <span class="mx-1 text-primary/60">|</span>}
+            <button
+              type="button"
+              data-ui-lang-button
+              data-ui-lang-code={language.code}
+              class="cursor-pointer text-primary/45 transition-colors hover:text-primary"
+            >
+              {language.label}
+            </button>
+          </>
+        ))}
       </div>
-      <div class="ml-4 flex items-center gap-2 border-l border-black/20 pl-4">
-        <a
-          href={socialLinks.linkedin}
-          aria-label="LinkedIn"
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
-        >
-          <Icon name="lucide:linkedin" class="h-4 w-4" />
-        </a>
-        <a
-          href={socialLinks.youtube}
-          aria-label="YouTube"
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
-        >
-          <Icon name="lucide:youtube" class="h-4 w-4 translate-y-px" />
-        </a>
-      </div>
+      {socialLinks.length > 0 && (
+        <div class="ml-4 flex items-center gap-2 border-l border-black/20 pl-4">
+          {socialLinks.map((link) => (
+            <a
+              href={link.href}
+              aria-label={link.label}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+            >
+              <Icon name={link.icon} class={link.className} />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
 
     <!-- Mobile Menu Button -->
-    <div class="md:hidden flex items-center">
+    <div class="flex items-center md:hidden">
       <button
         id="mobile-menu-button"
         type="button"
@@ -97,7 +137,7 @@ const socialLinks = siteConfig.socialLinks;
         aria-controls="mobile-menu"
         aria-expanded="false"
       >
-        <span class="sr-only">Open main menu</span>
+        <span class="sr-only" data-ui-i18n="nav.openMenu">Open main menu</span>
         <!-- Icon when menu is closed -->
         <svg
           id="menu-icon-closed"
@@ -143,7 +183,7 @@ const socialLinks = siteConfig.socialLinks;
               href={link.href}
               class="block w-full cursor-pointer px-3 py-2 text-left text-base font-light uppercase tracking-[0.08em] text-primary transition-colors hover:bg-hover hover:text-white focus-visible:bg-hover focus-visible:text-white"
             >
-              {link.text}
+              <span data-ui-i18n={link.key}>{link.text}</span>
             </a>
             {
               link.children && (
@@ -151,12 +191,12 @@ const socialLinks = siteConfig.socialLinks;
                   {link.children.map((child) => (
                     <a
                       href={child.href}
-                      data-about-target={child.href.startsWith("/about#")
-                        ? child.href.split("#")[1]
-                        : undefined}
-                      class="block w-full cursor-pointer px-3 py-1.5 text-left text-sm font-light tracking-[0.04em] text-primary/85 transition-colors hover:bg-hover hover:text-white focus-visible:bg-hover focus-visible:text-white"
-                    >
-                      {child.text}
+                        data-about-target={child.href.startsWith("/about#")
+                          ? child.href.split("#")[1]
+                          : undefined}
+                        class="block w-full cursor-pointer px-3 py-1.5 text-left text-sm font-light tracking-[0.04em] text-primary/85 transition-colors hover:bg-hover hover:text-white focus-visible:bg-hover focus-visible:text-white"
+                      >
+                      <span data-ui-i18n={child.key}>{child.text}</span>
                     </a>
                   ))}
                 </div>
@@ -165,29 +205,36 @@ const socialLinks = siteConfig.socialLinks;
           </div>
         ))
       }
-      <div class="px-3 py-2 text-base font-medium text-primary">
-        AR <span class="mx-1 text-primary/60">|</span> FR
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-base font-medium uppercase text-primary">
+        {uiLanguages.map((language, index) => (
+          <>
+            {index > 0 && <span class="text-primary/60">|</span>}
+            <button
+              type="button"
+              data-ui-lang-button
+              data-ui-lang-code={language.code}
+              class="cursor-pointer text-primary/45 transition-colors hover:text-primary"
+            >
+              {language.label}
+            </button>
+          </>
+        ))}
       </div>
-      <div class="flex h-8 items-center gap-2 px-3 py-2">
-        <a
-          href={socialLinks.linkedin}
-          aria-label="LinkedIn"
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
-        >
-          <Icon name="lucide:linkedin" class="h-[18px] w-[18px]" />
-        </a>
-        <a
-          href={socialLinks.youtube}
-          aria-label="YouTube"
-          target="_blank"
-          rel="noreferrer"
-          class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
-        >
-          <Icon name="lucide:youtube" class="h-[18px] w-[18px] translate-y-px" />
-        </a>
-      </div>
+      {socialLinks.length > 0 && (
+        <div class="flex h-8 items-center gap-2 px-3 py-2">
+          {socialLinks.map((link) => (
+            <a
+              href={link.href}
+              aria-label={link.label}
+              target="_blank"
+              rel="noreferrer"
+              class="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center leading-none text-primary transition-colors hover:text-primary/70"
+            >
+              <Icon name={link.icon} class={link.mobileClassName} />
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   </div>
 </nav>

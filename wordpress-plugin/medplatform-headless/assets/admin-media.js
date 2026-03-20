@@ -57,6 +57,13 @@
 
     const isPodcast = ($select.val() || "").toString() === "pod-cast";
     $("[data-mp-podcast-fields]").toggle(isPodcast);
+    $("[data-mp-publication-download-fields]").each(function () {
+      const $group = $(this);
+      $group.toggle(!isPodcast);
+      $group
+        .find("input, textarea, select, button")
+        .prop("disabled", isPodcast);
+    });
   };
 
   const hideOutputTypePanel = () => {
@@ -98,9 +105,9 @@
     return /^#([0-9a-f]{6})$/i.test(normalized) ? normalized.toLowerCase() : "";
   };
 
-  const syncProjectColorInputs = (source) => {
-    const picker = document.querySelector("[data-mp-color-picker]");
-    const valueInput = document.querySelector("[data-mp-color-value]");
+  const syncProjectColorField = (field, source) => {
+    const picker = field?.querySelector("[data-mp-color-picker]");
+    const valueInput = field?.querySelector("[data-mp-color-value]");
 
     if (!(picker instanceof HTMLInputElement) || !(valueInput instanceof HTMLInputElement)) {
       return;
@@ -131,7 +138,6 @@
         .map((option) => option.value)
         .filter(Boolean)
     );
-    const currentLead = leadSelect.value;
 
     Array.from(leadSelect.options).forEach((option) => {
       if (!option.value) {
@@ -142,16 +148,15 @@
 
       const isAllowed =
         selectedTeamIds.size === 0 ||
-        selectedTeamIds.has(option.value) ||
-        option.value === currentLead;
+        selectedTeamIds.has(option.value);
 
       option.hidden = !isAllowed;
       option.disabled = !isAllowed;
-    });
 
-    if (currentLead && selectedTeamIds.size > 0 && !selectedTeamIds.has(currentLead)) {
-      leadSelect.value = "";
-    }
+      if (!isAllowed && option.selected) {
+        option.selected = false;
+      }
+    });
   };
 
   const syncProjectStageOptions = () => {
@@ -187,6 +192,54 @@
     }
 
     stageSelect.value = stages[0];
+  };
+
+  const syncParentProjectOptions = () => {
+    const toggle = document.querySelector("[data-mp-parent-project-toggle]");
+    const fields = document.querySelector("[data-mp-parent-project-fields]");
+    const select = document.querySelector("[data-mp-parent-project-select]");
+
+    if (
+      !(toggle instanceof HTMLInputElement) ||
+      !(fields instanceof HTMLElement) ||
+      !(select instanceof HTMLSelectElement)
+    ) {
+      return;
+    }
+
+    fields.hidden = !toggle.checked;
+    select.disabled = !toggle.checked;
+  };
+
+  const syncAlignedProjectOptions = () => {
+    const toggle = document.querySelector("[data-mp-aligned-project-toggle]");
+    const fields = document.querySelector("[data-mp-aligned-project-fields]");
+    const select = document.querySelector("[data-mp-aligned-project-select]");
+
+    if (
+      !(toggle instanceof HTMLInputElement) ||
+      !(fields instanceof HTMLElement) ||
+      !(select instanceof HTMLSelectElement)
+    ) {
+      return;
+    }
+
+    fields.hidden = !toggle.checked;
+    select.disabled = !toggle.checked;
+  };
+
+  const syncCustomFocusAreaOptions = () => {
+    document.querySelectorAll("[data-mp-custom-focus-area-card]").forEach((card) => {
+      const toggle = card.querySelector("[data-mp-custom-focus-area-toggle]");
+      const fields = card.querySelector("[data-mp-custom-focus-area-fields]");
+
+      if (!(toggle instanceof HTMLInputElement) || !(fields instanceof HTMLElement)) {
+        return;
+      }
+
+      fields.hidden = !toggle.checked;
+      card.style.opacity = toggle.checked ? "1" : "0.72";
+    });
   };
 
   const syncDonorPreview = ($row) => {
@@ -294,12 +347,15 @@
   $(document).on("change", "[data-mp-output-type-select]", syncPublicationTypeUi);
   $(document).on("change", "[data-mp-team-select]", syncProjectLeadOptions);
   $(document).on("input", "[data-mp-stage-points-input]", syncProjectStageOptions);
-  $(document).on("change", "[data-mp-color-picker]", () =>
-    syncProjectColorInputs("picker")
-  );
-  $(document).on("input", "[data-mp-color-value]", () =>
-    syncProjectColorInputs("value")
-  );
+  $(document).on("change", "[data-mp-parent-project-toggle]", syncParentProjectOptions);
+  $(document).on("change", "[data-mp-aligned-project-toggle]", syncAlignedProjectOptions);
+  $(document).on("change", "[data-mp-custom-focus-area-toggle]", syncCustomFocusAreaOptions);
+  $(document).on("change", "[data-mp-color-picker]", function () {
+    syncProjectColorField(this.closest("[data-mp-color-field]"), "picker");
+  });
+  $(document).on("input", "[data-mp-color-value]", function () {
+    syncProjectColorField(this.closest("[data-mp-color-field]"), "value");
+  });
   $(document).on("change input", ".mp-donor-row .mp-media-input", function () {
     syncDonorPreview($(this).closest(".mp-donor-row"));
   });
@@ -318,5 +374,10 @@
   bindOutputTypePanelCleanup();
   syncProjectLeadOptions();
   syncProjectStageOptions();
-  syncProjectColorInputs("value");
+  syncParentProjectOptions();
+  syncAlignedProjectOptions();
+  syncCustomFocusAreaOptions();
+  document.querySelectorAll("[data-mp-color-field]").forEach((field) => {
+    syncProjectColorField(field, "value");
+  });
 })(jQuery);
