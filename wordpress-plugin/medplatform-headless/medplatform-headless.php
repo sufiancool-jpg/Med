@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.1
+ * Version: 0.1.2
  * Author: Codex
  */
 
@@ -1389,6 +1389,375 @@ function mp_headless_get_homepage_admin_url() {
 	}
 
 	return admin_url('post.php?post=' . $homepage_id . '&action=edit');
+}
+
+function mp_headless_seed_upsert_post($post_type, $slug, $postarr) {
+	$existing = get_page_by_path($slug, OBJECT, $post_type);
+
+	if ($existing instanceof WP_Post) {
+		$postarr['ID'] = $existing->ID;
+		return wp_update_post($postarr, true);
+	}
+
+	return wp_insert_post($postarr, true);
+}
+
+function mp_headless_seed_normalize_output_type($value) {
+	if ('Series' === $value) {
+		return 'Insights';
+	}
+
+	if ('Podcast' === $value) {
+		return 'Pod-Cast';
+	}
+
+	return $value ?: 'Insights';
+}
+
+function mp_headless_get_bundled_seed_payload() {
+	$seed_dir = trailingslashit(plugin_dir_path(__FILE__)) . 'seed/';
+	$paths    = array(
+		'people'       => $seed_dir . 'people.json',
+		'projects'     => $seed_dir . 'projects.json',
+		'homepage'     => $seed_dir . 'homepage.json',
+		'publications' => $seed_dir . 'generated-publications.json',
+	);
+	$payloads = array();
+
+	foreach ($paths as $key => $path) {
+		if (! file_exists($path)) {
+			return new WP_Error('mp_headless_seed_missing', sprintf(__('Seed file missing: %s', 'medplatform-headless'), basename($path)));
+		}
+
+		$decoded = json_decode((string) file_get_contents($path), true);
+		if (! is_array($decoded)) {
+			return new WP_Error('mp_headless_seed_invalid', sprintf(__('Seed file could not be parsed: %s', 'medplatform-headless'), basename($path)));
+		}
+
+		$payloads[$key] = $decoded;
+	}
+
+	return $payloads;
+}
+
+function mp_headless_import_bundled_seed_content() {
+	$seed_payload = mp_headless_get_bundled_seed_payload();
+	if (is_wp_error($seed_payload)) {
+		return $seed_payload;
+	}
+
+	$people       = $seed_payload['people'];
+	$projects     = $seed_payload['projects'];
+	$homepage     = $seed_payload['homepage'];
+	$publications = $seed_payload['publications'];
+
+	$output_types = array('Policy Paper', 'Research Report', 'Policy Brief', 'E-Book', 'Insights', 'Pod-Cast');
+	foreach ($output_types as $term_name) {
+		if (! term_exists($term_name, 'mp_output_type')) {
+			wp_insert_term($term_name, 'mp_output_type');
+		}
+	}
+
+	$person_ids          = array();
+	$person_ids_by_title = array();
+
+	foreach ($people as $person) {
+		if (! is_array($person) || empty($person['slug']) || empty($person['title'])) {
+			continue;
+		}
+
+		$result = mp_headless_seed_upsert_post(
+			'mp_person',
+			(string) $person['slug'],
+			array(
+				'post_type'    => 'mp_person',
+				'post_status'  => 'publish',
+				'post_name'    => (string) $person['slug'],
+				'post_title'   => (string) $person['title'],
+				'post_excerpt' => (string) ($person['excerpt'] ?? ''),
+				'post_content' => (string) ($person['contentHtml'] ?? ''),
+				'menu_order'   => intval($person['menuOrder'] ?? 0),
+			)
+		);
+
+		if (is_wp_error($result)) {
+			continue;
+		}
+
+		$person_id = (int) $result;
+		$person_ids[(string) $person['slug']] = $person_id;
+		$person_ids_by_title[strtolower((string) $person['title'])] = $person_id;
+
+		update_post_meta($person_id, 'mp_role', (string) ($person['role'] ?? ''));
+		update_post_meta($person_id, 'mp_email', (string) ($person['email'] ?? ''));
+		update_post_meta($person_id, 'mp_linkedin_url', (string) ($person['linkedinUrl'] ?? ''));
+		update_post_meta($person_id, 'mp_website_url', (string) ($person['websiteUrl'] ?? ''));
+		update_post_meta($person_id, 'mp_photo', (string) ($person['imageUrl'] ?? ''));
+		update_post_meta($person_id, 'mp_show_on_team_page', ! empty($person['showOnTeamPage']));
+	}
+
+	$project_ids = array();
+
+	foreach ($projects as $project) {
+		if (! is_array($project) || empty($project['slug']) || empty($project['title'])) {
+			continue;
+		}
+
+		$result = mp_headless_seed_upsert_post(
+			'mp_project',
+			(string) $project['slug'],
+			array(
+				'post_type'    => 'mp_project',
+				'post_status'  => 'publish',
+				'post_name'    => (string) $project['slug'],
+				'post_title'   => (string) $project['title'],
+				'post_excerpt' => (string) ($project['excerpt'] ?? ''),
+				'post_content' => (string) ($project['contentHtml'] ?? ''),
+			)
+		);
+
+		if (is_wp_error($result)) {
+			continue;
+		}
+
+		$project_id = (int) $result;
+		$project_ids[(string) $project['slug']] = $project_id;
+
+		$lead_person_slugs = ! empty($project['leadPersonSlugs']) && is_array($project['leadPersonSlugs'])
+			? $project['leadPersonSlugs']
+			: array();
+		$lead_person_ids = array();
+
+		foreach ($lead_person_slugs as $lead_person_slug) {
+			if (isset($person_ids[$lead_person_slug])) {
+				$lead_person_ids[] = (int) $person_ids[$lead_person_slug];
+			}
+		}
+
+		if (empty($lead_person_ids) && ! empty($project['leadName'])) {
+			$lead_name_lookup = strtolower((string) $project['leadName']);
+			if (isset($person_ids_by_title[$lead_name_lookup])) {
+				$lead_person_ids[] = (int) $person_ids_by_title[$lead_name_lookup];
+			}
+		}
+
+		$team_member_ids = array();
+		foreach ((array) ($project['teamMembers'] ?? array()) as $team_member_name) {
+			$team_member_lookup = strtolower((string) $team_member_name);
+			if (isset($person_ids_by_title[$team_member_lookup])) {
+				$team_member_ids[] = (int) $person_ids_by_title[$team_member_lookup];
+			}
+		}
+
+		foreach ($lead_person_ids as $lead_person_id) {
+			if (! in_array((int) $lead_person_id, $team_member_ids, true)) {
+				$team_member_ids[] = (int) $lead_person_id;
+			}
+		}
+
+		$lead_person_ids = array_values(array_unique(array_map('intval', $lead_person_ids)));
+		$team_member_ids = array_values(array_unique(array_map('intval', $team_member_ids)));
+		$lead_person_id  = ! empty($lead_person_ids) ? (int) $lead_person_ids[0] : 0;
+		$lead_name       = $lead_person_id > 0 ? (string) get_the_title($lead_person_id) : (string) ($project['leadName'] ?? '');
+		$lead_image      = $lead_person_id > 0 ? (string) get_post_meta($lead_person_id, 'mp_photo', true) : (string) ($project['leadImage'] ?? '');
+		$accent_color    = (string) ($project['color'] ?? '#15243a');
+		$progress_color  = (string) ($project['progressColor'] ?? $accent_color);
+
+		update_post_meta($project_id, 'mp_color', $accent_color);
+		update_post_meta($project_id, 'mp_progress_color', $progress_color);
+		update_post_meta($project_id, 'mp_current_stage', (string) ($project['currentStage'] ?? ''));
+		update_post_meta($project_id, 'mp_stage_points', (array) ($project['stagePoints'] ?? array('Conception', 'Research', 'Dialogue', 'Publication', 'Implemented')));
+		update_post_meta($project_id, 'mp_hide_project_bar', ! empty($project['hideProjectBar']));
+		update_post_meta($project_id, 'mp_hide_project_currently', ! empty($project['hideFromProjectScreens']));
+		update_post_meta($project_id, 'mp_lead_person_id', $lead_person_id);
+		update_post_meta($project_id, 'mp_lead_person_ids', $lead_person_ids);
+		update_post_meta($project_id, 'mp_lead_name', $lead_name);
+		update_post_meta($project_id, 'mp_lead_role', (string) ($project['leadRole'] ?? ''));
+		update_post_meta($project_id, 'mp_lead_image', $lead_image);
+		update_post_meta($project_id, 'mp_team_members', (array) ($project['teamMembers'] ?? array()));
+		update_post_meta($project_id, 'mp_team_member_ids', $team_member_ids);
+		update_post_meta($project_id, 'mp_donors', (array) ($project['donors'] ?? array()));
+		update_post_meta($project_id, 'mp_updates', (array) ($project['updates'] ?? array()));
+		update_post_meta($project_id, 'mp_focus_areas', (array) ($project['focusAreas'] ?? array()));
+		update_post_meta($project_id, 'mp_card_icon', mp_headless_sanitize_project_card_icon($project['cardIcon'] ?? ''));
+	}
+
+	foreach ($projects as $project) {
+		if (! is_array($project) || empty($project['slug']) || ! isset($project_ids[(string) $project['slug']])) {
+			continue;
+		}
+
+		$project_id         = (int) $project_ids[(string) $project['slug']];
+		$parent_project_id  = 0;
+		$aligned_project_id = 0;
+
+		if (! empty($project['parentProjectSlug']) && isset($project_ids[(string) $project['parentProjectSlug']])) {
+			$parent_project_id = (int) $project_ids[(string) $project['parentProjectSlug']];
+		}
+
+		if (! empty($project['alignedProjectSlug']) && isset($project_ids[(string) $project['alignedProjectSlug']])) {
+			$aligned_project_id = (int) $project_ids[(string) $project['alignedProjectSlug']];
+		}
+
+		update_post_meta($project_id, 'mp_parent_project_id', $parent_project_id);
+		update_post_meta($project_id, 'mp_aligned_project_id', $aligned_project_id);
+	}
+
+	$publication_ids = array();
+
+	foreach ($publications as $publication) {
+		if (! is_array($publication) || empty($publication['slug']) || empty($publication['title'])) {
+			continue;
+		}
+
+		$result = mp_headless_seed_upsert_post(
+			'mp_publication',
+			(string) $publication['slug'],
+			array(
+				'post_type'    => 'mp_publication',
+				'post_status'  => 'publish',
+				'post_name'    => (string) $publication['slug'],
+				'post_title'   => (string) $publication['title'],
+				'post_excerpt' => (string) ($publication['excerpt'] ?? ''),
+				'post_content' => (string) ($publication['contentHtml'] ?? ''),
+				'post_date'    => (string) ($publication['date'] ?? current_time('mysql')),
+			)
+		);
+
+		if (is_wp_error($result)) {
+			continue;
+		}
+
+		$publication_id = (int) $result;
+		$publication_ids[(string) $publication['slug']] = $publication_id;
+
+		wp_set_object_terms($publication_id, (array) ($publication['topics'] ?? array()), 'mp_topic');
+		wp_set_object_terms($publication_id, (array) ($publication['hashtags'] ?? array()), 'mp_hashtag');
+		wp_set_object_terms($publication_id, array(mp_headless_seed_normalize_output_type((string) ($publication['category'] ?? 'Insights'))), 'mp_output_type');
+
+		$related_project_ids = array();
+		foreach ((array) ($publication['projectSlugs'] ?? array()) as $project_slug) {
+			if (isset($project_ids[$project_slug])) {
+				$related_project_ids[] = (int) $project_ids[$project_slug];
+			}
+		}
+
+		$author_person_slugs = ! empty($publication['authorPersonSlugs']) && is_array($publication['authorPersonSlugs'])
+			? $publication['authorPersonSlugs']
+			: array();
+		if (empty($author_person_slugs) && ! empty($publication['authorPersonSlug'])) {
+			$author_person_slugs[] = (string) $publication['authorPersonSlug'];
+		}
+
+		$author_person_ids = array();
+		foreach ($author_person_slugs as $author_person_slug) {
+			if (isset($person_ids[$author_person_slug])) {
+				$author_person_ids[] = (int) $person_ids[$author_person_slug];
+			}
+		}
+
+		$author_person_ids = array_values(array_unique(array_map('intval', $author_person_ids)));
+		$author_person_id  = ! empty($author_person_ids) ? (int) $author_person_ids[0] : 0;
+		$author_names      = array();
+
+		foreach ($author_person_ids as $selected_author_person_id) {
+			$selected_author_name = get_the_title($selected_author_person_id);
+			if ($selected_author_name) {
+				$author_names[] = $selected_author_name;
+			}
+		}
+
+		$is_podcast      = mp_headless_seed_normalize_output_type((string) ($publication['category'] ?? 'Insights')) === 'Pod-Cast';
+		$asset_url       = (string) ($publication['downloadUrl'] ?? '');
+		$download_url    = $is_podcast ? '' : $asset_url;
+		$audio_url       = $is_podcast ? $asset_url : (string) ($publication['audioUrl'] ?? '');
+		$download_label  = $is_podcast ? '' : (string) ($publication['downloadLabel'] ?? '');
+		$author_name     = ! empty($author_names) ? implode(', ', $author_names) : (string) ($publication['authorName'] ?? '');
+
+		update_post_meta($publication_id, 'mp_author_name', $author_name);
+		update_post_meta($publication_id, 'mp_author_person_id', $author_person_id);
+		update_post_meta($publication_id, 'mp_author_person_ids', $author_person_ids);
+		update_post_meta($publication_id, 'mp_author_role', (string) ($publication['authorRole'] ?? ''));
+		update_post_meta($publication_id, 'mp_author_image', $author_person_id ? (string) get_post_meta($author_person_id, 'mp_photo', true) : (string) ($publication['authorImage'] ?? ''));
+		update_post_meta($publication_id, 'mp_cover_image', (string) ($publication['imageUrl'] ?? ''));
+		update_post_meta($publication_id, 'mp_audio_url', $audio_url);
+		update_post_meta($publication_id, 'mp_download_url', $download_url);
+		update_post_meta($publication_id, 'mp_download_label', $download_label);
+		update_post_meta($publication_id, 'mp_references', (array) ($publication['references'] ?? array()));
+
+		$contributor_person_ids = array();
+		foreach ((array) ($publication['contributorPersonSlugs'] ?? array()) as $person_slug) {
+			if (isset($person_ids[$person_slug])) {
+				$contributor_person_ids[] = (int) $person_ids[$person_slug];
+			}
+		}
+		$contributor_person_ids = array_values(
+			array_filter(
+				array_map('intval', $contributor_person_ids),
+				function($person_id) use ($author_person_ids) {
+					return ! in_array((int) $person_id, $author_person_ids, true);
+				}
+			)
+		);
+
+		update_post_meta($publication_id, 'mp_contributor_person_ids', $contributor_person_ids);
+		update_post_meta($publication_id, 'mp_contributor_names', (array) ($publication['contributorNames'] ?? array()));
+		update_post_meta($publication_id, 'mp_related_project_ids', $related_project_ids);
+	}
+
+	$homepage_id = mp_headless_get_homepage_post_id();
+
+	if ($homepage_id > 0) {
+		$featured_podcast_slug = (string) ($homepage['featuredPodcastSlug'] ?? '');
+		$featured_article_slug = (string) ($homepage['featuredArticleSlug'] ?? '');
+		$project_selection_ids = array_values($project_ids);
+		$slider_ids            = array();
+		$latest_ids            = array();
+
+		foreach ((array) ($homepage['sliderPublicationSlugs'] ?? array()) as $slug) {
+			if (isset($publication_ids[$slug])) {
+				$slider_ids[] = (int) $publication_ids[$slug];
+			}
+		}
+
+		foreach ((array) ($homepage['latestPublicationSlugs'] ?? array()) as $slug) {
+			if (isset($publication_ids[$slug])) {
+				$latest_ids[] = (int) $publication_ids[$slug];
+			}
+		}
+
+		update_post_meta($homepage_id, 'mp_featured_podcast_id', isset($publication_ids[$featured_podcast_slug]) ? (int) $publication_ids[$featured_podcast_slug] : 0);
+		update_post_meta($homepage_id, 'mp_featured_article_id', isset($publication_ids[$featured_article_slug]) ? (int) $publication_ids[$featured_article_slug] : 0);
+		update_post_meta($homepage_id, 'mp_homepage_project_count', 0);
+		update_post_meta($homepage_id, 'mp_homepage_project_ids', $project_selection_ids);
+		update_post_meta($homepage_id, 'mp_slider_publication_ids', $slider_ids);
+		update_post_meta($homepage_id, 'mp_latest_publication_ids', $latest_ids);
+		update_post_meta($homepage_id, 'mp_announcement_text', (string) ($homepage['announcementText'] ?? ''));
+		update_post_meta($homepage_id, 'mp_announcement_link_label', (string) ($homepage['announcementLinkLabel'] ?? ''));
+		update_post_meta($homepage_id, 'mp_announcement_link_url', (string) ($homepage['announcementLinkUrl'] ?? ''));
+	}
+
+	flush_rewrite_rules();
+
+	return array(
+		'people'       => count($person_ids),
+		'projects'     => count($project_ids),
+		'publications' => count($publication_ids),
+		'homepage'     => $homepage_id > 0 ? 1 : 0,
+	);
+}
+
+function mp_headless_set_seed_import_status($status, $message, $counts = array()) {
+	set_transient(
+		'mp_headless_seed_import_status',
+		array(
+			'status'     => sanitize_key((string) $status),
+			'message'    => sanitize_text_field((string) $message),
+			'counts'     => is_array($counts) ? $counts : array(),
+			'updated_at' => current_time('mysql'),
+		),
+		10 * MINUTE_IN_SECONDS
+	);
 }
 
 function mp_headless_get_person_admin_url($person_id = 0) {
@@ -3614,6 +3983,32 @@ function mp_headless_save_site_settings() {
 }
 add_action('admin_post_mp_headless_save_site_settings', 'mp_headless_save_site_settings');
 
+function mp_headless_import_seed_content() {
+	if (! current_user_can('manage_options')) {
+		wp_die(esc_html__('You do not have permission to import the bundled seed content.', 'medplatform-headless'));
+	}
+
+	check_admin_referer('mp_headless_import_seed_content', 'mp_headless_seed_import_nonce');
+
+	$GLOBALS['mp_headless_suspend_build_trigger'] = true;
+	$result = mp_headless_import_bundled_seed_content();
+	$GLOBALS['mp_headless_suspend_build_trigger'] = false;
+
+	if (is_wp_error($result)) {
+		mp_headless_set_seed_import_status('error', $result->get_error_message());
+		wp_safe_redirect(admin_url('options-general.php?page=medplatform-headless'));
+		exit;
+	}
+
+	$counts = is_array($result) ? $result : array();
+	mp_headless_set_seed_import_status('success', __('Bundled seed content imported successfully. A frontend rebuild has been triggered.', 'medplatform-headless'), $counts);
+	mp_headless_trigger_build('seed_import');
+
+	wp_safe_redirect(admin_url('options-general.php?page=medplatform-headless'));
+	exit;
+}
+add_action('admin_post_mp_headless_import_seed_content', 'mp_headless_import_seed_content');
+
 function mp_headless_redirect_homepage_admin_views() {
 	if (! is_admin()) {
 		return;
@@ -3873,9 +4268,34 @@ function mp_headless_render_settings_page() {
 	$github_token       = (string) get_option('mp_headless_github_token', '');
 	$github_trigger_path = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
 	$github_last_status = get_option('mp_headless_github_last_status', array());
+	$seed_import_status = get_transient('mp_headless_seed_import_status');
+	if ($seed_import_status) {
+		delete_transient('mp_headless_seed_import_status');
+	}
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e('Med Platform Headless', 'medplatform-headless'); ?></h1>
+		<?php if (is_array($seed_import_status) && ! empty($seed_import_status['message'])) : ?>
+			<?php $seed_notice_class = (($seed_import_status['status'] ?? '') === 'success') ? 'notice notice-success is-dismissible' : 'notice notice-error'; ?>
+			<div class="<?php echo esc_attr($seed_notice_class); ?>">
+				<p><?php echo esc_html((string) $seed_import_status['message']); ?></p>
+				<?php if (! empty($seed_import_status['counts']) && is_array($seed_import_status['counts'])) : ?>
+					<p style="margin-top:0;">
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: people count, 2: project count, 3: publication count */
+								__('Imported %1$s people, %2$s projects, and %3$s publications.', 'medplatform-headless'),
+								number_format_i18n((int) ($seed_import_status['counts']['people'] ?? 0)),
+								number_format_i18n((int) ($seed_import_status['counts']['projects'] ?? 0)),
+								number_format_i18n((int) ($seed_import_status['counts']['publications'] ?? 0))
+							)
+						);
+						?>
+					</p>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
 		<form action="options.php" method="post">
 			<?php settings_fields('mp_headless_settings'); ?>
 			<table class="form-table" role="presentation">
@@ -3957,6 +4377,17 @@ function mp_headless_render_settings_page() {
 			</table>
 			<?php submit_button(); ?>
 		</form>
+
+		<div style="margin-top:28px; max-width:900px; background:#fff; border:1px solid #dcdcde; padding:24px;">
+			<h2 style="margin-top:0;"><?php esc_html_e('Bundled Seed Import', 'medplatform-headless'); ?></h2>
+			<p style="margin-top:0; color:#50575e;"><?php esc_html_e('Import the existing team, project, publication, and homepage content that already ships with this repo. Records are matched by slug, so existing matching entries are updated and any extra CMS content stays untouched.', 'medplatform-headless'); ?></p>
+			<p style="margin:0 0 18px; color:#50575e;"><?php esc_html_e('Use this once on a fresh CMS to bring over the current website data, then keep editing from WordPress afterward.', 'medplatform-headless'); ?></p>
+			<form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+				<?php wp_nonce_field('mp_headless_import_seed_content', 'mp_headless_seed_import_nonce'); ?>
+				<input type="hidden" name="action" value="mp_headless_import_seed_content" />
+				<?php submit_button(__('Import Bundled Seed Content', 'medplatform-headless'), 'primary', 'submit', false); ?>
+			</form>
+		</div>
 	</div>
 	<?php
 }
@@ -4104,6 +4535,10 @@ function mp_headless_register_dashboard_widgets() {
 add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');
 
 function mp_headless_trigger_build($reason) {
+	if (! empty($GLOBALS['mp_headless_suspend_build_trigger'])) {
+		return;
+	}
+
 	$hook = get_option('mp_headless_build_hook_url', '');
 	if ($hook) {
 		wp_remote_post(
@@ -4162,7 +4597,7 @@ function mp_headless_trigger_github_deploy($reason) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $settings['token'],
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.1',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.2',
 	);
 	$existing_sha       = '';
 	$lookup_response    = wp_remote_get(

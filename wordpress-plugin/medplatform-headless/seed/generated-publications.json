@@ -1,0 +1,565 @@
+[
+  {
+    "slug": "aenean-commodo-ligula",
+    "title": "Aenean Commodo Ligula Eget Dolor",
+    "excerpt": "Exploring the depths of layout variations with standard dummy text.",
+    "date": "2026-01-18",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Paper",
+    "topics": [
+      "Scenario Making"
+    ],
+    "hashtags": [
+      "scenario-making",
+      "policy-dialogue"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_1_1768848683359.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Aenean Commodo Ligula Eget Dolor</h1>\n<p>Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</p>\n<h2>Key Takeaways</h2>\n<p>Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim.</p>\n<ul>\n<li><strong>Donec pede justo</strong>: Fringilla vel, aliquet nec, vulputate eget, arcu.</li>\n<li><strong>In enim justo</strong>: Rhoncus ut, imperdiet a, venenatis vitae, justo.</li>\n<li><strong>Nullam dictum</strong>: Felis eu pede mollis pretium. Integer tincidunt.</li>\n</ul>\n<p>Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus.</p>\n"
+  },
+  {
+    "slug": "cras-risus-ipsum",
+    "title": "Cras Risus Ipsum",
+    "excerpt": "Why policy-relevant research is as important as inclusive dialogue.",
+    "date": "2026-01-09",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Brief",
+    "topics": [
+      "Policy Relevant"
+    ],
+    "hashtags": [
+      "policy-relevant",
+      "collective-reflection"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_10_1768850582328.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Cras Risus Ipsum</h1>\n<p>Faucibus ut, ullamcorper id, varius ac, leo. Morbi mollis tellus ac sapien. Nunc nec neque. Praesent congue erat at massa. Sed cursus turpis vitae tortor.</p>\n<p>Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci.</p>\n<h2>Policy Priorities</h2>\n<p>Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc. Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere.</p>\n"
+  },
+  {
+    "slug": "curabitur-ullamcorper-ultricies",
+    "title": "Curabitur Ullamcorper Ultricies Nisi",
+    "excerpt": "Extensive reading on the topic of automated content generation.",
+    "date": "2026-01-15",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Paper",
+    "topics": [
+      "Capacity Building"
+    ],
+    "hashtags": [
+      "capacity-building",
+      "scenario-making"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_4_1768848735398.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Curabitur Ullamcorper Ultricies Nisi</h1>\n<p>Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus.</p>\n<p>Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc.</p>\n<h2>Deep Dive</h2>\n<p>Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue.</p>\n"
+  },
+  {
+    "slug": "donec-quam-felis",
+    "title": "Donec Quam Felis Ultricies Nec",
+    "excerpt": "A deep dive into the philosophy of placeholder text.",
+    "date": "2026-01-17",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Insights",
+    "topics": [
+      "Scenario Making"
+    ],
+    "hashtags": [
+      "scenario-making",
+      "capacity-building"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_2_1768848698871.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Donec Quam Felis Ultricies Nec</h1>\n<p>Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.</p>\n<blockquote>\n<p>&quot;Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum.&quot;</p>\n</blockquote>\n<p>Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo.</p>\n<h2>Why Do We Use It?</h2>\n<p>Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc.</p>\n"
+  },
+  {
+    "slug": "fusce-vulputate-eleifend",
+    "title": "Fusce Vulputate Eleifend",
+    "excerpt": "Exploring the retro wave aesthetic in modern web interfaces.",
+    "date": "2026-01-11",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Research Report",
+    "topics": [
+      "Sustainable Development"
+    ],
+    "hashtags": [
+      "sustainable-development",
+      "regional-security"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_8_1768850554501.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Fusce Vulputate Eleifend</h1>\n<p>Ut tellus dolor, dapibus eget, elementum vel, cursus eleifend, elit. Aenean auctor wisi et urna. Aliquam erat volutpat. Duis ac turpis. Integer rutrum ante eu lacus.</p>\n<p>Vestibulum libero nisl, porta vel, scelerisque eget, malesuada at, neque. Vivamus eget nibh. Etiam cursus leo vel metus. Nulla facilisi. Aenean nec eros.</p>\n<h2>Retro Vibes</h2>\n<p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Suspendisse sollicitudin velit sed leo. Ut pharetra augue nec augue. Nam elit agna, endrerit sit amet, tincidunt ac, viverra sed, nulla.</p>\n"
+  },
+  {
+    "slug": "integer-tincidunt-cras",
+    "title": "Integer Tincidunt Cras",
+    "excerpt": "Building tiny worlds: Component-based architecture explained.",
+    "date": "2026-01-08",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Paper",
+    "topics": [
+      "Policy Dialogue"
+    ],
+    "hashtags": [
+      "policy-dialogue",
+      "mediterranean-connectivity"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_11_1768850597259.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Integer Tincidunt Cras</h1>\n<p>Dapibus vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim.</p>\n<pre><code class=\"language-css\">.tiny-world {\n  display: flex;\n  justify-content: center;\n  perspective: 1000px;\n}\n</code></pre>\n<p>Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum.</p>\n<h2>Microservices</h2>\n<p>Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus.</p>\n"
+  },
+  {
+    "slug": "maecenas-tempus-tellus",
+    "title": "Maecenas Tempus Tellus Eget",
+    "excerpt": "Structured chaos: Ordering the random words.",
+    "date": "2026-01-14",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Paper",
+    "topics": [
+      "Policy Dialogue"
+    ],
+    "hashtags": [
+      "policy-dialogue",
+      "regional-security"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_5_1768848750922.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Maecenas Tempus Tellus Eget</h1>\n<p>Condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem.</p>\n<h2>Steps to Success</h2>\n<ol>\n<li><strong>Maecenas nec odio</strong> et ante tincidunt tempus.</li>\n<li><strong>Donec vitae sapien</strong> ut libero venenatis faucibus.</li>\n<li><strong>Nullam quis ante</strong>. Etiam sit amet orci eget eros faucibus tincidunt.</li>\n</ol>\n<p>Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc.</p>\n"
+  },
+  {
+    "slug": "markdown-features",
+    "title": "Policy Brief: Regional Security and Diplomacy",
+    "excerpt": "A short policy brief format for dialogue support and informed policymaking.",
+    "date": "2026-01-19",
+    "authorName": "Mediterranean Platform Editorial Team",
+    "authorPersonSlug": "",
+    "authorRole": "Policy dialogue, editorial production, and publication development",
+    "category": "Policy Brief",
+    "topics": [
+      "Policy Brief"
+    ],
+    "hashtags": [
+      "policy-brief",
+      "policy-relevant",
+      "regional-security"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/markdown.webp",
+    "downloadUrl": "/mp_luiss_site_summary.pdf",
+    "downloadLabel": "Download PDF",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Policy Brief Format</h1>\n<p>This brief highlights current regional security and diplomacy priorities across the Mediterranean space.</p>\n<ul>\n<li>Policy-relevant framing</li>\n<li>Dialogue support orientation</li>\n<li>National and transnational perspective</li>\n</ul>\n<h2>Key Notes</h2>\n<ol>\n<li>Support informed policymaking.</li>\n<li>Strengthen collective reflection.</li>\n<li>Advance practical cooperation pathways.</li>\n</ol>\n"
+  },
+  {
+    "slug": "nam-quam-nunc-blandit",
+    "title": "Nam Quam Nunc Blandit Vel",
+    "excerpt": "Short, punchy, and direct to the point.",
+    "date": "2026-01-13",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Brief",
+    "topics": [
+      "Regional Security"
+    ],
+    "hashtags": [
+      "regional-security",
+      "capacity-building"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_6_1768848765056.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Nam Quam Nunc Blandit Vel</h1>\n<p>Luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante.</p>\n<p>Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna.</p>\n<h2>Conclusion</h2>\n<p>Sed consequat, leo eget bibendum sodales, augue velit cursus nunc. <strong>Donec quam felis</strong>, ultricies nec, pellentesque eu, pretium quis, sem.</p>\n"
+  },
+  {
+    "slug": "phasellus-viverra-nulla",
+    "title": "Phasellus Viverra Nulla Ut Metus",
+    "excerpt": "Analyzing policy briefs and research notes for stronger regional dialogue.",
+    "date": "2026-01-16",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Research Report",
+    "topics": [
+      "Policy Dialogue"
+    ],
+    "hashtags": [
+      "policy-dialogue",
+      "mediterranean-connectivity"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_3_1768848720552.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Phasellus Viverra Nulla Ut Metus</h1>\n<p>Varius laoreet. Quisque rutrum. <em>Aenean imperdiet</em>. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui.</p>\n<pre><code class=\"language-javascript\">function helloWorld() {\n  console.log(&quot;Lorem Ipsum!&quot;);\n}\n</code></pre>\n<p>Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem.</p>\n<h2>Technical Details</h2>\n<ol>\n<li>Maecenas nec odio et ante tincidunt tempus.</li>\n<li>Donec vitae sapien ut libero venenatis faucibus.</li>\n<li>Nullam quis ante.</li>\n</ol>\n"
+  },
+  {
+    "slug": "red-sea-corridors-audio-brief",
+    "title": "Red Sea Corridors: Trade, Security, and Regional Power",
+    "excerpt": "A short audio brief unpacking the strategic significance of the Red Sea and the regional actors shaping its future.",
+    "date": "2026-01-20",
+    "authorName": "Mediterranean Platform Audio Brief",
+    "authorPersonSlug": "",
+    "authorRole": "Podcast and editorial brief production on regional security and maritime strategy",
+    "category": "Pod-Cast",
+    "topics": [
+      "Red Sea"
+    ],
+    "hashtags": [
+      "red-sea",
+      "regional-security",
+      "policy-dialogue"
+    ],
+    "projectSlugs": [
+      "gulf-platform"
+    ],
+    "imageUrl": "/articles/red-sea-ebook.pdf.png",
+    "downloadUrl": "/audio/mock-red-sea-brief.mp3",
+    "downloadLabel": "Open audio file",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Red Sea Corridors</h1>\n<p>This audio release introduces the strategic significance of the Red Sea as a corridor shaped by trade, maritime risk, diplomacy, and regional competition.</p>\n<h2>What This Release Covers</h2>\n<ul>\n<li>Regional security implications of maritime disruptions</li>\n<li>Trade and logistics pressure across connected routes</li>\n<li>The role of middle powers in shaping corridor governance</li>\n<li>Why Red Sea developments matter for Mediterranean policy debates</li>\n</ul>\n<h2>Editorial Note</h2>\n<p>This release is presented as a short-form audio brief linked to the Mediterranean Platform’s wider work on regional cooperation, security, and policy dialogue.</p>\n"
+  },
+  {
+    "slug": "suspendisse-potenti-nullam",
+    "title": "Suspendisse Potenti Nullam",
+    "excerpt": "Minimalist architecture and its influence on digital design patterns.",
+    "date": "2026-01-12",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Research Report",
+    "topics": [
+      "Sustainable Development"
+    ],
+    "hashtags": [
+      "sustainable-development"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_7_1768850538178.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Suspendisse Potenti Nullam</h1>\n<p>Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.</p>\n<blockquote>\n<p>&quot;Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.&quot;</p>\n</blockquote>\n<h2>Design Principles</h2>\n<p>Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi. Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis.</p>\n"
+  },
+  {
+    "slug": "vestibulum-purus-quam",
+    "title": "Vestibulum Purus Quam",
+    "excerpt": "The value of detail-oriented analysis in policy research and dialogue.",
+    "date": "2026-01-10",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Brief",
+    "topics": [
+      "Policy Relevant"
+    ],
+    "hashtags": [
+      "policy-relevant"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_9_1768850568154.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Vestibulum Purus Quam</h1>\n<p>Scelerisque ut, mollis sed, nonummy id, metus. Nullam accumsan lorem in dui. Cras ultricies mi eu turpis hendrerit fringilla. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; In ac dui quis mi consectetuer lacinia.</p>\n<p>Nam pretium turpis et arcu. Duis arcu tortor, suscipit eget, imperdiet nec, imperdiet iaculis, ipsum. Sed aliquam ultrices mauris. Integer ante arcu, accumsan a, consectetuer eget, posuere ut, mauris.</p>\n<h2>Clear Vision</h2>\n<p>Praesent adipiscing. Phasellus ullamcorper ipsum rutrum nunc. Nunc nonummy metus. Vestibulum volutpat pretium libero. Cras id dui.</p>\n"
+  },
+  {
+    "slug": "vivamus-elementum-semper",
+    "title": "Vivamus Elementum Semper",
+    "excerpt": "Next-gen interfaces and the future of dashboard design.",
+    "date": "2026-01-07",
+    "authorName": "Lorem",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Policy Paper",
+    "topics": [
+      "Capacity Building"
+    ],
+    "hashtags": [
+      "capacity-building",
+      "regional-security"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/blog_post_12_1768850610966.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Vivamus Elementum Semper</h1>\n<p>Nisi aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus.</p>\n<p>Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi.</p>\n<h2>Data Visualization</h2>\n<p>Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar.</p>\n"
+  },
+  {
+    "slug": "welcome",
+    "title": "Mediterranean Talks: In Conversation",
+    "excerpt": "An editorial update on talks, events, and policy dialogue priorities.",
+    "date": "2026-01-19",
+    "authorName": "Mediterranean Platform Editorial Team",
+    "authorPersonSlug": "",
+    "authorRole": "",
+    "category": "Insights",
+    "topics": [
+      "Collective Reflection"
+    ],
+    "hashtags": [
+      "collective-reflection",
+      "knowledge-exchange",
+      "mediterranean-connectivity"
+    ],
+    "projectSlugs": [],
+    "imageUrl": "/blog/welcome.webp",
+    "downloadUrl": "",
+    "downloadLabel": "",
+    "contributorPersonSlugs": [],
+    "contributorNames": [],
+    "contentHtml": "<h1>Mediterranean Talks</h1>\n<p>This editorial stream shares updates on events, publications, and policy dialogue across the broader Mediterranean.</p>\n<h2>Current Focus</h2>\n<p>Work concentrates on governance transitions, regional security, diplomacy, and scenario-making for informed policymaking.</p>\n"
+  },
+  {
+    "slug": "the-red-sea-divided-by-water-united-by-opportunities",
+    "title": "The Red Sea: Divided by Water, United by Opportunities",
+    "excerpt": "A multi-disciplinary publication on regional opportunity structures, cooperation pathways, and strategic dialogue.",
+    "date": "2026-02-25",
+    "authorName": "Ghanem, Narbone, Palleschi, and Maru (ed.)",
+    "authorRole": "Edited volume on regional strategy, maritime security, and policy dialogue",
+    "category": "E-Book",
+    "topics": [
+      "Regional Cooperation"
+    ],
+    "hashtags": [
+      "RedSea",
+      "RegionalCooperation",
+      "PolicyDialogue"
+    ],
+    "projectSlugs": [
+      "gulf-platform"
+    ],
+    "imageUrl": "/articles/red-sea-ebook.pdf.png",
+    "downloadUrl": "/articles/red-sea-ebook.pdf",
+    "downloadLabel": "Download e-book",
+    "contributorPersonSlugs": [
+      "luigi-narbone",
+      "carlo-palleschi"
+    ],
+    "contributorNames": [
+      "Dana Ghanem",
+      "Alemayehu G. Maru"
+    ],
+    "contentHtml": "<p>The recent maritime crisis in the Red Sea has brought this vital global waterway back to the fore. The region’s destiny is no longer being decided only by distant powers, but by assertive regional actors, shifting alliances, and new strategic calculations.</p><p>This publication provides a cross-regional reading of the Red Sea and the Horn of Africa, connecting Middle Eastern and African perspectives in one analytical frame.</p><p>It offers a policy-relevant basis for dialogue, scenario-building, and long-term strategic reflection.</p>"
+  },
+  {
+    "slug": "distribution-of-powers-in-libyas-future-local-governance-system",
+    "title": "Distribution of Powers in Libya's Future Local Governance System",
+    "excerpt": "Policy paper on governance architecture and local institutional design for stability and inclusive policymaking.",
+    "date": "2026-02-05",
+    "authorName": "Virginie Collombier",
+    "authorPersonSlug": "virginie-collombier",
+    "authorRole": "Policy analysis on governance reform and institutional design",
+    "category": "Policy Paper",
+    "topics": [
+      "Governance"
+    ],
+    "hashtags": [
+      "Libya",
+      "LocalGovernance",
+      "InstitutionalDesign"
+    ],
+    "projectSlugs": [
+      "libya-platform"
+    ],
+    "imageUrl": "/blog/blog_post_10_1768850582328.webp",
+    "downloadUrl": "/mp_luiss_site_summary.pdf",
+    "downloadLabel": "Download PDF",
+    "contributorPersonSlugs": [
+      "ilaria-bertocchini"
+    ],
+    "contributorNames": [
+      "Intissar Kherigi"
+    ],
+    "contentHtml": "<p>This paper examines the allocation of powers in Libya’s future local governance architecture and its implications for institutional balance, accountability, and implementation.</p><p>It focuses on realistic pathways for reform that can support both local legitimacy and national coherence.</p>"
+  },
+  {
+    "slug": "subnational-governance-in-divided-societies-learning-from-yemen-to-inform-libyas-peace-process",
+    "title": "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya's Peace Process",
+    "excerpt": "Comparative insights connecting local governance, peace process design, and practical dialogue support.",
+    "date": "2026-01-08",
+    "authorName": "Virginie Collombier",
+    "authorPersonSlug": "virginie-collombier",
+    "authorRole": "Comparative governance and peace process research",
+    "category": "Policy Paper",
+    "topics": [
+      "Dialogue Support"
+    ],
+    "hashtags": [
+      "Libya",
+      "PeaceProcess",
+      "DialogueSupport"
+    ],
+    "projectSlugs": [
+      "libya-platform"
+    ],
+    "imageUrl": "/blog/blog_post_11_1768850597259.webp",
+    "downloadUrl": "/mp_luiss_site_summary.pdf",
+    "downloadLabel": "Download PDF",
+    "contributorNames": [
+      "Mohamed Aziz Mrad"
+    ],
+    "contentHtml": "<p>Drawing lessons from Yemen, this paper connects subnational governance design with peace process architecture in Libya.</p><p>It highlights how local governance can be integrated into wider political settlements and transitional dialogue formats.</p>"
+  },
+  {
+    "slug": "youth-as-catalysts-for-shaping-libyas-future-pathways-for-inclusion-in-national-dialogue-and-vision-making",
+    "title": "Youth as Catalysts for Shaping Libya's Future Pathways for Inclusion in National Dialogue and Vision-Making",
+    "excerpt": "Evidence-led paper on youth inclusion, national dialogue, and long-term vision-making processes.",
+    "date": "2025-12-02",
+    "authorName": "Meryem Akabouch",
+    "authorPersonSlug": "meryem-akabouch",
+    "authorRole": "Research on inclusion, youth participation, and dialogue design",
+    "category": "Policy Paper",
+    "topics": [
+      "Youth Participation"
+    ],
+    "hashtags": [
+      "YouthInclusion",
+      "NationalDialogue",
+      "VisionMaking"
+    ],
+    "projectSlugs": [
+      "libya-platform"
+    ],
+    "imageUrl": "/blog/blog_post_12_1768850610966.webp",
+    "downloadUrl": "/mp_luiss_site_summary.pdf",
+    "downloadLabel": "Download PDF",
+    "contributorNames": [
+      "Abdelkarim Skouri"
+    ],
+    "contentHtml": "<p>This paper looks at how young people can be meaningfully included in Libya’s national dialogue and longer-term vision-making processes.</p><p>It connects policy design with participatory practice, mentorship, and institution-building.</p>"
+  },
+  {
+    "slug": "africa-nexus-building-an-african-european-knowledge-ecosystem",
+    "title": "Africa Nexus: Building an African-European Knowledge Ecosystem",
+    "excerpt": "A platform briefing connecting experts, young scholars, and policymakers through policy analyses and knowledge exchange.",
+    "date": "2025-11-29",
+    "authorName": "Africa Nexus Team",
+    "authorRole": "Cross-regional platform briefing",
+    "category": "Insights",
+    "topics": [
+      "Knowledge Exchange"
+    ],
+    "hashtags": [
+      "AfricaNexus",
+      "CrossroadsExchanges",
+      "KnowledgeExchange"
+    ],
+    "projectSlugs": [
+      "africa-nexus"
+    ],
+    "imageUrl": "/blog/welcome.webp",
+    "contributorPersonSlugs": [
+      "carlo-palleschi",
+      "meraf-villani",
+      "meryem-akabouch"
+    ],
+    "contentHtml": "<p>Africa Nexus is designed as a policy-facing crossroads for African and European experts, researchers, and institutions.</p><p>Its focus is on building a durable knowledge ecosystem that can support sustained dialogue, publications, and practical cooperation.</p>"
+  },
+  {
+    "slug": "hydrogen-valleys-and-sustainable-development-in-algeria",
+    "title": "Hydrogen Valleys and Sustainable Development in Algeria: Pivoting from Hydrocarbons to an Inclusive Euro-Mediterranean Hydrogen Economy",
+    "excerpt": "Research on energy transition, industrial strategy, and climate-linked development in North Africa.",
+    "date": "2025-11-21",
+    "authorName": "Leon Stille",
+    "authorPersonSlug": "leon-stille",
+    "authorRole": "Energy transition and industrial strategy analysis",
+    "category": "Research Report",
+    "topics": [
+      "Energy Transition"
+    ],
+    "hashtags": [
+      "EnergyTransition",
+      "ClimatePolicy",
+      "SustainableDevelopment"
+    ],
+    "projectSlugs": [
+      "africa-nexus"
+    ],
+    "imageUrl": "/blog/markdown.webp",
+    "downloadUrl": "/mp_luiss_site_summary.pdf",
+    "downloadLabel": "Download report",
+    "contributorPersonSlugs": [
+      "carlo-palleschi"
+    ],
+    "contentHtml": "<p>This report examines hydrogen valleys, industrial policy, and just transition questions in Algeria.</p><p>It situates national planning within a wider Euro-Mediterranean energy economy and long-term development framework.</p>"
+  },
+  {
+    "slug": "gulf-platform-europe-gulf-dialogue-on-geopolitical-economic-and-societal-trends",
+    "title": "Gulf Platform: Europe-Gulf Dialogue on Geopolitical, Economic, and Societal Trends",
+    "excerpt": "Policy-relevant research and dialogue support for decision-makers working across regional security and long-term cooperation files.",
+    "date": "2025-10-15",
+    "authorName": "Luigi Narbone",
+    "authorPersonSlug": "luigi-narbone",
+    "authorRole": "Platform briefing on Europe-Gulf dialogue and strategic trends",
+    "category": "Insights",
+    "topics": [
+      "Regional Security"
+    ],
+    "hashtags": [
+      "GulfPlatform",
+      "RegionalSecurity",
+      "PolicyRelevant"
+    ],
+    "projectSlugs": [
+      "gulf-platform"
+    ],
+    "imageUrl": "/blog/blog_post_8_1768850554501.webp",
+    "contributorPersonSlugs": [
+      "leon-stille"
+    ],
+    "contentHtml": "<p>This publication outlines the Gulf Platform’s research and dialogue agenda across geopolitical, economic, and societal files.</p><p>It frames Europe-Gulf relations as a long-term policy conversation rather than a narrow crisis response track.</p>"
+  }
+]
