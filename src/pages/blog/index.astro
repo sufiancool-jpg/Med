@@ -2,15 +2,8 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
 import { getPublications } from "../../lib/site-data";
-import type { GetStaticPathsOptions } from "astro";
 
-export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
-  const publications = await getPublications();
-  return paginate(publications, { pageSize: Math.max(publications.length, 1) });
-}
-
-const { page } = Astro.props;
-const publications = page.data;
+const publications = await getPublications();
 
 const publicationTypeOptions = [
   "Policy Paper",

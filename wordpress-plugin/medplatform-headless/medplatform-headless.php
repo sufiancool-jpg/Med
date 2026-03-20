@@ -181,6 +181,144 @@ function mp_headless_sanitize_focus_areas($value) {
 	return array_values($clean);
 }
 
+function mp_headless_get_frontend_base_url() {
+	$configured_url = trim((string) get_option('mp_headless_frontend_url', ''));
+	if ($configured_url !== '') {
+		return untrailingslashit($configured_url);
+	}
+
+	$home_url = home_url('/');
+	$host     = wp_parse_url($home_url, PHP_URL_HOST);
+
+	if (in_array($host, array('127.0.0.1', 'localhost'), true)) {
+		return 'http://localhost:4321';
+	}
+
+	return 'https://mediterranean-platform.org';
+}
+
+function mp_headless_get_frontend_url($path = '/') {
+	$base_url = mp_headless_get_frontend_base_url();
+
+	if ($path === '' || $path === '/') {
+		return $base_url . '/';
+	}
+
+	return $base_url . '/' . ltrim($path, '/');
+}
+
+function mp_headless_get_frontend_post_path($post) {
+	$post = get_post($post);
+	if (! $post instanceof WP_Post) {
+		return '/';
+	}
+
+	switch ($post->post_type) {
+		case 'mp_publication':
+			return '/blog/' . $post->post_name;
+		case 'mp_project':
+			return '/services/' . $post->post_name;
+		case 'mp_person':
+			return '/team/' . $post->post_name;
+		case 'mp_homepage':
+			return '/';
+		default:
+			return '/';
+	}
+}
+
+function mp_headless_get_frontend_post_url($post) {
+	return mp_headless_get_frontend_url(mp_headless_get_frontend_post_path($post));
+}
+
+function mp_headless_get_frontend_term_path($term) {
+	$term = get_term($term);
+	if (! $term || is_wp_error($term)) {
+		return '/blog';
+	}
+
+	switch ($term->taxonomy) {
+		case 'mp_output_type':
+			return '/blog/category/' . $term->slug;
+		case 'mp_hashtag':
+			return '/blog/tags/' . $term->slug;
+		case 'mp_topic':
+			return '/blog';
+		default:
+			return '/';
+	}
+}
+
+function mp_headless_get_frontend_term_url($term) {
+	return mp_headless_get_frontend_url(mp_headless_get_frontend_term_path($term));
+}
+
+function mp_headless_is_login_request() {
+	$script_name = basename((string) ($_SERVER['PHP_SELF'] ?? ''));
+	return in_array($script_name, array('wp-login.php', 'wp-signup.php'), true);
+}
+
+function mp_headless_is_rest_request() {
+	if ((defined('REST_REQUEST') && REST_REQUEST) || (function_exists('wp_is_json_request') && wp_is_json_request())) {
+		return true;
+	}
+
+	$request_uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+	return strpos($request_uri, '/wp-json/') !== false || strpos($request_uri, 'rest_route=') !== false;
+}
+
+function mp_headless_is_public_page_request() {
+	if (is_admin() || wp_doing_ajax() || wp_doing_cron() || mp_headless_is_login_request() || mp_headless_is_rest_request()) {
+		return false;
+	}
+
+	if (is_preview()) {
+		return false;
+	}
+
+	if (defined('XMLRPC_REQUEST') && XMLRPC_REQUEST) {
+		return false;
+	}
+
+	$request_path = wp_parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+	if (is_string($request_path)) {
+		$basename = basename($request_path);
+		if ($basename !== '' && preg_match('/\.[a-z0-9]+$/i', $basename)) {
+			return false;
+		}
+	}
+
+	return is_front_page() || is_home() || is_archive() || is_singular() || is_search() || is_404();
+}
+
+function mp_headless_get_frontend_redirect_url() {
+	if (is_singular()) {
+		return mp_headless_get_frontend_post_url(get_queried_object_id());
+	}
+
+	if (is_post_type_archive('mp_publication')) {
+		return mp_headless_get_frontend_url('/blog');
+	}
+
+	if (is_post_type_archive('mp_project')) {
+		return mp_headless_get_frontend_url('/services');
+	}
+
+	if (is_post_type_archive('mp_person')) {
+		return mp_headless_get_frontend_url('/team');
+	}
+
+	if (is_tax(array('mp_output_type', 'mp_hashtag', 'mp_topic'))) {
+		return mp_headless_get_frontend_term_url(get_queried_object());
+	}
+
+	if (is_search()) {
+		return mp_headless_get_frontend_url('/blog');
+	}
+
+	return mp_headless_get_frontend_url('/');
+}
+
 function mp_headless_post_type_labels($singular, $plural) {
 	return array(
 		'name'               => $plural,
@@ -2424,6 +2562,25 @@ function mp_headless_customize_people_menu() {
 }
 add_action('admin_menu', 'mp_headless_customize_people_menu', 30);
 
+function mp_headless_customize_admin_bar($wp_admin_bar) {
+	if (! is_admin_bar_showing()) {
+		return;
+	}
+
+	$frontend_url = mp_headless_get_frontend_url('/');
+
+	foreach (array('site-name', 'view-site') as $node_id) {
+		$node = $wp_admin_bar->get_node($node_id);
+		if (! $node) {
+			continue;
+		}
+
+		$node->href = $frontend_url;
+		$wp_admin_bar->add_node((array) $node);
+	}
+}
+add_action('admin_bar_menu', 'mp_headless_customize_admin_bar', 90);
+
 function mp_headless_save_homepage_settings() {
 	if (! current_user_can('edit_posts')) {
 		wp_die(esc_html__('You do not have permission to manage homepage settings.', 'medplatform-headless'));
@@ -2592,18 +2749,37 @@ function mp_headless_render_projects_action_button() {
 add_action('admin_print_footer_scripts-edit.php', 'mp_headless_render_projects_action_button');
 
 function mp_headless_customize_person_row_actions($actions, $post) {
-	if ($post->post_type !== 'mp_person' && $post->post_type !== 'mp_project') {
+	if (! in_array($post->post_type, array('mp_publication', 'mp_person', 'mp_project'), true)) {
 		return $actions;
 	}
 
 	if (isset($actions['edit'])) {
-		$edit_url = $post->post_type === 'mp_person'
-			? mp_headless_get_person_admin_url($post->ID)
-			: mp_headless_get_project_admin_url($post->ID);
-		$actions['edit'] = sprintf(
-			'<a href="%s">%s</a>',
-			esc_url($edit_url),
-			esc_html__('Edit', 'medplatform-headless')
+		if ($post->post_type === 'mp_person' || $post->post_type === 'mp_project') {
+			$edit_url = $post->post_type === 'mp_person'
+				? mp_headless_get_person_admin_url($post->ID)
+				: mp_headless_get_project_admin_url($post->ID);
+			$actions['edit'] = sprintf(
+				'<a href="%s">%s</a>',
+				esc_url($edit_url),
+				esc_html__('Edit', 'medplatform-headless')
+			);
+		}
+	}
+
+	$frontend_url = mp_headless_get_frontend_post_url($post);
+	if (isset($actions['view'])) {
+		$actions['view'] = sprintf(
+			'<a href="%s" rel="bookmark">%s</a>',
+			esc_url($frontend_url),
+			esc_html__('View', 'medplatform-headless')
+		);
+	}
+
+	if (isset($actions['preview']) && $post->post_status === 'publish') {
+		$actions['preview'] = sprintf(
+			'<a href="%s" rel="bookmark">%s</a>',
+			esc_url($frontend_url),
+			esc_html__('Preview', 'medplatform-headless')
 		);
 	}
 
@@ -2614,6 +2790,16 @@ function mp_headless_customize_person_row_actions($actions, $post) {
 add_filter('post_row_actions', 'mp_headless_customize_person_row_actions', 10, 2);
 
 function mp_headless_register_settings() {
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_frontend_url',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'esc_url_raw',
+			'default'           => '',
+		)
+	);
+
 	register_setting(
 		'mp_headless_settings',
 		'mp_headless_build_hook_url',
@@ -2633,6 +2819,13 @@ function mp_headless_render_settings_page() {
 		<form action="options.php" method="post">
 			<?php settings_fields('mp_headless_settings'); ?>
 			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="mp_headless_frontend_url"><?php esc_html_e('Frontend Site URL', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_frontend_url" type="url" class="regular-text code" name="mp_headless_frontend_url" value="<?php echo esc_attr(get_option('mp_headless_frontend_url', '')); ?>" />
+						<p class="description"><?php esc_html_e('Optional. When set, admin "Visit site" links and public WordPress redirects will use this Astro frontend URL. Leave empty to use the local Astro URL on localhost and the production frontend URL elsewhere.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
 				<tr>
 					<th scope="row"><label for="mp_headless_build_hook_url"><?php esc_html_e('Build Hook URL', 'medplatform-headless'); ?></label></th>
 					<td>
@@ -2663,13 +2856,90 @@ function mp_headless_trigger_build($reason) {
 			'body'    => wp_json_encode(
 				array(
 					'reason'    => $reason,
-					'site'      => home_url('/'),
+					'site'      => mp_headless_get_frontend_url('/'),
 					'timestamp' => time(),
 				)
 			),
 		)
 	);
 }
+
+function mp_headless_filter_post_type_link($post_link, $post) {
+	if (! $post instanceof WP_Post) {
+		return $post_link;
+	}
+
+	if (! in_array($post->post_type, array('mp_publication', 'mp_person', 'mp_project', 'mp_homepage'), true)) {
+		return $post_link;
+	}
+
+	return mp_headless_get_frontend_post_url($post);
+}
+add_filter('post_type_link', 'mp_headless_filter_post_type_link', 10, 2);
+
+function mp_headless_filter_term_link($term_link, $term, $taxonomy) {
+	if (! in_array($taxonomy, array('mp_output_type', 'mp_hashtag', 'mp_topic'), true)) {
+		return $term_link;
+	}
+
+	return mp_headless_get_frontend_term_url($term);
+}
+add_filter('term_link', 'mp_headless_filter_term_link', 10, 3);
+
+function mp_headless_allowed_redirect_hosts($hosts) {
+	$frontend_host = wp_parse_url(mp_headless_get_frontend_base_url(), PHP_URL_HOST);
+	if ($frontend_host && ! in_array($frontend_host, $hosts, true)) {
+		$hosts[] = $frontend_host;
+	}
+
+	return $hosts;
+}
+add_filter('allowed_redirect_hosts', 'mp_headless_allowed_redirect_hosts');
+
+add_filter('wp_sitemaps_enabled', '__return_false');
+
+function mp_headless_filter_wp_robots($robots) {
+	if (! mp_headless_is_public_page_request()) {
+		return $robots;
+	}
+
+	return array(
+		'noindex'   => true,
+		'nofollow'  => true,
+		'noarchive' => true,
+	);
+}
+add_filter('wp_robots', 'mp_headless_filter_wp_robots');
+
+function mp_headless_send_noindex_headers() {
+	if (! mp_headless_is_public_page_request()) {
+		return;
+	}
+
+	header('X-Robots-Tag: noindex, nofollow, noarchive', true);
+}
+add_action('send_headers', 'mp_headless_send_noindex_headers');
+
+function mp_headless_redirect_public_requests() {
+	if (! mp_headless_is_public_page_request()) {
+		return;
+	}
+
+	$method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+	if (! in_array($method, array('GET', 'HEAD'), true)) {
+		return;
+	}
+
+	$frontend_base = untrailingslashit(mp_headless_get_frontend_base_url());
+	$wp_base       = untrailingslashit(home_url('/'));
+	if ($frontend_base === $wp_base) {
+		return;
+	}
+
+	wp_safe_redirect(mp_headless_get_frontend_redirect_url(), 301, 'Med Platform Headless');
+	exit;
+}
+add_action('template_redirect', 'mp_headless_redirect_public_requests', 1);
 
 function mp_headless_maybe_trigger_build_on_post_save($post_id, $post) {
 	if (wp_is_post_revision($post_id) || (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)) {

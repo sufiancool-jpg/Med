@@ -5,7 +5,7 @@ import icon from "astro-icon";
 import remarkReadingTime from "remark-reading-time";
 
 export default defineConfig({
-  site: "https://astrostarterpro.com/",
+  site: "https://mediterranean-platform.org/",
   integrations: [sitemap(), icon()],
   markdown: {
     remarkPlugins: [
