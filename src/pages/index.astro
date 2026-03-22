@@ -739,13 +739,13 @@ const metadata = {
         </p>
       </div>
 
-      <div class="grid gap-px border border-[#e7e7e6] bg-[#e7e7e6] sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid border border-[#e7e7e6] bg-white sm:grid-cols-2 lg:grid-cols-3">
         {activityThemes.map((item, index) => (
           <article
             data-project-card
             style={`--project-hover-bg:${item.hoverBg};--project-hover-title:${item.hoverTitle};--project-hover-meta:${item.hoverMeta};--project-hover-summary:${item.hoverSummary};--project-hover-icon:${item.hoverIcon};`}
             class:list={[
-              "group relative flex overflow-hidden bg-background p-5 transition-colors duration-300 md:p-6",
+              "group relative -m-px flex overflow-hidden border border-[#e7e7e6] bg-background p-5 transition-colors duration-300 md:p-6",
               shouldCenterLastHomepageProject &&
                 index === activityThemes.length - 1 &&
                 "lg:col-start-2",
