@@ -15,7 +15,6 @@ const aboutIntro = [
   "The Platform places youth at the centre of its efforts, encouraging their participation and equipping them through training and mentorship programmes to become agents of change. It also runs executive trainings and educational activities that foster knowledge exchange, skills development, and communities of practice across academic, diplomatic, and civil society circles.",
 ];
 
-const aboutVideoEmbedUrl = "https://www.youtube.com/embed/zlRl8sJU_4I?rel=0";
 const teamMembers = await getTeamPeople();
 const partnerLogos = [
   {
@@ -58,16 +57,19 @@ const partnerLogos = [
                 alt="Mediterranean Platform"
                 class="mx-auto w-full max-w-[19rem] object-contain sm:max-w-[22rem] md:max-w-none"
               />
-              <div class="aspect-video w-full overflow-hidden border border-black/15 bg-black/5">
-                <iframe
-                  src={aboutVideoEmbedUrl}
-                  title="Mediterranean Platform video"
-                  class="h-full w-full"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  allowfullscreen
-                ></iframe>
+              <div class="relative aspect-video w-full overflow-hidden border border-black/15 bg-black/5">
+                <video
+                  data-about-video
+                  class="absolute inset-0 h-full w-full object-cover"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                  preload="auto"
+                >
+                  <source src="/webbg.mp4" type="video/mp4" />
+                </video>
+                <div class="absolute inset-0 bg-black/10"></div>
               </div>
             </div>
           </div>
@@ -197,6 +199,29 @@ const partnerLogos = [
     </section>
   </div>
 </BaseLayout>
+
+<script is:inline>
+  const initAboutVideo = () => {
+    document.querySelectorAll("[data-about-video]").forEach((video) => {
+      video.muted = true;
+      video.defaultMuted = true;
+      const playPromise = video.play?.();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAboutVideo, {
+      once: true,
+    });
+  } else {
+    initAboutVideo();
+  }
+
+  document.addEventListener("astro:after-swap", initAboutVideo);
+</script>
 
 <style>
   .about-anchor {
