@@ -175,11 +175,11 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
         player.dataset.bound = "true";
 
         const setPlaybackState = (isPlaying) => {
-          if (playIcon instanceof HTMLElement) {
+          if (playIcon instanceof Element) {
             playIcon.classList.toggle("hidden", isPlaying);
           }
 
-          if (pauseIcon instanceof HTMLElement) {
+          if (pauseIcon instanceof Element) {
             pauseIcon.classList.toggle("hidden", !isPlaying);
           }
 
