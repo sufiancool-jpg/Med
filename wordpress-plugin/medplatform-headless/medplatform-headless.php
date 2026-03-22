@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.6
+ * Version: 0.1.7
  * Author: Codex
  */
 
@@ -152,6 +152,51 @@ function mp_headless_sanitize_repo_path_value($value) {
 	return ltrim($value, '/');
 }
 
+function mp_headless_sanitize_ga4_property_id($value) {
+	return preg_replace('/\D+/', '', (string) wp_unslash($value));
+}
+
+function mp_headless_sanitize_ga4_service_account_json($value) {
+	$raw = trim((string) wp_unslash($value));
+
+	if ($raw === '') {
+		return '';
+	}
+
+	$decoded = json_decode($raw, true);
+	if (! is_array($decoded)) {
+		return '';
+	}
+
+	$normalized = array(
+		'type'                        => sanitize_text_field((string) ($decoded['type'] ?? '')),
+		'project_id'                  => sanitize_text_field((string) ($decoded['project_id'] ?? '')),
+		'private_key_id'              => sanitize_text_field((string) ($decoded['private_key_id'] ?? '')),
+		'private_key'                 => str_replace("\r\n", "\n", (string) ($decoded['private_key'] ?? '')),
+		'client_email'                => sanitize_email((string) ($decoded['client_email'] ?? '')),
+		'client_id'                   => sanitize_text_field((string) ($decoded['client_id'] ?? '')),
+		'auth_uri'                    => esc_url_raw((string) ($decoded['auth_uri'] ?? '')),
+		'token_uri'                   => esc_url_raw((string) ($decoded['token_uri'] ?? '')),
+		'auth_provider_x509_cert_url' => esc_url_raw((string) ($decoded['auth_provider_x509_cert_url'] ?? '')),
+		'client_x509_cert_url'        => esc_url_raw((string) ($decoded['client_x509_cert_url'] ?? '')),
+		'universe_domain'             => sanitize_text_field((string) ($decoded['universe_domain'] ?? '')),
+	);
+
+	if ($normalized['client_email'] === '' || $normalized['private_key'] === '') {
+		return '';
+	}
+
+	return wp_json_encode(
+		array_filter(
+			$normalized,
+			function($item) {
+				return $item !== '';
+			}
+		),
+		JSON_UNESCAPED_SLASHES
+	);
+}
+
 function mp_headless_set_github_deploy_status($status, $message, $reason = '') {
 	update_option(
 		'mp_headless_github_last_status',
@@ -175,7 +220,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.6',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.7',
 	);
 }
 
@@ -4865,6 +4910,26 @@ function mp_headless_register_settings() {
 			'default'           => true,
 		)
 	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_ga4_property_id',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'mp_headless_sanitize_ga4_property_id',
+			'default'           => '',
+		)
+	);
+
+	register_setting(
+		'mp_headless_settings',
+		'mp_headless_ga4_service_account_json',
+		array(
+			'type'              => 'string',
+			'sanitize_callback' => 'mp_headless_sanitize_ga4_service_account_json',
+			'default'           => '',
+		)
+	);
 }
 add_action('admin_init', 'mp_headless_register_settings');
 
@@ -4876,6 +4941,10 @@ function mp_headless_render_settings_page() {
 	$github_trigger_path      = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
 	$github_auto_push_enabled = mp_headless_github_auto_push_enabled();
 	$github_last_status       = get_option('mp_headless_github_last_status', array());
+	$ga4_property_id          = (string) get_option('mp_headless_ga4_property_id', '');
+	$ga4_service_account_json = (string) get_option('mp_headless_ga4_service_account_json', '');
+	$ga4_service_account      = $ga4_service_account_json !== '' ? json_decode($ga4_service_account_json, true) : array();
+	$ga4_service_email        = is_array($ga4_service_account) ? (string) ($ga4_service_account['client_email'] ?? '') : '';
 	$github_recent_versions   = array();
 	$github_recent_error      = null;
 	if ($github_repo_owner !== '' && $github_repo_name !== '' && $github_token !== '') {
@@ -4977,6 +5046,40 @@ function mp_headless_render_settings_page() {
 							<?php esc_html_e('Automatically push GitHub deploy updates after CMS changes', 'medplatform-headless'); ?>
 						</label>
 						<p class="description"><?php esc_html_e('Turn this off if you want WordPress content changes to wait until you manually click Push Update.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row" colspan="2" style="padding-bottom:0;">
+						<h2 style="margin:0;"><?php esc_html_e('Google Analytics Dashboard', 'medplatform-headless'); ?></h2>
+						<p class="description" style="margin:6px 0 0;"><?php esc_html_e('Optional. This adds a read-only GA4 widget to the WordPress dashboard so the team can see website traffic without installing Site Kit or adding another frontend tracking snippet.', 'medplatform-headless'); ?></p>
+					</th>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_ga4_property_id"><?php esc_html_e('GA4 Property ID', 'medplatform-headless'); ?></label></th>
+					<td>
+						<input id="mp_headless_ga4_property_id" type="text" class="regular-text code" name="mp_headless_ga4_property_id" value="<?php echo esc_attr($ga4_property_id); ?>" placeholder="529452010" />
+						<p class="description"><?php esc_html_e('Use the numeric GA4 property ID for the live frontend site.', 'medplatform-headless'); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="mp_headless_ga4_service_account_json"><?php esc_html_e('Service Account JSON', 'medplatform-headless'); ?></label></th>
+					<td>
+						<textarea id="mp_headless_ga4_service_account_json" class="large-text code" rows="12" name="mp_headless_ga4_service_account_json" spellcheck="false"><?php echo esc_textarea($ga4_service_account_json); ?></textarea>
+						<p class="description"><?php esc_html_e('Paste the full Google service-account JSON key here. The plugin uses it only to read GA4 dashboard reports for the configured property.', 'medplatform-headless'); ?></p>
+						<?php if ($ga4_service_email !== '') : ?>
+							<p class="description" style="margin-top:6px;">
+								<?php
+								echo esc_html(
+									sprintf(
+										/* translators: %s: service account email */
+										__('Current service account email: %s', 'medplatform-headless'),
+										$ga4_service_email
+									)
+								);
+								?>
+							</p>
+						<?php endif; ?>
+						<p class="description" style="margin-top:6px;"><?php esc_html_e('In Google Analytics, add that service-account email as a Viewer or Analyst on the GA4 property. This does not inject anything into the frontend.', 'medplatform-headless'); ?></p>
 					</td>
 				</tr>
 				<tr>
@@ -5264,6 +5367,264 @@ function mp_headless_handle_publication_download() {
 add_action('admin_post_nopriv_mp_headless_track_publication_download', 'mp_headless_handle_publication_download');
 add_action('admin_post_mp_headless_track_publication_download', 'mp_headless_handle_publication_download');
 
+function mp_headless_get_ga4_settings() {
+	$property_id          = trim((string) get_option('mp_headless_ga4_property_id', ''));
+	$service_account_json = trim((string) get_option('mp_headless_ga4_service_account_json', ''));
+	$service_account      = $service_account_json !== '' ? json_decode($service_account_json, true) : array();
+
+	return array(
+		'property_id'     => $property_id,
+		'service_account' => is_array($service_account) ? $service_account : array(),
+	);
+}
+
+function mp_headless_get_ga4_settings_url() {
+	return admin_url('options-general.php?page=medplatform-headless');
+}
+
+function mp_headless_base64url_encode($value) {
+	return rtrim(strtr(base64_encode((string) $value), '+/', '-_'), '=');
+}
+
+function mp_headless_get_ga4_access_token() {
+	$settings        = mp_headless_get_ga4_settings();
+	$service_account = $settings['service_account'];
+
+	if (empty($settings['property_id'])) {
+		return new WP_Error('mp_headless_ga4_property_missing', __('Add the GA4 Property ID in Med Platform Headless settings first.', 'medplatform-headless'));
+	}
+
+	if (empty($service_account['client_email']) || empty($service_account['private_key'])) {
+		return new WP_Error('mp_headless_ga4_service_account_missing', __('Paste a valid Google service-account JSON key in Med Platform Headless settings first.', 'medplatform-headless'));
+	}
+
+	if (! function_exists('openssl_sign')) {
+		return new WP_Error('mp_headless_ga4_openssl_missing', __('The OpenSSL PHP extension is required to authenticate with Google Analytics.', 'medplatform-headless'));
+	}
+
+	$cache_key    = 'mp_headless_ga4_token_' . md5($settings['property_id'] . '|' . (string) $service_account['client_email']);
+	$cached_token = get_transient($cache_key);
+	if (is_string($cached_token) && $cached_token !== '') {
+		return $cached_token;
+	}
+
+	$issued_at = time();
+	$payload   = array(
+		'iss'   => (string) $service_account['client_email'],
+		'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
+		'aud'   => (string) ($service_account['token_uri'] ?? 'https://oauth2.googleapis.com/token'),
+		'exp'   => $issued_at + 3600,
+		'iat'   => $issued_at,
+	);
+	$header    = array(
+		'alg' => 'RS256',
+		'typ' => 'JWT',
+	);
+	$segments  = array(
+		mp_headless_base64url_encode(wp_json_encode($header)),
+		mp_headless_base64url_encode(wp_json_encode($payload)),
+	);
+	$unsigned  = implode('.', $segments);
+	$signature = '';
+
+	if (! openssl_sign($unsigned, $signature, (string) $service_account['private_key'], OPENSSL_ALGO_SHA256)) {
+		return new WP_Error('mp_headless_ga4_signing_failed', __('Google Analytics authentication failed while signing the service-account request.', 'medplatform-headless'));
+	}
+
+	$response = wp_remote_post(
+		(string) ($service_account['token_uri'] ?? 'https://oauth2.googleapis.com/token'),
+		array(
+			'timeout' => 20,
+			'body'    => array(
+				'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+				'assertion'  => $unsigned . '.' . mp_headless_base64url_encode($signature),
+			),
+		)
+	);
+
+	if (is_wp_error($response)) {
+		return new WP_Error('mp_headless_ga4_token_request_failed', $response->get_error_message());
+	}
+
+	$status_code = (int) wp_remote_retrieve_response_code($response);
+	$body        = json_decode((string) wp_remote_retrieve_body($response), true);
+
+	if ($status_code < 200 || $status_code >= 300 || ! is_array($body) || empty($body['access_token'])) {
+		$message = is_array($body) ? (string) ($body['error_description'] ?? $body['error'] ?? '') : '';
+		if ($message === '') {
+			$message = __('Google Analytics rejected the service-account authentication request.', 'medplatform-headless');
+		}
+
+		return new WP_Error('mp_headless_ga4_token_invalid', $message);
+	}
+
+	$expires_in = max(300, (int) ($body['expires_in'] ?? 3600));
+	set_transient($cache_key, (string) $body['access_token'], max(60, $expires_in - 60));
+
+	return (string) $body['access_token'];
+}
+
+function mp_headless_run_ga4_report($body) {
+	$settings = mp_headless_get_ga4_settings();
+	$token    = mp_headless_get_ga4_access_token();
+
+	if (is_wp_error($token)) {
+		return $token;
+	}
+
+	$response = wp_remote_post(
+		sprintf(
+			'https://analyticsdata.googleapis.com/v1beta/properties/%s:runReport',
+			rawurlencode((string) $settings['property_id'])
+		),
+		array(
+			'timeout' => 20,
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $token,
+				'Content-Type'  => 'application/json',
+			),
+			'body'    => wp_json_encode($body),
+		)
+	);
+
+	if (is_wp_error($response)) {
+		return new WP_Error('mp_headless_ga4_report_request_failed', $response->get_error_message());
+	}
+
+	$status_code = (int) wp_remote_retrieve_response_code($response);
+	$parsed_body = json_decode((string) wp_remote_retrieve_body($response), true);
+
+	if ($status_code < 200 || $status_code >= 300 || ! is_array($parsed_body)) {
+		$message = is_array($parsed_body) ? (string) ($parsed_body['error']['message'] ?? '') : '';
+		if ($message === '') {
+			$message = __('Google Analytics returned an invalid report response.', 'medplatform-headless');
+		}
+
+		return new WP_Error('mp_headless_ga4_report_invalid', $message);
+	}
+
+	return $parsed_body;
+}
+
+function mp_headless_parse_ga4_metric_row($report) {
+	$row = is_array($report['rows'] ?? null) ? ($report['rows'][0] ?? array()) : array();
+
+	return array(
+		'users'    => (int) (($row['metricValues'][0]['value'] ?? 0)),
+		'sessions' => (int) (($row['metricValues'][1]['value'] ?? 0)),
+		'views'    => (int) (($row['metricValues'][2]['value'] ?? 0)),
+	);
+}
+
+function mp_headless_get_ga4_dashboard_stats() {
+	$settings      = mp_headless_get_ga4_settings();
+	$cache_key     = 'mp_headless_ga4_dashboard_' . md5((string) $settings['property_id']);
+	$cached_stats  = get_transient($cache_key);
+
+	if (is_array($cached_stats) && ! empty($cached_stats)) {
+		return $cached_stats;
+	}
+
+	if (empty($settings['property_id'])) {
+		return new WP_Error('mp_headless_ga4_property_missing', __('Add the GA4 Property ID in Med Platform Headless settings to load dashboard traffic stats.', 'medplatform-headless'));
+	}
+
+	if (empty($settings['service_account']['client_email']) || empty($settings['service_account']['private_key'])) {
+		return new WP_Error('mp_headless_ga4_service_account_missing', __('Paste a valid Google service-account JSON key in Med Platform Headless settings to load dashboard traffic stats.', 'medplatform-headless'));
+	}
+
+	$summary_body = array(
+		'metrics' => array(
+			array('name' => 'activeUsers'),
+			array('name' => 'sessions'),
+			array('name' => 'screenPageViews'),
+		),
+	);
+	$last_7_body  = $summary_body;
+	$last_7_body['dateRanges'] = array(
+		array(
+			'startDate' => '7daysAgo',
+			'endDate'   => 'today',
+		),
+	);
+	$last_30_body = $summary_body;
+	$last_30_body['dateRanges'] = array(
+		array(
+			'startDate' => '30daysAgo',
+			'endDate'   => 'today',
+		),
+	);
+	$top_pages_body = array(
+		'dateRanges' => array(
+			array(
+				'startDate' => '30daysAgo',
+				'endDate'   => 'today',
+			),
+		),
+		'dimensions' => array(
+			array('name' => 'pagePath'),
+		),
+		'metrics'    => array(
+			array('name' => 'screenPageViews'),
+		),
+		'dimensionFilter' => array(
+			'filter' => array(
+				'fieldName'    => 'pagePath',
+				'stringFilter' => array(
+					'matchType' => 'BEGINS_WITH',
+					'value'     => '/',
+				),
+			),
+		),
+		'orderBys' => array(
+			array(
+				'metric' => array(
+					'metricName' => 'screenPageViews',
+				),
+				'desc'   => true,
+			),
+		),
+		'limit' => 5,
+	);
+
+	$last_7_report   = mp_headless_run_ga4_report($last_7_body);
+	$last_30_report  = mp_headless_run_ga4_report($last_30_body);
+	$top_pages_report = mp_headless_run_ga4_report($top_pages_body);
+
+	foreach (array($last_7_report, $last_30_report, $top_pages_report) as $report) {
+		if (is_wp_error($report)) {
+			return $report;
+		}
+	}
+
+	$top_pages = array();
+	foreach ((array) ($top_pages_report['rows'] ?? array()) as $row) {
+		$path  = trim((string) ($row['dimensionValues'][0]['value'] ?? ''));
+		$views = (int) ($row['metricValues'][0]['value'] ?? 0);
+
+		if ($path === '') {
+			continue;
+		}
+
+		$top_pages[] = array(
+			'path'  => $path,
+			'views' => $views,
+		);
+	}
+
+	$stats = array(
+		'property_id' => (string) $settings['property_id'],
+		'last_7_days' => mp_headless_parse_ga4_metric_row($last_7_report),
+		'last_30_days' => mp_headless_parse_ga4_metric_row($last_30_report),
+		'top_pages'   => $top_pages,
+		'fetched_at'  => time(),
+	);
+
+	set_transient($cache_key, $stats, 15 * MINUTE_IN_SECONDS);
+
+	return $stats;
+}
+
 function mp_headless_get_download_dashboard_stats() {
 	$publication_ids = get_posts(
 		array(
@@ -5322,6 +5683,65 @@ function mp_headless_render_download_dashboard_widget() {
 	<?php
 }
 
+function mp_headless_render_ga4_dashboard_widget() {
+	$stats        = mp_headless_get_ga4_dashboard_stats();
+	$settings_url = mp_headless_get_ga4_settings_url();
+
+	if (is_wp_error($stats)) :
+		?>
+		<p style="margin:0 0 10px; color:#50575e;"><?php esc_html_e('This widget reads GA4 traffic reports for the Astro frontend. It does not inject any tracking code.', 'medplatform-headless'); ?></p>
+		<p style="margin:0 0 10px; color:#b32d2e;"><?php echo esc_html($stats->get_error_message()); ?></p>
+		<p style="margin:0;">
+			<a class="button button-secondary" href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Open Med Platform Headless Settings', 'medplatform-headless'); ?></a>
+		</p>
+		<?php
+		return;
+	endif;
+
+	$last_7_days  = is_array($stats['last_7_days'] ?? null) ? $stats['last_7_days'] : array();
+	$last_30_days = is_array($stats['last_30_days'] ?? null) ? $stats['last_30_days'] : array();
+	$top_pages    = is_array($stats['top_pages'] ?? null) ? $stats['top_pages'] : array();
+	$fetched_at   = ! empty($stats['fetched_at']) ? wp_date(get_option('date_format') . ' ' . get_option('time_format'), (int) $stats['fetched_at']) : '';
+	?>
+	<div style="display:grid; gap:14px;">
+		<div style="display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+			<div style="border:1px solid #dcdcde; background:#fff; padding:14px;">
+				<p style="margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#50575e;"><?php esc_html_e('Last 7 Days', 'medplatform-headless'); ?></p>
+				<p style="margin:10px 0 0; font-size:24px; font-weight:700; line-height:1;"><?php echo esc_html(number_format_i18n((int) ($last_7_days['users'] ?? 0))); ?></p>
+				<p style="margin:6px 0 0; color:#50575e;"><?php esc_html_e('Active users', 'medplatform-headless'); ?></p>
+				<p style="margin:10px 0 0; color:#1d2327;"><?php echo esc_html(sprintf(__('Sessions: %s', 'medplatform-headless'), number_format_i18n((int) ($last_7_days['sessions'] ?? 0)))); ?></p>
+				<p style="margin:4px 0 0; color:#1d2327;"><?php echo esc_html(sprintf(__('Views: %s', 'medplatform-headless'), number_format_i18n((int) ($last_7_days['views'] ?? 0)))); ?></p>
+			</div>
+			<div style="border:1px solid #dcdcde; background:#fff; padding:14px;">
+				<p style="margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#50575e;"><?php esc_html_e('Last 30 Days', 'medplatform-headless'); ?></p>
+				<p style="margin:10px 0 0; font-size:24px; font-weight:700; line-height:1;"><?php echo esc_html(number_format_i18n((int) ($last_30_days['users'] ?? 0))); ?></p>
+				<p style="margin:6px 0 0; color:#50575e;"><?php esc_html_e('Active users', 'medplatform-headless'); ?></p>
+				<p style="margin:10px 0 0; color:#1d2327;"><?php echo esc_html(sprintf(__('Sessions: %s', 'medplatform-headless'), number_format_i18n((int) ($last_30_days['sessions'] ?? 0)))); ?></p>
+				<p style="margin:4px 0 0; color:#1d2327;"><?php echo esc_html(sprintf(__('Views: %s', 'medplatform-headless'), number_format_i18n((int) ($last_30_days['views'] ?? 0)))); ?></p>
+			</div>
+		</div>
+		<div style="border:1px solid #dcdcde; background:#fff; padding:14px;">
+			<p style="margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#50575e;"><?php esc_html_e('Top Pages', 'medplatform-headless'); ?></p>
+			<?php if (! empty($top_pages)) : ?>
+				<ol style="margin:12px 0 0 18px;">
+					<?php foreach ($top_pages as $page) : ?>
+						<li style="margin-bottom:8px;">
+							<code><?php echo esc_html((string) ($page['path'] ?? '')); ?></code>
+							<span style="color:#50575e;"><?php echo esc_html(sprintf(__(' (%s views)', 'medplatform-headless'), number_format_i18n((int) ($page['views'] ?? 0)))); ?></span>
+						</li>
+					<?php endforeach; ?>
+				</ol>
+			<?php else : ?>
+				<p style="margin:12px 0 0; color:#50575e;"><?php esc_html_e('No page-view data is available yet.', 'medplatform-headless'); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php if ($fetched_at !== '') : ?>
+			<p style="margin:0; color:#646970;"><?php echo esc_html(sprintf(__('Last refreshed: %s', 'medplatform-headless'), $fetched_at)); ?></p>
+		<?php endif; ?>
+	</div>
+	<?php
+}
+
 function mp_headless_register_dashboard_widgets() {
 	if (! current_user_can('edit_posts')) {
 		return;
@@ -5331,6 +5751,12 @@ function mp_headless_register_dashboard_widgets() {
 		'mp_headless_download_stats',
 		__('Publication Download Stats', 'medplatform-headless'),
 		'mp_headless_render_download_dashboard_widget'
+	);
+
+	wp_add_dashboard_widget(
+		'mp_headless_ga4_stats',
+		__('Website Visit Stats (GA4)', 'medplatform-headless'),
+		'mp_headless_render_ga4_dashboard_widget'
 	);
 }
 add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');
