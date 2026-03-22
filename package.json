@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "dev:live-cms": "WORDPRESS_API_URL=https://wheat-octopus-390597.hostingersite.com/wp-json astro dev",
     "dev:headless": "npm run wp:setup && concurrently -k -n WP,ASTRO -c cyan,magenta \"npm:wp:serve\" \"npm:dev\"",
     "build": "astro build",
     "preview": "astro preview",

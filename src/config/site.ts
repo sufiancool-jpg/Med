@@ -4,7 +4,7 @@ export const siteConfig = {
   name: "Mediterranean Platform",
   description:
     "Research, dialogue, and educational programme promoting informed policymaking and advocacy across the Mediterranean space.",
-  url: "https://mediterranean-platform.org",
+  url: "https://mediplatform.org",
   lang: "en",
   locale: "en_US",
   author: "Mediterranean Platform",

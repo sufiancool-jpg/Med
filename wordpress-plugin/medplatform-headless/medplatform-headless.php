@@ -374,7 +374,7 @@ function mp_headless_get_frontend_base_url() {
 		return 'http://localhost:4321';
 	}
 
-	return 'https://mediterranean-platform.org';
+	return 'https://mediplatform.org';
 }
 
 function mp_headless_get_frontend_url($path = '/') {
