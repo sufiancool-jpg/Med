@@ -112,22 +112,22 @@ const getTitleSizeClass = (title: string) => {
                 <div class="max-w-[86%] text-left">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
-                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-light uppercase tracking-[0.08em] leading-none text-white sm:px-2.5 sm:py-1 sm:text-[11px]">
+                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase tracking-[0.08em] leading-none text-white sm:px-2.5 sm:py-1 sm:text-[11px]">
                         {item.category}
                       </span>
                     )}
                     {item.hashtags && (
-                      <p class="line-clamp-1 text-[10px] font-sans font-light uppercase tracking-[0.08em] text-white sm:text-[11px] md:text-[13px]">
+                      <p class="line-clamp-1 text-[10px] font-sans font-semibold uppercase tracking-[0.08em] text-white sm:text-[11px] md:text-[13px]">
                         {item.hashtags}
                       </p>
                     )}
                   </div>
-                  <p class="mt-2 text-[13px] font-sans font-light uppercase tracking-[0.08em] leading-none text-white sm:text-sm">
+                  <p class="mt-2 text-[13px] font-sans font-semibold uppercase tracking-[0.08em] leading-none text-white sm:text-sm">
                     <span data-ui-i18n="hero.by">By</span> {item.author}
                   </p>
                   <h3
                     class:list={[
-                      "mt-2 font-sans font-bold uppercase tracking-[0.08em] leading-tight text-white [overflow-wrap:anywhere]",
+                      "mt-2 font-sans font-semibold uppercase tracking-[0.08em] leading-tight text-white [overflow-wrap:anywhere]",
                       getTitleSizeClass(item.title),
                     ]}
                   >
