@@ -1,6 +1,5 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Features from "../components/widgets/Features.astro";
 import Content from "../components/widgets/Content.astro";
 import Form from "../components/ui/Form.astro";
 
@@ -20,50 +19,6 @@ const contactText = [
   <div
     class="reveal mx-auto mb-12 max-w-xl border border-border bg-card p-8 shadow-sm md:mb-16"
   >
-    <Form />
+    <Form recipient="info@mediplatform.org" />
   </div>
-  <Features
-    tagline="Contact Information"
-    title="How to Reach the Team"
-    subtitle="Direct channels for events, publications, and policy engagement."
-    classes={{ container: "pt-0 md:pt-0" }}
-    features={[
-      {
-        title: "Address",
-        description: "Via di Villa Emiliani 14, 00197 Rome, Italy",
-        icon: "lucide:map-pin",
-        iconClass: "bg-primary/10 text-primary",
-      },
-      {
-        title: "Telephone",
-        description: "(+39) 06 8522 5052",
-        icon: "lucide:phone",
-        iconClass: "bg-accent/20 text-primary",
-      },
-      {
-        title: "Mailing List",
-        description: "Subscription available for publications and event updates",
-        icon: "lucide:mail",
-        iconClass: "bg-primary/10 text-primary",
-      },
-      {
-        title: "Publications",
-        description: "Policy Paper, Policy Brief, Research Report, E-Book, Series, and Take-Aways",
-        icon: "lucide:file-text",
-        iconClass: "bg-accent/20 text-primary",
-      },
-      {
-        title: "Events",
-        description: "Events, Mediterranean Talks, African Talks, Roundtable, and Public Lecture",
-        icon: "lucide:calendar-days",
-        iconClass: "bg-primary/10 text-primary",
-      },
-      {
-        title: "Projects",
-        description: "Libya Platform, Africa Nexus, and Gulf Platform",
-        icon: "lucide:network",
-        iconClass: "bg-accent/20 text-primary",
-      },
-    ]}
-  />
 </BaseLayout>

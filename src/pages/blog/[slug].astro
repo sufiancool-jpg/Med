@@ -262,11 +262,11 @@ const metadata = {
           </div>
 
           {publication.image && (
-            <div class="mt-8 overflow-hidden border border-black/12 bg-white">
+            <div class="mt-8 max-w-4xl overflow-hidden border border-black/12 bg-[#f5f6f2] p-4 sm:p-5">
               <img
                 src={publication.image}
                 alt={publication.title}
-                class="aspect-[5/4] w-full object-cover"
+                class="mx-auto max-h-[32rem] w-auto max-w-full object-contain"
               />
             </div>
           )}

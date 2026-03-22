@@ -4,15 +4,25 @@ import Button from "./Button.astro";
 interface Props {
   action?: string;
   method?: "GET" | "POST";
+  recipient?: string;
 }
 
-const { action = "#", method = "POST" } = Astro.props;
+const { action, method = "GET", recipient = "info@mediplatform.org" } = Astro.props;
+const resolvedAction = action || `mailto:${recipient}`;
 ---
 
-<form action={action} method={method} class="space-y-6">
+<form
+  action={resolvedAction}
+  method={method}
+  data-contact-form
+  data-contact-recipient={recipient}
+  class="space-y-6"
+>
   <div>
-    <label for="name" class="block text-sm font-medium text-foreground/80 mb-2"
-      >Name</label
+    <label
+      for="name"
+      data-ui-i18n="contact.name"
+      class="mb-2 block text-sm font-medium text-foreground/80">Name</label
     >
     <input
       type="text"
@@ -22,11 +32,14 @@ const { action = "#", method = "POST" } = Astro.props;
       required
       class="block w-full rounded-xl border-border bg-muted/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all border outline-none focus:ring-4"
       placeholder="Your name"
+      data-ui-i18n-placeholder="contact.namePlaceholder"
     />
   </div>
   <div>
-    <label for="email" class="block text-sm font-medium text-foreground/80 mb-2"
-      >Email</label
+    <label
+      for="email"
+      data-ui-i18n="contact.email"
+      class="mb-2 block text-sm font-medium text-foreground/80">Email</label
     >
     <input
       type="email"
@@ -36,12 +49,32 @@ const { action = "#", method = "POST" } = Astro.props;
       required
       class="block w-full rounded-xl border-border bg-muted/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all border outline-none focus:ring-4"
       placeholder="your@email.com"
+      data-ui-i18n-placeholder="contact.emailPlaceholder"
     />
   </div>
   <div>
     <label
+      for="topic"
+      data-ui-i18n="contact.area"
+      class="mb-2 block text-sm font-medium text-foreground/80">Area of contact</label
+    >
+    <select
+      name="topic"
+      id="topic"
+      required
+      class="block w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
+    >
+      <option value="" data-ui-i18n="contact.areaPlaceholder">Choose area of contact</option>
+      <option value="general" data-ui-i18n="contact.area.general">General info</option>
+      <option value="volunteer" data-ui-i18n="contact.area.volunteer">Volunteer</option>
+      <option value="career" data-ui-i18n="contact.area.career">Career</option>
+    </select>
+  </div>
+  <div>
+    <label
       for="message"
-      class="block text-sm font-medium text-foreground/80 mb-2">Message</label
+      data-ui-i18n="contact.message"
+      class="mb-2 block text-sm font-medium text-foreground/80">Message</label
     >
     <textarea
       name="message"
@@ -49,11 +82,71 @@ const { action = "#", method = "POST" } = Astro.props;
       rows="4"
       required
       class="block w-full rounded-xl border-border bg-muted/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all border outline-none focus:ring-4 resize-none"
-      placeholder="How can we help you?"></textarea>
+      placeholder="How can we help you?"
+      data-ui-i18n-placeholder="contact.messagePlaceholder"></textarea>
   </div>
   <div>
     <Button type="submit" size="lg" class="w-full sm:w-auto">
-      Send message
+      <span data-ui-i18n="contact.send">Send message</span>
     </Button>
   </div>
 </form>
+
+<script is:inline>
+  const runtime = window;
+
+  if (!runtime.__mpInitContactForms) {
+    runtime.__mpInitContactForms = () => {
+      document.querySelectorAll("[data-contact-form]").forEach((form) => {
+        if (!(form instanceof HTMLFormElement) || form.dataset.bound === "true") {
+          return;
+        }
+
+        form.dataset.bound = "true";
+
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+
+          if (!form.reportValidity()) {
+            return;
+          }
+
+          const recipient = form.dataset.contactRecipient || "info@mediplatform.org";
+          const formData = new FormData(form);
+          const name = String(formData.get("name") || "").trim();
+          const email = String(formData.get("email") || "").trim();
+          const message = String(formData.get("message") || "").trim();
+          const topicSelect = form.querySelector("#topic");
+          const topicLabel =
+            topicSelect instanceof HTMLSelectElement
+              ? topicSelect.selectedOptions[0]?.textContent?.trim() || topicSelect.value
+              : String(formData.get("topic") || "").trim();
+
+          const subject = `Website contact: ${topicLabel}`;
+          const body = [
+            `Name: ${name}`,
+            `Email: ${email}`,
+            `Area: ${topicLabel}`,
+            "",
+            message,
+          ].join("\n");
+
+          runtime.location.href =
+            `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        });
+      });
+    };
+
+    const bootContactForms = () => runtime.__mpInitContactForms?.();
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", bootContactForms, { once: true });
+    } else {
+      bootContactForms();
+    }
+
+    document.addEventListener("astro:after-swap", bootContactForms);
+  } else {
+    runtime.__mpInitContactForms?.();
+  }
+</script>

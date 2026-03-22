@@ -139,6 +139,8 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
         const applyUiLanguage = () => {
           const language = getStoredLanguage();
           document.documentElement.dataset.uiLanguage = language;
+          document.documentElement.lang = language;
+          document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
 
           document.querySelectorAll("[data-ui-i18n]").forEach((element) => {
             const key = element.getAttribute("data-ui-i18n");

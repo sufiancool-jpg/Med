@@ -79,41 +79,75 @@ const metadata = {
 
       {!project.hideProjectBar && project.stagePoints.length > 0 && (
         <div class="mx-auto mt-10 max-w-6xl">
-        <div class="flex items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-primary/58">
-          <span>{project.stagePoints[0]}</span>
-          <span>{project.stagePoints[project.stagePoints.length - 1]}</span>
-        </div>
-        <div class="relative mt-5">
-          <div class="absolute left-0 right-0 top-[0.6rem] h-[3px] bg-black/10"></div>
-          <div
-            class="absolute left-0 top-[0.6rem] h-[3px]"
-            style={`width:${timelineProgress}%;background:${project.progressColor};`}
-          ></div>
-          <div
-            class="relative grid gap-4 overflow-x-auto pb-1"
-            style={`grid-template-columns:repeat(${Math.max(stageItems.length, 1)},minmax(7rem,1fr));`}
-          >
-            {stageItems.map((item) => (
-              <div class="text-center">
-                <div
-                  class:list={[
-                    "mx-auto h-5 w-5 rounded-full border-2 bg-white",
-                    item.isActive ? "border-transparent" : "border-black/18",
-                  ]}
-                  style={item.isActive ? `background:${project.progressColor};` : undefined}
-                ></div>
-                <p
-                  class:list={[
-                    "mt-4 text-[0.74rem] font-semibold uppercase tracking-[0.1em]",
-                    item.isCurrent ? "text-primary" : "text-primary/52",
-                  ]}
-                >
-                  {item.stage}
-                </p>
+          <div class="space-y-4 md:hidden">
+            {stageItems.map((item, index) => (
+              <div class="grid grid-cols-[1.2rem_minmax(0,1fr)] gap-4">
+                <div class="flex flex-col items-center">
+                  <div
+                    class:list={[
+                      "h-5 w-5 rounded-full border-2 bg-white",
+                      item.isActive ? "border-transparent" : "border-black/18",
+                    ]}
+                    style={item.isActive ? `background:${project.progressColor};` : undefined}
+                  ></div>
+                  {index < stageItems.length - 1 && (
+                    <div
+                      class="mt-2 w-[3px] flex-1 rounded-full"
+                      style={`min-height:3.25rem;background:${index < currentStageIndex ? project.progressColor : "rgba(10,18,32,0.1)"};`}
+                    ></div>
+                  )}
+                </div>
+                <div class="pb-3">
+                  <p
+                    class:list={[
+                      "text-[0.76rem] font-semibold uppercase tracking-[0.1em]",
+                      item.isCurrent ? "text-primary" : "text-primary/52",
+                    ]}
+                  >
+                    {item.stage}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+
+          <div class="hidden md:block">
+            <div class="flex items-center justify-between text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-primary/58">
+              <span>{project.stagePoints[0]}</span>
+              <span>{project.stagePoints[project.stagePoints.length - 1]}</span>
+            </div>
+            <div class="relative mt-5">
+              <div class="absolute left-0 right-0 top-[0.6rem] h-[3px] bg-black/10"></div>
+              <div
+                class="absolute left-0 top-[0.6rem] h-[3px]"
+                style={`width:${timelineProgress}%;background:${project.progressColor};`}
+              ></div>
+              <div
+                class="relative grid gap-4 pb-1"
+                style={`grid-template-columns:repeat(${Math.max(stageItems.length, 1)},minmax(7rem,1fr));`}
+              >
+                {stageItems.map((item) => (
+                  <div class="text-center">
+                    <div
+                      class:list={[
+                        "mx-auto h-5 w-5 rounded-full border-2 bg-white",
+                        item.isActive ? "border-transparent" : "border-black/18",
+                      ]}
+                      style={item.isActive ? `background:${project.progressColor};` : undefined}
+                    ></div>
+                    <p
+                      class:list={[
+                        "mt-4 text-[0.74rem] font-semibold uppercase tracking-[0.1em]",
+                        item.isCurrent ? "text-primary" : "text-primary/52",
+                      ]}
+                    >
+                      {item.stage}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
