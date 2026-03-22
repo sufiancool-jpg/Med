@@ -1,6 +1,6 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import fs from "node:fs/promises";
 
 const rootDir = process.cwd();
 const wpDir = path.join(rootDir, ".wp-local");
@@ -87,16 +87,11 @@ wp("option", "update", "blog_public", "0", `--path=${wpDir}`);
 run("node", ["scripts/generate-wordpress-seed.mjs"]);
 wp("eval-file", "scripts/seed-wordpress.php", `--path=${wpDir}`);
 
-const envPath = path.join(rootDir, ".env");
-try {
-  await fs.access(envPath);
-} catch {
-  await fs.writeFile(envPath, `WORDPRESS_API_URL=${siteUrl}/wp-json\n`, "utf8");
-}
-
 console.log("");
 console.log("Local WordPress is ready.");
 console.log(`WordPress admin: ${siteUrl}/wp-admin`);
 console.log(`Username: ${adminUser}`);
 console.log(`Password: ${adminPassword}`);
-console.log("Run `npm run wp:serve` to start WordPress and `npm run dev` for Astro.");
+console.log("Run `npm run wp:serve` to start local WordPress.");
+console.log("Run `npm run dev:local-cms` to preview Astro against local WordPress.");
+console.log("Run `npm run dev` or `npm run dev:live-cms` to keep Astro pointed at the live CMS.");
