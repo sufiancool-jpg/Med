@@ -20,6 +20,7 @@ const mainMenuLinks = [
 ];
 
 const siteSettings = await getSiteSettings();
+const isHomepage = Astro.url.pathname === "/";
 const socialLinks = [
   {
     label: "LinkedIn",
@@ -53,13 +54,24 @@ const socialLinks = [
     class="relative flex w-full items-center justify-between overflow-visible px-4 py-2 sm:px-6 lg:px-8"
   >
     <div class="flex items-center">
-      <a href="/" class="mr-3 inline-flex items-center md:hidden" aria-label="Mediterranean Platform home">
+      <a
+        href="/"
+        class="mr-3 inline-flex items-center gap-2 md:hidden"
+        aria-label="Mediterranean Platform home"
+      >
         <img
           src="/logo_Transparent.png"
           alt="Mediterranean Platform"
           class="h-10 w-auto object-contain"
           loading="eager"
         />
+        {
+          isHomepage && (
+            <span class="max-w-[10rem] text-[0.8rem] font-semibold leading-[1.1] text-primary">
+              The Mediterranean Platform
+            </span>
+          )
+        }
       </a>
       <div class="hidden items-center gap-5 md:flex">
         {
