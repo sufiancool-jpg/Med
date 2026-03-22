@@ -174,11 +174,30 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
 
         player.dataset.bound = "true";
 
+        const setPlaybackState = (isPlaying) => {
+          if (playIcon instanceof HTMLElement) {
+            playIcon.classList.toggle("hidden", isPlaying);
+          }
+
+          if (pauseIcon instanceof HTMLElement) {
+            pauseIcon.classList.toggle("hidden", !isPlaying);
+          }
+
+          toggle.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+          toggle.setAttribute(
+            "aria-label",
+            isPlaying
+              ? translateUi("audio.pausePreview", "Pause audio preview")
+              : translateUi("audio.playPreview", "Play audio preview"),
+          );
+        };
+
         const syncUI = () => {
           const duration = audio.duration || 0;
           const current = audio.currentTime || 0;
           const progress = duration > 0 ? current / duration : 0;
           const activeBars = Math.round(progress * waveBars.length);
+          const isPlaying = !audio.paused && !audio.ended;
 
           progressFill.style.width = `${progress * 100}%`;
 
@@ -190,20 +209,7 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
             durationTime.textContent = formatTime(duration || 24);
           }
 
-          if (playIcon instanceof HTMLElement) {
-            playIcon.classList.toggle("hidden", !audio.paused);
-          }
-
-          if (pauseIcon instanceof HTMLElement) {
-            pauseIcon.classList.toggle("hidden", audio.paused);
-          }
-
-          toggle.setAttribute(
-            "aria-label",
-            audio.paused
-              ? translateUi("audio.playPreview", "Play audio preview")
-              : translateUi("audio.pausePreview", "Pause audio preview"),
-          );
+          setPlaybackState(isPlaying);
           progressRail.setAttribute(
             "aria-label",
             translateUi("audio.seekPreview", "Seek audio preview"),
@@ -215,11 +221,36 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
           });
         };
 
+        player.__mpSyncAudioPreview = syncUI;
+
         toggle.addEventListener("click", () => {
           if (audio.paused) {
-            audio.play().catch(() => {});
+            document.querySelectorAll("[data-audio-preview]").forEach((otherPlayer) => {
+              if (!(otherPlayer instanceof HTMLElement) || otherPlayer === player) return;
+
+              const otherAudio = otherPlayer.querySelector("[data-audio-el]");
+              if (otherAudio instanceof HTMLAudioElement && !otherAudio.paused) {
+                otherAudio.pause();
+              }
+
+              if (typeof otherPlayer.__mpSyncAudioPreview === "function") {
+                otherPlayer.__mpSyncAudioPreview();
+              }
+            });
+
+            audio
+              .play()
+              .then(() => {
+                setPlaybackState(true);
+                syncUI();
+              })
+              .catch(() => {
+                syncUI();
+              });
           } else {
             audio.pause();
+            setPlaybackState(false);
+            syncUI();
           }
         });
 
@@ -235,10 +266,12 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
         audio.addEventListener("loadedmetadata", syncUI);
         audio.addEventListener("timeupdate", syncUI);
         audio.addEventListener("play", syncUI);
+        audio.addEventListener("playing", syncUI);
         audio.addEventListener("pause", syncUI);
         document.addEventListener("mp:ui-language-change", syncUI);
         audio.addEventListener("ended", () => {
           audio.currentTime = 0;
+          setPlaybackState(false);
           syncUI();
         });
 
