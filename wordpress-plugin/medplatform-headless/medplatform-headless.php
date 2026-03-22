@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.8
+ * Version: 0.1.9
  * Author: Codex
  */
 
@@ -165,12 +165,26 @@ function mp_headless_normalize_private_key($private_key) {
 
 	$private_key = str_replace(array("\r\n", "\r"), "\n", $private_key);
 	$private_key = str_replace('\\n', "\n", $private_key);
+	$key_type    = 'PRIVATE KEY';
 
-	if (substr($private_key, -1) !== "\n") {
-		$private_key .= "\n";
+	if (preg_match('/BEGIN ([A-Z ]+?)-----/', $private_key, $matches)) {
+		$key_type = trim((string) ($matches[1] ?? 'PRIVATE KEY'));
 	}
 
-	return $private_key;
+	$body = preg_replace('/-----BEGIN [A-Z ]+-----/', '', $private_key);
+	$body = preg_replace('/-----END [A-Z ]+-----/', '', (string) $body);
+	$body = preg_replace('/\s+/', '', (string) $body);
+
+	if ($body === '') {
+		return '';
+	}
+
+	return sprintf(
+		"-----BEGIN %s-----\n%s-----END %s-----\n",
+		$key_type,
+		chunk_split($body, 64, "\n"),
+		$key_type
+	);
 }
 
 function mp_headless_sanitize_ga4_service_account_json($value) {
@@ -237,7 +251,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.8',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.9',
 	);
 }
 
@@ -5444,6 +5458,11 @@ function mp_headless_get_ga4_access_token() {
 	);
 	$unsigned  = implode('.', $segments);
 	$signature = '';
+
+	while (openssl_error_string()) {
+		continue;
+	}
+
 	$key       = openssl_pkey_get_private($private_key);
 
 	if (! $key) {
