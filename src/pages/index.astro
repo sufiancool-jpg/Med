@@ -87,6 +87,8 @@ const activityThemes = homepageProjects.map((project) => ({
   hoverSummary: "rgba(255,255,255,0.88)",
   hoverIcon: "rgba(255,255,255,0.94)",
 }));
+const shouldCenterLastHomepageProject =
+  activityThemes.length > 3 && activityThemes.length % 3 === 1;
 
 const midPageSliderItems = homepageSelections.sliderPublications.map((publication) => ({
   title: publication.title,
@@ -522,11 +524,11 @@ const metadata = {
 
   <section
     id="home-latest-slider"
-    style="background-color:#d8e9e3;background-image:linear-gradient(180deg,#d8e9e3 0%,#d8e9e3 calc(100% - 88px),#eaf3f0 calc(100% - 34px),#ffffff 100%);"
-    class="flex flex-col overflow-hidden bg-[#d8e9e3] pb-4 md:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:pb-[var(--announce-h,48px)]"
+    style="background-color:#d6e8e2;background-image:linear-gradient(180deg,#d6e8e2 0%,#d6e8e2 calc(100% - 120px),#e3f0eb calc(100% - 62px),#ffffff 100%);"
+    class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4 md:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:pb-[var(--announce-h,48px)]"
   >
     {audioRelease && (
-      <div class="bg-[#d8e9e3] md:min-h-0 md:flex-1 md:basis-0">
+      <div class="bg-[#d6e8e2] md:min-h-0 md:flex-1 md:basis-0">
         <div class="w-full px-4 py-4 sm:px-6 md:h-full md:overflow-hidden md:py-5 lg:px-8">
           <article class="grid grid-cols-1 gap-5 md:h-full md:min-h-0 md:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] md:items-center md:gap-8">
             <div class="flex min-h-0 flex-col justify-start md:justify-center md:pr-4">
@@ -737,12 +739,17 @@ const metadata = {
         </p>
       </div>
 
-      <div class="grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
-        {activityThemes.map((item) => (
+      <div class="grid gap-px border border-[#e7e7e6] bg-[#e7e7e6] sm:grid-cols-2 lg:grid-cols-3">
+        {activityThemes.map((item, index) => (
           <article
             data-project-card
             style={`--project-hover-bg:${item.hoverBg};--project-hover-title:${item.hoverTitle};--project-hover-meta:${item.hoverMeta};--project-hover-summary:${item.hoverSummary};--project-hover-icon:${item.hoverIcon};`}
-            class="group relative flex overflow-hidden bg-background p-5 transition-colors duration-300 md:p-6"
+            class:list={[
+              "group relative flex overflow-hidden bg-background p-5 transition-colors duration-300 md:p-6",
+              shouldCenterLastHomepageProject &&
+                index === activityThemes.length - 1 &&
+                "lg:col-start-2",
+            ]}
           >
             <div
               data-project-bgicon
