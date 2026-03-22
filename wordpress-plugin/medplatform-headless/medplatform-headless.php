@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.9
+ * Version: 0.1.10
  * Author: Codex
  */
 
@@ -251,7 +251,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.9',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.10',
 	);
 }
 
@@ -5417,6 +5417,24 @@ function mp_headless_base64url_encode($value) {
 	return rtrim(strtr(base64_encode((string) $value), '+/', '-_'), '=');
 }
 
+function mp_headless_load_private_key_resource($private_key) {
+	$key = openssl_pkey_get_private($private_key);
+	if ($key) {
+		return $key;
+	}
+
+	$temp_file = wp_tempnam('mp-headless-ga4-key');
+	if (! $temp_file) {
+		return false;
+	}
+
+	file_put_contents($temp_file, $private_key);
+	$key = openssl_pkey_get_private('file://' . $temp_file);
+	@unlink($temp_file);
+
+	return $key;
+}
+
 function mp_headless_get_ga4_access_token() {
 	$settings        = mp_headless_get_ga4_settings();
 	$service_account = $settings['service_account'];
@@ -5463,7 +5481,7 @@ function mp_headless_get_ga4_access_token() {
 		continue;
 	}
 
-	$key       = openssl_pkey_get_private($private_key);
+	$key       = mp_headless_load_private_key_resource($private_key);
 
 	if (! $key) {
 		$errors = array();
