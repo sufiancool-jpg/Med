@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { Icon } from "astro-icon/components";
-import ProtectedEmailLink from "../components/ui/ProtectedEmailLink.astro";
 import { getTeamPeople, isDefaultProfileImage } from "../lib/site-data";
 
 const metadata = {
@@ -116,10 +115,12 @@ const partnerLogos = [
                   {member.shortBio}
                 </p>
                 {member.email && (
-                  <ProtectedEmailLink
-                    email={member.email}
+                  <a
+                    href={`mailto:${member.email}`}
                     class="mt-2.5 inline-flex text-[0.76rem] font-medium text-primary transition-colors hover:text-hover md:mt-3.5 md:text-[0.8rem]"
-                  />
+                  >
+                    {member.email}
+                  </a>
                 )}
                 {(member.linkedinUrl || member.websiteUrl) && (
                   <div class="mt-2 flex items-center gap-2.5">
