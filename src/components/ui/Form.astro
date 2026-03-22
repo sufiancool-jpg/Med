@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { action, method = "GET", recipient = "info@mediplatform.org" } = Astro.props;
+const wordpressApiUrl = (import.meta.env.WORDPRESS_API_URL ?? process.env.WORDPRESS_API_URL ?? "").replace(/\/$/, "");
+const submissionEndpoint = wordpressApiUrl ? `${wordpressApiUrl}/mp-headless/v1/contact` : "";
 const resolvedAction = action || `mailto:${recipient}`;
 ---
 
@@ -16,6 +18,7 @@ const resolvedAction = action || `mailto:${recipient}`;
   method={method}
   data-contact-form
   data-contact-recipient={recipient}
+  data-contact-endpoint={submissionEndpoint}
   class="space-y-6"
 >
   <div>
@@ -71,6 +74,17 @@ const resolvedAction = action || `mailto:${recipient}`;
     </select>
   </div>
   <div>
+    <label for="website" class="sr-only">Website</label>
+    <input
+      type="text"
+      id="website"
+      name="website"
+      tabindex="-1"
+      autocomplete="off"
+      class="hidden"
+    />
+  </div>
+  <div>
     <label
       for="message"
       data-ui-i18n="contact.message"
@@ -86,9 +100,14 @@ const resolvedAction = action || `mailto:${recipient}`;
       data-ui-i18n-placeholder="contact.messagePlaceholder"></textarea>
   </div>
   <div>
-    <Button type="submit" size="lg" class="w-full sm:w-auto">
-      <span data-ui-i18n="contact.send">Send message</span>
+    <Button type="submit" size="lg" class="w-full sm:w-auto" data-contact-submit>
+      <span data-contact-submit-label data-ui-i18n="contact.send">Send message</span>
     </Button>
+    <p
+      data-contact-status
+      hidden
+      class="mt-3 text-sm leading-6"
+    ></p>
   </div>
 </form>
 
@@ -104,24 +123,36 @@ const resolvedAction = action || `mailto:${recipient}`;
 
         form.dataset.bound = "true";
 
-        form.addEventListener("submit", (event) => {
-          event.preventDefault();
-
-          if (!form.reportValidity()) {
-            return;
+        const submitButton = form.querySelector("[data-contact-submit]");
+        const submitLabel = form.querySelector("[data-contact-submit-label]");
+        const status = form.querySelector("[data-contact-status]");
+        const translateUi = (key, fallback) =>
+          runtime.__mpTranslateUi?.(key, runtime.__mpGetUiLanguage?.()) ?? fallback;
+        const setStatus = (message, tone = "neutral") => {
+          if (!(status instanceof HTMLElement)) return;
+          status.hidden = false;
+          status.textContent = message;
+          status.classList.remove("text-primary/72", "text-emerald-700", "text-red-700");
+          status.classList.add(
+            tone === "success"
+              ? "text-emerald-700"
+              : tone === "error"
+                ? "text-red-700"
+                : "text-primary/72",
+          );
+        };
+        const setSubmitting = (isSubmitting) => {
+          if (submitButton instanceof HTMLButtonElement) {
+            submitButton.disabled = isSubmitting;
           }
 
-          const recipient = form.dataset.contactRecipient || "info@mediplatform.org";
-          const formData = new FormData(form);
-          const name = String(formData.get("name") || "").trim();
-          const email = String(formData.get("email") || "").trim();
-          const message = String(formData.get("message") || "").trim();
-          const topicSelect = form.querySelector("#topic");
-          const topicLabel =
-            topicSelect instanceof HTMLSelectElement
-              ? topicSelect.selectedOptions[0]?.textContent?.trim() || topicSelect.value
-              : String(formData.get("topic") || "").trim();
-
+          if (submitLabel instanceof HTMLElement) {
+            submitLabel.textContent = isSubmitting
+              ? translateUi("contact.sending", "Sending...")
+              : translateUi("contact.send", "Send message");
+          }
+        };
+        const buildMailtoHref = ({ recipient, name, email, topicLabel, message }) => {
           const subject = `Website contact: ${topicLabel}`;
           const body = [
             `Name: ${name}`,
@@ -131,8 +162,73 @@ const resolvedAction = action || `mailto:${recipient}`;
             message,
           ].join("\n");
 
-          runtime.location.href =
-            `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+          return `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        };
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          if (!form.reportValidity()) {
+            return;
+          }
+
+          setSubmitting(true);
+          const recipient = form.dataset.contactRecipient || "info@mediplatform.org";
+          const endpoint = form.dataset.contactEndpoint || "";
+          const formData = new FormData(form);
+          const name = String(formData.get("name") || "").trim();
+          const email = String(formData.get("email") || "").trim();
+          const message = String(formData.get("message") || "").trim();
+          const topicValue = String(formData.get("topic") || "").trim();
+          const topicSelect = form.querySelector("#topic");
+          const topicLabel =
+            topicSelect instanceof HTMLSelectElement
+              ? topicSelect.selectedOptions[0]?.textContent?.trim() || topicSelect.value
+              : topicValue;
+
+          if (status instanceof HTMLElement) {
+            status.hidden = true;
+          }
+
+          const fallbackToMailClient = () => {
+            setStatus(translateUi("contact.fallback", "Opening your email app..."));
+            runtime.location.href = buildMailtoHref({
+              recipient,
+              name,
+              email,
+              topicLabel,
+              message,
+            });
+          };
+
+          try {
+            if (!endpoint) {
+              fallbackToMailClient();
+              return;
+            }
+
+            const response = await fetch(endpoint, {
+              method: "POST",
+              body: formData,
+              mode: "cors",
+            });
+
+            if (!response.ok) {
+              throw new Error(`Contact request failed with status ${response.status}`);
+            }
+
+            const payload = await response.json().catch(() => ({}));
+            setStatus(
+              payload?.message || translateUi("contact.success", "Your message has been sent."),
+              "success",
+            );
+            form.reset();
+          } catch (error) {
+            console.error(error);
+            fallbackToMailClient();
+          } finally {
+            setSubmitting(false);
+          }
         });
       });
     };

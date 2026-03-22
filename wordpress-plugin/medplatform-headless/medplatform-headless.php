@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.3
+ * Version: 0.1.4
  * Author: Codex
  */
 
@@ -168,6 +168,36 @@ function mp_headless_set_github_deploy_status($status, $message, $reason = '') {
 
 function mp_headless_github_auto_push_enabled() {
 	return (bool) get_option('mp_headless_github_auto_push_enabled', true);
+}
+
+function mp_headless_get_contact_topic_labels() {
+	return array(
+		'general'   => __('General info', 'medplatform-headless'),
+		'volunteer' => __('Volunteer', 'medplatform-headless'),
+		'career'    => __('Career', 'medplatform-headless'),
+	);
+}
+
+function mp_headless_get_request_ip_address() {
+	$candidates = array(
+		$_SERVER['HTTP_CF_CONNECTING_IP'] ?? '',
+		$_SERVER['HTTP_X_FORWARDED_FOR'] ?? '',
+		$_SERVER['REMOTE_ADDR'] ?? '',
+	);
+
+	foreach ($candidates as $candidate) {
+		$candidate = trim((string) $candidate);
+		if ($candidate === '') {
+			continue;
+		}
+
+		$first_ip = trim((string) explode(',', $candidate)[0]);
+		if ($first_ip !== '') {
+			return sanitize_text_field($first_ip);
+		}
+	}
+
+	return '';
 }
 
 function mp_headless_trim_words($value, $limit) {
@@ -4457,6 +4487,16 @@ function mp_headless_register_rest_routes() {
 
 	register_rest_route(
 		'mp-headless/v1',
+		'/contact',
+		array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => 'mp_headless_submit_contact_message',
+			'permission_callback' => '__return_true',
+		)
+	);
+
+	register_rest_route(
+		'mp-headless/v1',
 		'/publications/(?P<id>\d+)/download-stats',
 		array(
 			'methods'             => WP_REST_Server::READABLE,
@@ -4475,6 +4515,102 @@ function mp_headless_register_rest_routes() {
 	);
 }
 add_action('rest_api_init', 'mp_headless_register_rest_routes');
+
+function mp_headless_rest_contact_cors_headers($served, $result, $request, $server) {
+	if (! $request instanceof WP_REST_Request || $request->get_route() !== '/mp-headless/v1/contact') {
+		return $served;
+	}
+
+	$frontend_base = mp_headless_get_frontend_base_url();
+	$scheme        = wp_parse_url($frontend_base, PHP_URL_SCHEME);
+	$host          = wp_parse_url($frontend_base, PHP_URL_HOST);
+
+	if ($scheme && $host && ! headers_sent()) {
+		header('Access-Control-Allow-Origin: ' . $scheme . '://' . $host);
+		header('Access-Control-Allow-Methods: POST, OPTIONS');
+		header('Access-Control-Allow-Headers: Content-Type');
+		header('Vary: Origin', false);
+	}
+
+	if ($request->get_method() === 'OPTIONS') {
+		status_header(200);
+		return true;
+	}
+
+	return $served;
+}
+add_filter('rest_pre_serve_request', 'mp_headless_rest_contact_cors_headers', 10, 4);
+
+function mp_headless_submit_contact_message(WP_REST_Request $request) {
+	$honeypot = trim((string) $request->get_param('website'));
+	if ($honeypot !== '') {
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __('Your message has been sent.', 'medplatform-headless'),
+			)
+		);
+	}
+
+	$name    = sanitize_text_field((string) $request->get_param('name'));
+	$email   = sanitize_email((string) $request->get_param('email'));
+	$topic   = sanitize_key((string) $request->get_param('topic'));
+	$message = sanitize_textarea_field((string) $request->get_param('message'));
+	$topics  = mp_headless_get_contact_topic_labels();
+
+	if ($name === '' || $email === '' || $message === '') {
+		return new WP_Error('mp_headless_contact_invalid', __('Please complete all contact fields.', 'medplatform-headless'), array('status' => 400));
+	}
+
+	if (! is_email($email)) {
+		return new WP_Error('mp_headless_contact_invalid_email', __('Please enter a valid email address.', 'medplatform-headless'), array('status' => 400));
+	}
+
+	if (! isset($topics[$topic])) {
+		return new WP_Error('mp_headless_contact_invalid_topic', __('Please choose a valid area of contact.', 'medplatform-headless'), array('status' => 400));
+	}
+
+	$rate_limit_key = '';
+	$request_ip     = mp_headless_get_request_ip_address();
+	if ($request_ip !== '') {
+		$rate_limit_key = 'mp_headless_contact_rate_' . md5($request_ip);
+		if (get_transient($rate_limit_key)) {
+			return new WP_Error('mp_headless_contact_rate_limited', __('Please wait a minute before sending another message.', 'medplatform-headless'), array('status' => 429));
+		}
+	}
+
+	$subject = sprintf('[Mediterranean Platform] %s', $topics[$topic]);
+	$body    = implode(
+		"\n",
+		array(
+			'A new contact message was submitted from mediplatform.org.',
+			'',
+			'Name: ' . $name,
+			'Email: ' . $email,
+			'Area: ' . $topics[$topic],
+			'',
+			'Message:',
+			$message,
+		)
+	);
+	$headers = array('Reply-To: ' . $name . ' <' . $email . '>');
+	$sent    = wp_mail('info@mediplatform.org', $subject, $body, $headers);
+
+	if (! $sent) {
+		return new WP_Error('mp_headless_contact_failed', __('We could not send your message right now.', 'medplatform-headless'), array('status' => 500));
+	}
+
+	if (! empty($rate_limit_key)) {
+		set_transient($rate_limit_key, 1, MINUTE_IN_SECONDS);
+	}
+
+	return rest_ensure_response(
+		array(
+			'success' => true,
+			'message' => __('Your message has been sent.', 'medplatform-headless'),
+		)
+	);
+}
 
 function mp_headless_handle_publication_download() {
 	$publication_id = intval($_GET['publication_id'] ?? 0);
@@ -4652,7 +4788,7 @@ function mp_headless_trigger_github_deploy($reason, $force = false) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $settings['token'],
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.3',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.4',
 	);
 	$existing_sha       = '';
 	$lookup_response    = wp_remote_get(
