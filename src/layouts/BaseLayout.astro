@@ -62,6 +62,16 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
     />
     <Schema type="WebSite" data={{}} />
     <slot name="head" />
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-6QBQKC5RCQ"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "G-6QBQKC5RCQ");
+    </script>
     <script is:inline>
       const getTheme = () => {
         if (
