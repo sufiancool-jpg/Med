@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.10
+ * Version: 0.1.11
  * Author: Codex
  */
 
@@ -251,7 +251,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.10',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.11',
 	);
 }
 
@@ -561,9 +561,10 @@ function mp_headless_restore_github_version_snapshot($commit_sha) {
 
 function mp_headless_get_contact_topic_labels() {
 	return array(
-		'general'   => __('General info', 'medplatform-headless'),
-		'volunteer' => __('Volunteer', 'medplatform-headless'),
-		'career'    => __('Career', 'medplatform-headless'),
+		'research_partnership' => __('Research partnership', 'medplatform-headless'),
+		'project_collaboration' => __('Project collaboration', 'medplatform-headless'),
+		'volunteer'            => __('Volunteer', 'medplatform-headless'),
+		'general'              => __('General info', 'medplatform-headless'),
 	);
 }
 
@@ -5301,11 +5302,12 @@ function mp_headless_submit_contact_message(WP_REST_Request $request) {
 		);
 	}
 
-	$name    = sanitize_text_field((string) $request->get_param('name'));
-	$email   = sanitize_email((string) $request->get_param('email'));
-	$topic   = sanitize_key((string) $request->get_param('topic'));
-	$message = sanitize_textarea_field((string) $request->get_param('message'));
-	$topics  = mp_headless_get_contact_topic_labels();
+	$name         = sanitize_text_field((string) $request->get_param('name'));
+	$email        = sanitize_email((string) $request->get_param('email'));
+	$organisation = sanitize_text_field((string) $request->get_param('organisation'));
+	$topic        = sanitize_key((string) $request->get_param('topic'));
+	$message      = sanitize_textarea_field((string) $request->get_param('message'));
+	$topics       = mp_headless_get_contact_topic_labels();
 
 	if ($name === '' || $email === '' || $message === '') {
 		return new WP_Error('mp_headless_contact_invalid', __('Please complete all contact fields.', 'medplatform-headless'), array('status' => 400));
@@ -5328,22 +5330,30 @@ function mp_headless_submit_contact_message(WP_REST_Request $request) {
 		}
 	}
 
-	$subject = sprintf('[Mediterranean Platform] %s', $topics[$topic]);
-	$body    = implode(
-		"\n",
+	$subject = sprintf('{%s} Mediterranean Platform contact', $topics[$topic]);
+	$body_lines = array(
+		'A new contact message was submitted from mediplatform.org.',
+		'',
+		'Name: ' . $name,
+		'Email: ' . $email,
+	);
+
+	if ($organisation !== '') {
+		$body_lines[] = 'Organisation / Institution: ' . $organisation;
+	}
+
+	$body_lines = array_merge(
+		$body_lines,
 		array(
-			'A new contact message was submitted from mediplatform.org.',
-			'',
-			'Name: ' . $name,
-			'Email: ' . $email,
 			'Area: ' . $topics[$topic],
 			'',
 			'Message:',
 			$message,
 		)
 	);
+	$body = implode("\n", $body_lines);
 	$headers = array('Reply-To: ' . $name . ' <' . $email . '>');
-	$sent    = wp_mail('info@mediplatform.org', $subject, $body, $headers);
+	$sent    = wp_mail('i.bertocchini@mediplatform.org', $subject, $body, $headers);
 
 	if (! $sent) {
 		return new WP_Error('mp_headless_contact_failed', __('We could not send your message right now.', 'medplatform-headless'), array('status' => 500));

@@ -7,7 +7,8 @@ interface Props {
   recipient?: string;
 }
 
-const { action, method = "GET", recipient = "info@mediplatform.org" } = Astro.props;
+const defaultRecipient = "i.bertocchini@mediplatform.org";
+const { action, method = "GET", recipient = defaultRecipient } = Astro.props;
 const wordpressApiUrl = (import.meta.env.WORDPRESS_API_URL ?? process.env.WORDPRESS_API_URL ?? "").replace(/\/$/, "");
 const submissionEndpoint = wordpressApiUrl ? `${wordpressApiUrl}/mp-headless/v1/contact` : "";
 const resolvedAction = action || `mailto:${recipient}`;
@@ -57,6 +58,22 @@ const resolvedAction = action || `mailto:${recipient}`;
   </div>
   <div>
     <label
+      for="organisation"
+      data-ui-i18n="contact.organisation"
+      class="mb-2 block text-sm font-medium text-foreground/80">Organisation / Institution</label
+    >
+    <input
+      type="text"
+      name="organisation"
+      id="organisation"
+      autocomplete="organization"
+      class="block w-full rounded-xl border-border bg-muted/50 px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 transition-all border outline-none focus:ring-4"
+      placeholder="Your organisation or institution"
+      data-ui-i18n-placeholder="contact.organisationPlaceholder"
+    />
+  </div>
+  <div>
+    <label
       for="topic"
       data-ui-i18n="contact.area"
       class="mb-2 block text-sm font-medium text-foreground/80">Area of contact</label
@@ -68,9 +85,10 @@ const resolvedAction = action || `mailto:${recipient}`;
       class="block w-full rounded-xl border border-border bg-muted/50 px-4 py-3 text-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all"
     >
       <option value="" data-ui-i18n="contact.areaPlaceholder">Choose area of contact</option>
-      <option value="general" data-ui-i18n="contact.area.general">General info</option>
+      <option value="research_partnership" data-ui-i18n="contact.area.researchPartnership">Research partnership</option>
+      <option value="project_collaboration" data-ui-i18n="contact.area.projectCollaboration">Project collaboration</option>
       <option value="volunteer" data-ui-i18n="contact.area.volunteer">Volunteer</option>
-      <option value="career" data-ui-i18n="contact.area.career">Career</option>
+      <option value="general" data-ui-i18n="contact.area.general">General info</option>
     </select>
   </div>
   <div>
@@ -113,6 +131,7 @@ const resolvedAction = action || `mailto:${recipient}`;
 
 <script is:inline>
   const runtime = window;
+  const defaultRecipient = "i.bertocchini@mediplatform.org";
 
   if (!runtime.__mpInitContactForms) {
     runtime.__mpInitContactForms = () => {
@@ -152,11 +171,12 @@ const resolvedAction = action || `mailto:${recipient}`;
               : translateUi("contact.send", "Send message");
           }
         };
-        const buildMailtoHref = ({ recipient, name, email, topicLabel, message }) => {
-          const subject = `Website contact: ${topicLabel}`;
+        const buildMailtoHref = ({ recipient, name, email, organisation, topicLabel, message }) => {
+          const subject = `{${topicLabel}} Mediterranean Platform contact`;
           const body = [
             `Name: ${name}`,
             `Email: ${email}`,
+            `Organisation / Institution: ${organisation || "-"}`,
             `Area: ${topicLabel}`,
             "",
             message,
@@ -173,11 +193,12 @@ const resolvedAction = action || `mailto:${recipient}`;
           }
 
           setSubmitting(true);
-          const recipient = form.dataset.contactRecipient || "info@mediplatform.org";
+          const recipient = form.dataset.contactRecipient || defaultRecipient;
           const endpoint = form.dataset.contactEndpoint || "";
           const formData = new FormData(form);
           const name = String(formData.get("name") || "").trim();
           const email = String(formData.get("email") || "").trim();
+          const organisation = String(formData.get("organisation") || "").trim();
           const message = String(formData.get("message") || "").trim();
           const topicValue = String(formData.get("topic") || "").trim();
           const topicSelect = form.querySelector("#topic");
@@ -196,6 +217,7 @@ const resolvedAction = action || `mailto:${recipient}`;
               recipient,
               name,
               email,
+              organisation,
               topicLabel,
               message,
             });

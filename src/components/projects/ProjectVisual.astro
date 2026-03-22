@@ -1,0 +1,40 @@
+---
+import { Icon } from "astro-icon/components";
+import { resolveProjectVisual } from "../../lib/project-visuals";
+
+interface Props {
+  slug: string;
+  cardIcon?: string;
+  class?: string;
+  strokeWidth?: number | string;
+}
+
+const { slug, cardIcon, class: className = "", strokeWidth = 1.6 } = Astro.props;
+const visual = resolveProjectVisual(slug, cardIcon);
+---
+
+{
+  visual.kind === "custom" ? (
+    <svg
+      viewBox={visual.viewBox}
+      class={className}
+      fill="none"
+      stroke="currentColor"
+      style={`stroke-width:${strokeWidth};`}
+      aria-hidden="true"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      {visual.paths.map((path) => (
+        <path d={path} vector-effect="non-scaling-stroke"></path>
+      ))}
+    </svg>
+  ) : (
+    <Icon
+      name={visual.name}
+      class={className}
+      aria-hidden="true"
+      style={`stroke-width:${strokeWidth};`}
+    />
+  )
+}

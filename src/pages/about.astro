@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { Icon } from "astro-icon/components";
+import ProtectedEmailLink from "../components/ui/ProtectedEmailLink.astro";
 import { getTeamPeople, isDefaultProfileImage } from "../lib/site-data";
 
 const metadata = {
@@ -10,9 +11,9 @@ const metadata = {
 };
 
 const aboutIntro = [
-  "The Mediterranean Platform fosters exchanges between academic, policy, and business communities across the Mediterranean and beyond, contributing to high-quality knowledge production. It promotes multidisciplinary research through a broad regional network, aiming to support better-informed decision-making and evidence-based policies, while amplifying local perspectives in international debates.",
-  "Policy dialogues are central to its work, bringing stakeholders together to address transnational issues, support mediation, and develop operational ideas for diplomatic and business strategies, especially in complex and conflict-affected contexts.",
-  "The Platform places youth at the centre of its efforts, encouraging their participation and equipping them through training and mentorship programmes to become agents of change. It also runs executive trainings and educational activities that foster knowledge exchange, skills development, and communities of practice across academic, diplomatic, and civil society circles.",
+  "The Mediterranean Platform fosters exchange among academic, policy, and business communities across the Mediterranean and beyond, contributing to the production of high-quality knowledge. Through a broad regional network, it advances multidisciplinary research to support informed decision-making and evidence-based policymaking, while amplifying local perspectives in international debates.",
+  "Policy dialogues are at the core of its work, convening stakeholders to address transnational issues, support mediation efforts, and generate operational ideas for diplomatic and business strategies, particularly in complex and conflict-affected settings.",
+  "The Platform places young people at the centre of its activities, promoting their participation and equipping them through training and mentorship programmes to become agents of change. It also offers executive training and educational activities designed to foster knowledge exchange, strengthen skills, and build communities of practice across academic, diplomatic, and civil society spheres.",
 ];
 
 const teamMembers = await getTeamPeople();
@@ -115,12 +116,10 @@ const partnerLogos = [
                   {member.shortBio}
                 </p>
                 {member.email && (
-                  <a
-                    href={`mailto:${member.email}`}
+                  <ProtectedEmailLink
+                    email={member.email}
                     class="mt-2.5 inline-flex text-[0.76rem] font-medium text-primary transition-colors hover:text-hover md:mt-3.5 md:text-[0.8rem]"
-                  >
-                    {member.email}
-                  </a>
+                  />
                 )}
                 {(member.linkedinUrl || member.websiteUrl) && (
                   <div class="mt-2 flex items-center gap-2.5">
@@ -157,20 +156,20 @@ const partnerLogos = [
 
     <section class="bg-white">
       <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 md:pb-16 lg:px-8">
-        <div class="about-cta-block flex flex-col items-start gap-4 md:gap-5">
+        <div class="about-cta-block flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[clamp(1.7rem,3.8vw,3.1rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-black">
+          <span data-ui-i18n="about.partneringPrompt">Interested in Partnering with us?</span>
           <a
-            href="/career"
-            class="inline-flex w-fit items-baseline gap-3 self-start text-[clamp(1.7rem,3.8vw,3.1rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-black transition-all hover:text-[#42b09a] hover:underline"
+            href="/contact"
+            class="inline-flex items-baseline gap-3 transition-all hover:text-[#42b09a] hover:underline"
           >
-            <span data-ui-i18n="about.joinCareers">Looking to join us? Check careers</span>
-            <span aria-hidden="true">&gt;</span>
+            <span data-ui-i18n="about.reachOut">Reach out</span>
           </a>
+          <span aria-hidden="true">&amp;</span>
           <a
             href="/volunteer"
-            class="inline-flex w-fit items-baseline gap-3 self-start text-[clamp(1.7rem,3.8vw,3.1rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-black transition-all hover:text-[#42b09a] hover:underline"
+            class="inline-flex items-baseline gap-3 transition-all hover:text-[#42b09a] hover:underline"
           >
-            <span data-ui-i18n="about.volunteer">A particular project? Volunteer</span>
-            <span aria-hidden="true">&gt;</span>
+            <span data-ui-i18n="about.volunteerNow">volunteer now</span>
           </a>
         </div>
       </div>

@@ -89,12 +89,12 @@ const {
             {items.map((item) => (
               <article class="relative w-[17rem] shrink-0 snap-start border border-black/12 bg-white">
                 <a href={item.href} class="absolute inset-0 z-10" aria-label={`Open ${item.title}`}></a>
-                <div class="h-28 overflow-hidden bg-black/5">
+                <div class="h-28 overflow-hidden bg-[#f5f6f2]">
                   <img
                     src={item.image || "/blog/welcome.webp"}
                     alt={item.title}
                     loading="lazy"
-                    class="h-full w-full object-cover"
+                    class="h-full w-full object-contain p-2"
                   />
                 </div>
                 <div class="p-4">

@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Schema from "../../components/seo/Schema.astro";
 import AudioPreviewPlayer from "../../components/widgets/AudioPreviewPlayer.astro";
 import RelatedPublicationSlider from "../../components/widgets/RelatedPublicationSlider.astro";
+import ProjectVisual from "../../components/projects/ProjectVisual.astro";
 import { Icon } from "astro-icon/components";
 import { render } from "astro:content";
 import {
@@ -218,7 +219,7 @@ const metadata = {
               )}
             </div>
 
-            <h1 class="mt-4 text-[clamp(1.4rem,3.5vw,2.9rem)] font-bold leading-[0.96] tracking-[-0.035em] text-primary">
+            <h1 class="mt-4 text-[clamp(1.26rem,3.15vw,2.6rem)] font-bold leading-[0.96] tracking-[-0.035em] text-primary">
               {publication.title}
             </h1>
 
@@ -428,9 +429,19 @@ const metadata = {
                       class="block border px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5"
                       style={`border-color:${project.color};background:${project.color};color:${getProjectButtonTextColor(project.color)};`}
                     >
-                      <p class="text-[1rem] font-semibold leading-tight">
-                        {project.title} Project
-                      </p>
+                      <div class="flex items-center gap-3">
+                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-current/20 bg-white/10">
+                          <ProjectVisual
+                            slug={project.slug}
+                            cardIcon={project.cardIcon}
+                            class="h-5 w-5"
+                            strokeWidth={1.6}
+                          />
+                        </span>
+                        <p class="text-[1rem] font-semibold leading-tight">
+                          {project.title} Project
+                        </p>
+                      </div>
                     </a>
                   ))}
                 </div>

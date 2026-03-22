@@ -237,13 +237,13 @@ const metadata = {
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
               <span data-ui-i18n="project.donors">Donors</span>
             </p>
-            <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="mt-4 grid grid-cols-1 gap-3">
               {project.donors.map((donor) => (
-                <div class="flex min-h-[4.25rem] items-center justify-center border border-black/10 bg-white p-3">
+                <div class="flex min-h-[4.75rem] items-center justify-center border border-black/10 bg-white px-4 py-3">
                   <img
                     src={donor.logo}
                     alt={donor.name}
-                    class="max-h-9 w-auto object-contain"
+                    class="max-h-12 w-auto max-w-full object-contain"
                     loading="lazy"
                   />
                 </div>

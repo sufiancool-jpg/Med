@@ -141,8 +141,13 @@ const filterGridClass = hasTypeFilter
             <a href={item.href} class="absolute inset-0 z-10" aria-label={`Open ${item.title}`}></a>
           )}
 
-          <div class="overflow-hidden">
-            <img src={item.image} alt={item.imageAlt} loading="lazy" class="h-56 w-full object-cover" />
+          <div class="overflow-hidden bg-[#f5f6f2]">
+            <img
+              src={item.image}
+              alt={item.imageAlt}
+              loading="lazy"
+              class="h-56 w-full object-contain p-2"
+            />
           </div>
 
           <div class="mt-4 flex flex-wrap items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-primary/55">

@@ -90,6 +90,7 @@ export interface PublicationSummary {
     title: string;
     href: string;
     color: string;
+    cardIcon?: string;
   }>;
   downloadTrackedHref?: string;
   downloadCountApiHref?: string;
@@ -815,6 +816,7 @@ const buildWordPressPublicationSummary = (
       title: project.title,
       href: project.href,
       color: project.color,
+      cardIcon: project.cardIcon,
     })),
     downloadTrackedHref: isPodcastOutput
       ? undefined
@@ -1042,6 +1044,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
               title: project!.title,
               href: project!.href,
               color: project!.color,
+              cardIcon: project!.cardIcon,
             }));
 
           return {
