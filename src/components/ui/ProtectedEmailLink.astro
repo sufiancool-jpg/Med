@@ -1,0 +1,70 @@
+---
+interface Props {
+  email: string;
+  class?: string;
+}
+
+const { email, class: className = "" } = Astro.props;
+
+const encodedEmail = email
+  .split("")
+  .reverse()
+  .map((character, index) => character.charCodeAt(0) + index)
+  .join(".");
+
+const noscriptLabel = email.replace("@", " [at] ").replaceAll(".", " [dot] ");
+---
+
+<button
+  type="button"
+  class:list={["cursor-pointer border-0 bg-transparent p-0 font-inherit", "text-left", className]}
+  data-protected-email-button
+  data-protected-email-value={encodedEmail}
+  data-email-opened="false"
+>
+  <span data-ui-i18n="contact.email">Email</span>
+</button>
+
+<noscript>
+  <span>{noscriptLabel}</span>
+</noscript>
+
+<script is:inline>
+  const decodeProtectedEmail = (encodedValue) => {
+    const parts = String(encodedValue || "")
+      .split(".")
+      .filter(Boolean);
+
+    return parts
+      .map((part, index) => String.fromCharCode(Number(part) - index))
+      .reverse()
+      .join("");
+  };
+
+  const bindProtectedEmailButtons = () => {
+    document.querySelectorAll("[data-protected-email-button]").forEach((element) => {
+      if (!(element instanceof HTMLButtonElement) || element.dataset.bound === "true") {
+        return;
+      }
+
+      element.dataset.bound = "true";
+
+      element.addEventListener("click", () => {
+        const email = decodeProtectedEmail(element.dataset.protectedEmailValue);
+
+        if (!email) {
+          return;
+        }
+
+        element.textContent = email;
+        element.dataset.emailOpened = "true";
+        element.setAttribute("aria-label", email);
+        element.setAttribute("title", email);
+        window.location.href = `mailto:${email}`;
+      });
+    });
+  };
+
+  bindProtectedEmailButtons();
+  document.addEventListener("astro:page-load", bindProtectedEmailButtons);
+</script>

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { Icon } from "astro-icon/components";
+import ProtectedEmailLink from "../../components/ui/ProtectedEmailLink.astro";
 import {
   DEFAULT_PROFILE_IMAGE,
   getPeople,
@@ -62,9 +63,7 @@ const metadata = {
               )}
               <div class="mt-3 space-y-2 text-[0.86rem] text-primary/72 md:mt-0 md:text-[0.92rem]">
                 {person.email && (
-                  <a href={`mailto:${person.email}`} class="block transition-colors hover:text-hover">
-                    {person.email}
-                  </a>
+                  <ProtectedEmailLink email={person.email} class="block transition-colors hover:text-hover" />
                 )}
                 {(person.linkedinUrl || person.websiteUrl) && (
                   <div class="flex items-center gap-3 pt-1">
