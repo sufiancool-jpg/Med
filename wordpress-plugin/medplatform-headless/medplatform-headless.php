@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.4
+ * Version: 0.1.5
  * Author: Codex
  */
 
@@ -168,6 +168,319 @@ function mp_headless_set_github_deploy_status($status, $message, $reason = '') {
 
 function mp_headless_github_auto_push_enabled() {
 	return (bool) get_option('mp_headless_github_auto_push_enabled', true);
+}
+
+function mp_headless_get_github_api_headers($token) {
+	return array(
+		'Accept'               => 'application/vnd.github+json',
+		'Authorization'        => 'Bearer ' . $token,
+		'X-GitHub-Api-Version' => '2022-11-28',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.5',
+	);
+}
+
+function mp_headless_is_github_trigger_commit_message($message) {
+	return strpos(trim((string) $message), 'Trigger Hostinger deploy:') === 0;
+}
+
+function mp_headless_get_github_versions_cache_key() {
+	$settings = mp_headless_get_github_deploy_settings();
+
+	return 'mp_headless_github_versions_' . md5(
+		sprintf(
+			'%s/%s@%s',
+			(string) $settings['owner'],
+			(string) $settings['repo'],
+			(string) $settings['branch']
+		)
+	);
+}
+
+function mp_headless_clear_github_versions_cache() {
+	delete_transient(mp_headless_get_github_versions_cache_key());
+}
+
+function mp_headless_get_recent_github_versions($limit = 5) {
+	$limit    = max(1, min(10, intval($limit)));
+	$settings = mp_headless_get_github_deploy_settings();
+
+	if ($settings['owner'] === '' || $settings['repo'] === '' || $settings['token'] === '') {
+		return new WP_Error('mp_headless_github_not_configured', __('GitHub auto deploy is not fully configured yet.', 'medplatform-headless'));
+	}
+
+	$cache_key = mp_headless_get_github_versions_cache_key();
+	$cached    = get_transient($cache_key);
+	if (is_array($cached) && ! empty($cached)) {
+		return array_slice($cached, 0, $limit);
+	}
+
+	$commits_url = add_query_arg(
+		array(
+			'sha'      => $settings['branch'],
+			'per_page' => 20,
+		),
+		sprintf(
+			'https://api.github.com/repos/%s/%s/commits',
+			rawurlencode($settings['owner']),
+			rawurlencode($settings['repo'])
+		)
+	);
+	$response    = wp_remote_get(
+		$commits_url,
+		array(
+			'timeout' => 20,
+			'headers' => mp_headless_get_github_api_headers($settings['token']),
+		)
+	);
+
+	if (is_wp_error($response)) {
+		return new WP_Error('mp_headless_github_versions_request_failed', $response->get_error_message());
+	}
+
+	$status_code = (int) wp_remote_retrieve_response_code($response);
+	if ($status_code !== 200) {
+		return new WP_Error(
+			'mp_headless_github_versions_bad_status',
+			sprintf(
+				/* translators: %s: HTTP status code */
+				__('GitHub history lookup returned status %s.', 'medplatform-headless'),
+				$status_code
+			)
+		);
+	}
+
+	$body = json_decode(wp_remote_retrieve_body($response), true);
+	if (! is_array($body)) {
+		return new WP_Error('mp_headless_github_versions_invalid_json', __('GitHub history lookup returned invalid JSON.', 'medplatform-headless'));
+	}
+
+	$versions = array();
+	$fallback = array();
+
+	foreach ($body as $commit) {
+		if (! is_array($commit)) {
+			continue;
+		}
+
+		$sha         = sanitize_text_field((string) ($commit['sha'] ?? ''));
+		$html_url    = esc_url_raw((string) ($commit['html_url'] ?? ''));
+		$commit_meta = isset($commit['commit']) && is_array($commit['commit']) ? $commit['commit'] : array();
+		$message     = trim((string) ($commit_meta['message'] ?? ''));
+		$title       = trim((string) strtok($message, "\n"));
+		$author_meta = isset($commit_meta['author']) && is_array($commit_meta['author']) ? $commit_meta['author'] : array();
+		$author_name = trim((string) ($author_meta['name'] ?? ''));
+		$author_date = trim((string) ($author_meta['date'] ?? ''));
+		$author_user = isset($commit['author']) && is_array($commit['author']) ? trim((string) ($commit['author']['login'] ?? '')) : '';
+
+		if ($sha === '' || $title === '') {
+			continue;
+		}
+
+		$item = array(
+			'sha'         => $sha,
+			'short_sha'   => substr($sha, 0, 7),
+			'title'       => $title,
+			'message'     => $message,
+			'author'      => $author_user !== '' ? $author_user : $author_name,
+			'committed_at'=> $author_date,
+			'html_url'    => $html_url,
+			'is_trigger'  => mp_headless_is_github_trigger_commit_message($title),
+		);
+
+		$fallback[] = $item;
+
+		if (! $item['is_trigger']) {
+			$versions[] = $item;
+		}
+
+		if (count($versions) >= $limit) {
+			break;
+		}
+	}
+
+	if (empty($versions)) {
+		$versions = array_slice($fallback, 0, $limit);
+	}
+
+	set_transient($cache_key, $versions, 5 * MINUTE_IN_SECONDS);
+
+	return $versions;
+}
+
+function mp_headless_restore_github_version_snapshot($commit_sha) {
+	$settings  = mp_headless_get_github_deploy_settings();
+	$commit_sha = strtolower(trim((string) $commit_sha));
+
+	if ($settings['owner'] === '' || $settings['repo'] === '' || $settings['token'] === '') {
+		return new WP_Error('mp_headless_github_not_configured', __('GitHub auto deploy is not fully configured yet.', 'medplatform-headless'));
+	}
+
+	if (! preg_match('/^[a-f0-9]{7,40}$/', $commit_sha)) {
+		return new WP_Error('mp_headless_invalid_commit_sha', __('The selected GitHub commit is invalid.', 'medplatform-headless'));
+	}
+
+	$headers         = mp_headless_get_github_api_headers($settings['token']);
+	$base_repository = sprintf(
+		'https://api.github.com/repos/%s/%s',
+		rawurlencode($settings['owner']),
+		rawurlencode($settings['repo'])
+	);
+	$current_ref_url = sprintf(
+		'%s/git/ref/heads/%s',
+		$base_repository,
+		rawurlencode($settings['branch'])
+	);
+	$current_ref     = wp_remote_get(
+		$current_ref_url,
+		array(
+			'timeout' => 20,
+			'headers' => $headers,
+		)
+	);
+
+	if (is_wp_error($current_ref)) {
+		return new WP_Error('mp_headless_github_current_ref_failed', $current_ref->get_error_message());
+	}
+
+	$current_status = (int) wp_remote_retrieve_response_code($current_ref);
+	if ($current_status !== 200) {
+		return new WP_Error(
+			'mp_headless_github_current_ref_status',
+			sprintf(
+				/* translators: %s: HTTP status code */
+				__('GitHub branch lookup returned status %s.', 'medplatform-headless'),
+				$current_status
+			)
+		);
+	}
+
+	$current_ref_body = json_decode(wp_remote_retrieve_body($current_ref), true);
+	$current_head_sha = sanitize_text_field((string) ($current_ref_body['object']['sha'] ?? ''));
+	if ($current_head_sha === '') {
+		return new WP_Error('mp_headless_github_current_ref_invalid', __('GitHub branch lookup returned an invalid response.', 'medplatform-headless'));
+	}
+
+	if (strtolower($current_head_sha) === $commit_sha) {
+		return new WP_Error('mp_headless_github_same_version', __('That version is already the current branch head.', 'medplatform-headless'));
+	}
+
+	$selected_commit_url = sprintf('%s/git/commits/%s', $base_repository, rawurlencode($commit_sha));
+	$selected_commit     = wp_remote_get(
+		$selected_commit_url,
+		array(
+			'timeout' => 20,
+			'headers' => $headers,
+		)
+	);
+
+	if (is_wp_error($selected_commit)) {
+		return new WP_Error('mp_headless_github_selected_commit_failed', $selected_commit->get_error_message());
+	}
+
+	$selected_status = (int) wp_remote_retrieve_response_code($selected_commit);
+	if ($selected_status !== 200) {
+		return new WP_Error(
+			'mp_headless_github_selected_commit_status',
+			sprintf(
+				/* translators: %s: HTTP status code */
+				__('GitHub commit lookup returned status %s.', 'medplatform-headless'),
+				$selected_status
+			)
+		);
+	}
+
+	$selected_body     = json_decode(wp_remote_retrieve_body($selected_commit), true);
+	$selected_tree_sha = sanitize_text_field((string) ($selected_body['tree']['sha'] ?? ''));
+	$selected_message  = trim((string) ($selected_body['message'] ?? ''));
+	$selected_title    = trim((string) strtok($selected_message, "\n"));
+
+	if ($selected_tree_sha === '') {
+		return new WP_Error('mp_headless_github_selected_tree_missing', __('GitHub did not return a tree for the selected commit.', 'medplatform-headless'));
+	}
+
+	$create_commit_response = wp_remote_post(
+		sprintf('%s/git/commits', $base_repository),
+		array(
+			'timeout'     => 20,
+			'headers'     => $headers,
+			'data_format' => 'body',
+			'body'        => wp_json_encode(
+				array(
+					'message' => sprintf(
+						/* translators: 1: short commit sha, 2: original commit title */
+						__('Restore frontend to %1$s: %2$s', 'medplatform-headless'),
+						substr($commit_sha, 0, 7),
+						$selected_title !== '' ? $selected_title : __('selected version', 'medplatform-headless')
+					),
+					'tree'    => $selected_tree_sha,
+					'parents' => array($current_head_sha),
+				)
+			),
+		)
+	);
+
+	if (is_wp_error($create_commit_response)) {
+		return new WP_Error('mp_headless_github_restore_commit_failed', $create_commit_response->get_error_message());
+	}
+
+	$create_status = (int) wp_remote_retrieve_response_code($create_commit_response);
+	if ($create_status !== 201) {
+		return new WP_Error(
+			'mp_headless_github_restore_commit_status',
+			sprintf(
+				/* translators: %s: HTTP status code */
+				__('GitHub restore commit returned status %s.', 'medplatform-headless'),
+				$create_status
+			)
+		);
+	}
+
+	$create_body    = json_decode(wp_remote_retrieve_body($create_commit_response), true);
+	$new_commit_sha = sanitize_text_field((string) ($create_body['sha'] ?? ''));
+	if ($new_commit_sha === '') {
+		return new WP_Error('mp_headless_github_restore_commit_invalid', __('GitHub did not return the new restore commit SHA.', 'medplatform-headless'));
+	}
+
+	$update_ref_response = wp_remote_request(
+		$current_ref_url,
+		array(
+			'method'      => 'PATCH',
+			'timeout'     => 20,
+			'headers'     => $headers,
+			'data_format' => 'body',
+			'body'        => wp_json_encode(
+				array(
+					'sha'   => $new_commit_sha,
+					'force' => false,
+				)
+			),
+		)
+	);
+
+	if (is_wp_error($update_ref_response)) {
+		return new WP_Error('mp_headless_github_restore_ref_failed', $update_ref_response->get_error_message());
+	}
+
+	$update_status = (int) wp_remote_retrieve_response_code($update_ref_response);
+	if ($update_status !== 200) {
+		return new WP_Error(
+			'mp_headless_github_restore_ref_status',
+			sprintf(
+				/* translators: %s: HTTP status code */
+				__('GitHub branch update returned status %s.', 'medplatform-headless'),
+				$update_status
+			)
+		);
+	}
+
+	update_option('mp_headless_github_last_trigger_at', time(), false);
+	mp_headless_clear_github_versions_cache();
+
+	return array(
+		'restored_sha'   => $commit_sha,
+		'new_commit_sha' => $new_commit_sha,
+		'title'          => $selected_title,
+	);
 }
 
 function mp_headless_get_contact_topic_labels() {
@@ -4057,6 +4370,45 @@ function mp_headless_manual_push_update() {
 }
 add_action('admin_post_mp_headless_manual_push_update', 'mp_headless_manual_push_update');
 
+function mp_headless_restore_github_version() {
+	if (! current_user_can('manage_options')) {
+		wp_die(esc_html__('You do not have permission to restore a frontend version.', 'medplatform-headless'));
+	}
+
+	$commit_sha = isset($_POST['mp_headless_restore_commit_sha']) ? sanitize_text_field(wp_unslash($_POST['mp_headless_restore_commit_sha'])) : '';
+
+	check_admin_referer('mp_headless_restore_github_version_' . $commit_sha, 'mp_headless_restore_github_nonce');
+
+	$result = mp_headless_restore_github_version_snapshot($commit_sha);
+	$reason = 'restore_commit:' . substr($commit_sha, 0, 12);
+
+	if (is_wp_error($result)) {
+		$status = 'error';
+		if ($result->get_error_code() === 'mp_headless_github_same_version') {
+			$status = 'skipped';
+		}
+
+		mp_headless_set_github_deploy_status($status, $result->get_error_message(), $reason);
+		wp_safe_redirect(admin_url('options-general.php?page=medplatform-headless'));
+		exit;
+	}
+
+	mp_headless_set_github_deploy_status(
+		'success',
+		sprintf(
+			/* translators: 1: short restored commit sha, 2: short new commit sha */
+			__('Restored the frontend code snapshot from %1$s and created redeploy commit %2$s.', 'medplatform-headless'),
+			substr((string) ($result['restored_sha'] ?? ''), 0, 7),
+			substr((string) ($result['new_commit_sha'] ?? ''), 0, 7)
+		),
+		$reason
+	);
+
+	wp_safe_redirect(admin_url('options-general.php?page=medplatform-headless'));
+	exit;
+}
+add_action('admin_post_mp_headless_restore_github_version', 'mp_headless_restore_github_version');
+
 function mp_headless_redirect_homepage_admin_views() {
 	if (! is_admin()) {
 		return;
@@ -4320,13 +4672,22 @@ function mp_headless_register_settings() {
 add_action('admin_init', 'mp_headless_register_settings');
 
 function mp_headless_render_settings_page() {
-	$github_repo_owner  = (string) get_option('mp_headless_github_repo_owner', '');
-	$github_repo_name   = (string) get_option('mp_headless_github_repo_name', '');
-	$github_branch      = (string) get_option('mp_headless_github_branch', 'main');
-	$github_token       = (string) get_option('mp_headless_github_token', '');
-	$github_trigger_path = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
+	$github_repo_owner        = (string) get_option('mp_headless_github_repo_owner', '');
+	$github_repo_name         = (string) get_option('mp_headless_github_repo_name', '');
+	$github_branch            = (string) get_option('mp_headless_github_branch', 'main');
+	$github_token             = (string) get_option('mp_headless_github_token', '');
+	$github_trigger_path      = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
 	$github_auto_push_enabled = mp_headless_github_auto_push_enabled();
-	$github_last_status = get_option('mp_headless_github_last_status', array());
+	$github_last_status       = get_option('mp_headless_github_last_status', array());
+	$github_recent_versions   = array();
+	$github_recent_error      = null;
+	if ($github_repo_owner !== '' && $github_repo_name !== '' && $github_token !== '') {
+		$github_recent_versions = mp_headless_get_recent_github_versions(5);
+		if (is_wp_error($github_recent_versions)) {
+			$github_recent_error    = $github_recent_versions->get_error_message();
+			$github_recent_versions = array();
+		}
+	}
 	$seed_import_status = get_transient('mp_headless_seed_import_status');
 	if ($seed_import_status) {
 		delete_transient('mp_headless_seed_import_status');
@@ -4456,6 +4817,63 @@ function mp_headless_render_settings_page() {
 				<input type="hidden" name="action" value="mp_headless_manual_push_update" />
 				<?php submit_button(__('Push Update', 'medplatform-headless'), 'secondary', 'submit', false); ?>
 			</form>
+		</div>
+
+		<div style="margin-top:28px; max-width:900px; background:#fff; border:1px solid #dcdcde; padding:24px;">
+			<h2 style="margin-top:0;"><?php esc_html_e('Recent Frontend Versions', 'medplatform-headless'); ?></h2>
+			<p style="margin-top:0; color:#50575e;"><?php esc_html_e('These are the latest useful GitHub snapshots on the configured branch. Restoring one creates a new GitHub commit from that older snapshot so Hostinger can redeploy it without rewriting branch history.', 'medplatform-headless'); ?></p>
+			<p style="margin:0 0 18px; color:#50575e;"><?php esc_html_e('This restores repo code only. It does not roll back WordPress content stored in the live CMS database.', 'medplatform-headless'); ?></p>
+			<?php if ($github_repo_owner === '' || $github_repo_name === '' || $github_token === '') : ?>
+				<p style="margin:0; color:#646970;"><?php esc_html_e('Fill in the GitHub auto-deploy settings above to load recent versions.', 'medplatform-headless'); ?></p>
+			<?php elseif ($github_recent_error) : ?>
+				<p style="margin:0; color:#b32d2e;"><?php echo esc_html($github_recent_error); ?></p>
+			<?php elseif (empty($github_recent_versions)) : ?>
+				<p style="margin:0; color:#646970;"><?php esc_html_e('No GitHub versions are available yet.', 'medplatform-headless'); ?></p>
+			<?php else : ?>
+				<table class="widefat striped" style="max-width:100%;">
+					<thead>
+						<tr>
+							<th><?php esc_html_e('Commit', 'medplatform-headless'); ?></th>
+							<th><?php esc_html_e('Message', 'medplatform-headless'); ?></th>
+							<th><?php esc_html_e('Author', 'medplatform-headless'); ?></th>
+							<th><?php esc_html_e('Date', 'medplatform-headless'); ?></th>
+							<th><?php esc_html_e('Action', 'medplatform-headless'); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ($github_recent_versions as $version) : ?>
+							<?php
+							$version_date = '';
+							if (! empty($version['committed_at'])) {
+								$timestamp = strtotime((string) $version['committed_at']);
+								if ($timestamp) {
+									$version_date = wp_date(get_option('date_format') . ' ' . get_option('time_format'), $timestamp);
+								}
+							}
+							?>
+							<tr>
+								<td>
+									<code><?php echo esc_html((string) ($version['short_sha'] ?? '')); ?></code>
+									<?php if (! empty($version['html_url'])) : ?>
+										<div><a href="<?php echo esc_url((string) $version['html_url']); ?>" target="_blank" rel="noreferrer"><?php esc_html_e('View on GitHub', 'medplatform-headless'); ?></a></div>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html((string) ($version['title'] ?? '')); ?></td>
+								<td><?php echo esc_html((string) ($version['author'] ?? '')); ?></td>
+								<td><?php echo esc_html($version_date !== '' ? $version_date : (string) ($version['committed_at'] ?? '')); ?></td>
+								<td>
+									<form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post" onsubmit="return confirm('<?php echo esc_js(__('Restore this GitHub snapshot and trigger a frontend redeploy?', 'medplatform-headless')); ?>');">
+										<?php wp_nonce_field('mp_headless_restore_github_version_' . (string) ($version['sha'] ?? ''), 'mp_headless_restore_github_nonce'); ?>
+										<input type="hidden" name="action" value="mp_headless_restore_github_version" />
+										<input type="hidden" name="mp_headless_restore_commit_sha" value="<?php echo esc_attr((string) ($version['sha'] ?? '')); ?>" />
+										<?php submit_button(__('Restore This Version', 'medplatform-headless'), 'secondary', 'submit', false); ?>
+									</form>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
 		</div>
 
 		<div style="margin-top:28px; max-width:900px; background:#fff; border:1px solid #dcdcde; padding:24px;">
@@ -4784,12 +5202,7 @@ function mp_headless_trigger_github_deploy($reason, $force = false) {
 		rawurlencode($settings['repo']),
 		implode('/', $encoded_path_parts)
 	);
-	$headers            = array(
-		'Accept'               => 'application/vnd.github+json',
-		'Authorization'        => 'Bearer ' . $settings['token'],
-		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.4',
-	);
+	$headers            = mp_headless_get_github_api_headers($settings['token']);
 	$existing_sha       = '';
 	$lookup_response    = wp_remote_get(
 		add_query_arg('ref', $settings['branch'], $contents_url),
@@ -4858,6 +5271,7 @@ function mp_headless_trigger_github_deploy($reason, $force = false) {
 	}
 
 	update_option('mp_headless_github_last_trigger_at', time(), false);
+	mp_headless_clear_github_versions_cache();
 	mp_headless_set_github_deploy_status('success', 'GitHub deploy trigger commit created successfully.', $reason);
 }
 
