@@ -19,7 +19,7 @@ export const siteConfig = {
   navLinks: [
     { text: "Home", href: "/" },
     { text: "About", href: "/about" },
-    { text: "Projects", href: "/services" },
+    { text: "Projects", href: "/projects" },
     { text: "Media", href: "/widgets" },
     { text: "Publications", href: "/blog" },
     { text: "Contact", href: "/contact" },

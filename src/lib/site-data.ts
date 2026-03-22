@@ -19,6 +19,14 @@ export interface PublicationReference {
   url: string;
 }
 
+export interface SeoFields {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  canonical?: string;
+  noindex?: boolean;
+}
+
 export interface ProjectLink {
   id: number | string;
   slug: string;
@@ -87,6 +95,7 @@ export interface PublicationSummary {
   downloadCountApiHref?: string;
   downloadHref?: string;
   downloadLabel?: string;
+  seo: SeoFields;
   source: "wordpress" | "local";
 }
 
@@ -147,6 +156,7 @@ export interface ProjectSummary {
     description: string;
   }>;
   contentHtml: string;
+  seo: SeoFields;
   source: "wordpress" | "local";
 }
 
@@ -173,6 +183,10 @@ export interface SiteSettings {
     contact?: string;
   };
   showPublicDownloadCounts: boolean;
+  seoDefaults: {
+    description?: string;
+    ogImage?: string;
+  };
 }
 
 interface WordPressTerm {
@@ -232,6 +246,7 @@ const stripHtml = (value: string) =>
 
 const PUBLICATION_PREVIEW_WORD_LIMIT = 12;
 const PROJECT_DESCRIPTION_WORD_LIMIT = 25;
+const PROJECTS_BASE_PATH = "/projects";
 
 const normalizeComparableText = (value: string) =>
   stripHtml(value)
@@ -266,6 +281,24 @@ const clampWordCount = (value: string, limit: number) => {
 
 const clampProjectDescription = (value: string) =>
   clampWordCount(value, PROJECT_DESCRIPTION_WORD_LIMIT);
+
+const normalizeOptionalText = (value: unknown) => {
+  const normalized = String(value ?? "").trim();
+  return normalized === "" ? undefined : normalized;
+};
+
+const normalizeOptionalUrl = (value: unknown) => {
+  const normalized = String(value ?? "").trim();
+  return normalized === "" ? undefined : normalized;
+};
+
+const normalizeSeoFields = (meta?: Record<string, unknown>): SeoFields => ({
+  title: normalizeOptionalText(meta?.mp_seo_title),
+  description: normalizeOptionalText(meta?.mp_seo_description),
+  ogImage: normalizeOptionalUrl(meta?.mp_seo_og_image),
+  canonical: normalizeOptionalUrl(meta?.mp_seo_canonical_url),
+  noindex: Boolean(meta?.mp_seo_noindex),
+});
 
 const buildPublicationPreviewText = (...candidates: Array<string | undefined>) => {
   const preferredSource =
@@ -330,6 +363,9 @@ const defaultAnnouncementBarSettings: AnnouncementBarSettings = {
   linkHref: "/widgets",
 };
 
+const siteConfigOgImage =
+  typeof siteConfig.ogImage === "string" ? siteConfig.ogImage : siteConfig.ogImage.src;
+
 const defaultSiteSettings: SiteSettings = {
   socialLinks: {
     linkedin: siteConfig.socialLinks.linkedin,
@@ -338,6 +374,10 @@ const defaultSiteSettings: SiteSettings = {
     contact: siteConfig.socialLinks.contact,
   },
   showPublicDownloadCounts: false,
+  seoDefaults: {
+    description: siteConfig.description,
+    ogImage: siteConfigOgImage,
+  },
 };
 
 let wordpressProjectCache: Promise<ProjectSummary[] | null> | undefined;
@@ -610,7 +650,7 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
             hiddenFromProjectScreens: Boolean(record.meta?.mp_hide_project_currently),
             id: record.id,
             slug: record.slug,
-            href: `/services/${record.slug}`,
+            href: `${PROJECTS_BASE_PATH}/${record.slug}`,
             title: decodeHtml(record.title.rendered),
             description: clampProjectDescription(record.excerpt.rendered),
             cardIcon: String(record.meta?.mp_card_icon ?? ""),
@@ -638,6 +678,7 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
                 }))
               : [],
             contentHtml: record.content.rendered,
+            seo: normalizeSeoFields(record.meta),
             source: "wordpress" as const,
           };
         });
@@ -786,6 +827,7 @@ const buildWordPressPublicationSummary = (
       : buildWordPressApiEndpoint(`/mp-headless/v1/publications/${record.id}/download-stats`),
     downloadHref: isPodcastOutput ? "" : String(record.meta?.mp_download_url ?? ""),
     downloadLabel: String(record.meta?.mp_download_label ?? ""),
+    seo: normalizeSeoFields(record.meta),
     source: "wordpress",
   };
 };
@@ -856,6 +898,10 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
           youtube?: string;
           instagram?: string;
         };
+        seoDefaults?: {
+          description?: string;
+          ogImage?: string;
+        };
         showPublicDownloadCounts?: boolean;
       }>("/mp-headless/v1/site-settings");
 
@@ -871,6 +917,10 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
           contact: siteConfig.socialLinks.contact,
         },
         showPublicDownloadCounts: Boolean(settings.showPublicDownloadCounts),
+        seoDefaults: {
+          description: normalizeOptionalText(settings.seoDefaults?.description) ?? siteConfig.description,
+          ogImage: normalizeOptionalUrl(settings.seoDefaults?.ogImage) ?? siteConfigOgImage,
+        },
       };
     })();
   }
@@ -1032,6 +1082,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             downloadTrackedHref: entry.data.downloadHref,
             downloadHref: entry.data.downloadHref,
             downloadLabel: entry.data.downloadLabel,
+            seo: {},
             source: "local" as const,
           };
         })
@@ -1133,6 +1184,7 @@ export const getProjects = async (): Promise<ProjectSummary[]> => {
     updates: project.updates,
     focusAreas: project.focusAreas,
     contentHtml: project.overview.map((paragraph) => `<p>${paragraph}</p>`).join(""),
+    seo: {},
     source: "local",
   }));
 };
@@ -1287,6 +1339,7 @@ export const getPublicationsForProject = async (projectSlug: string) => {
           color: localProject.color,
         },
       ],
+      seo: {},
       source: "local" as const,
     }));
 };

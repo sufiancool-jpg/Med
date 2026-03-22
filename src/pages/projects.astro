@@ -1,0 +1,196 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FilteredArticleArchive from "../components/widgets/FilteredArticleArchive.astro";
+import { Icon } from "astro-icon/components";
+import { getProjects, getPublications } from "../lib/site-data";
+
+const projectVisuals = {
+  "libya-platform": {
+    viewBox: "0 0 140 100",
+    paths: [
+      "M114.964,78.994L114.964,91.394L108.287,91.414L108.225,94L85.106,82.152L61.988,70.135L56.146,73.581L52.035,75.92L48.78,72.473L39.621,69.75L37.075,65.784L32.506,62.823L29.793,63.998L27.727,60.436L27.498,57.694L24.076,53.001L26.371,50.298L25.87,46.22L26.622,42.65L26.183,39.653L27.206,34.27L26.893,31.191L25.015,25.286L27.853,23.727L28.353,20.874L27.727,18.076L31.713,15.451L33.507,13.267L36.324,11.296L36.658,6L43.46,8.385L45.901,7.79L50.742,8.933L58.42,12.004L61.132,18.076L66.349,19.385L74.507,22.222L80.683,25.559L83.521,23.819L86.296,20.714L84.939,15.521L86.755,12.189L90.928,8.968L94.934,8.035L102.758,9.446L104.74,12.514L106.91,12.537L108.746,13.707L114.505,14.516L115.924,16.765L113.817,20.015L114.714,22.907L113.232,27.056L114.964,32.429L114.964,55.662Z",
+    ],
+  },
+  "africa-nexus": {
+    viewBox: "0 0 140 170",
+    paths: [
+      "M111.79,96.631L110.932,98.935L111.039,99.996L112.232,100.682L112.286,101.167L111.776,102.302L111.884,102.874L111.763,103.772L112.413,104.952L113.184,106.815L113.861,107.228L114.162,108.077L114.089,109.966L114.316,111.639L114.39,114.629L114.719,115.573L114.162,116.95L113.439,118.292L112.252,119.494L110.55,120.235L108.452,121.183L106.355,123.285L105.637,123.644L104.337,125.046L103.567,125.501L103.412,126.914L104.297,128.424L104.659,129.597L104.686,130.198L105.014,130.099L104.961,132.075L104.659,133.019L105.095,133.366L104.82,134.211L104.042,134.94L102.508,135.63L100.269,136.743L99.452,137.508L99.612,138.377L100.088,138.517L99.927,139.612L99.458,141.134L99.244,142.885L98.761,143.842L97.488,144.916L97.126,145.227L96.335,146.314L95.819,147.419L94.76,148.974L92.656,151.228L91.342,152.554L89.935,153.565L87.991,154.429L87.046,154.547L86.805,155.168L85.672,154.834L84.748,155.263L82.73,154.831L81.604,155.104L80.834,154.986L78.917,155.872L77.322,156.231L76.176,157.085L75.325,157.139L74.541,156.334L73.911,156.292L73.106,155.286L73.019,155.598L72.771,154.994L72.785,153.685L72.181,152.198L72.778,151.795L72.731,150.111L71.511,148.074L70.58,146.245L70.573,146.242L69.239,143.469L67.852,141.874L67.128,140.34L66.713,138.314L66.257,136.816L65.634,133.662L65.587,131.237L65.352,130.14L64.628,129.315L63.663,127.661L62.685,125.283L62.283,124.044L60.768,122.126L60.654,120.628L60.48,119.402L60.735,117.699L61.378,115.932L61.479,115.104L62.082,113.377L62.524,112.59L63.59,111.342L64.193,110.494L64.387,109.085L64.287,108.01L63.73,107.333L63.234,106.188L62.779,105.054L62.879,104.665L63.449,103.915L62.886,102.101L62.504,100.843L61.572,99.657L61.747,99.293L61.485,98.713L60.989,97.308L59.461,95.329L57.551,93.448L56.318,91.908L55.185,89.985L55.246,89.368L55.655,88.772L56.104,87.417L56.479,86.037L56.13,85.754L56.774,83.663L57.042,82.194L56.318,80.959L55.467,80.644L55.092,79.806L54.609,79.538L54.636,79.022L52.699,79.696L51.995,79.598L51.278,80.015L49.79,79.974L48.792,78.804L48.182,77.453L46.862,76.221L45.461,76.243L43.819,76.24L42.284,76.459L40.783,76.858L37.861,77.953L36.829,78.596L35.153,79.136L33.491,78.605L32.647,78.627L31.347,78.26L30.154,78.282L27.949,78.608L26.655,79.146L24.812,79.832L24.45,79.784L23.961,79.8L22.044,78.909L20.356,77.488L18.767,76.462L17.514,75.254L17.011,75.114L15.671,74.358L14.706,73.354L14.377,72.667L14.15,71.274L13.332,70.16L12.608,69.419L12.132,69.176L11.67,68.798L11.455,67.962L11.181,67.545L10.644,67.233L9.646,66.44L8.862,66.314L8.439,65.78L8.446,65.491L7.883,65.088L7.763,64.678L7.454,63.215L7.696,62.366L6.925,60.872L6,60.189L6.818,59.824L7.716,58.468L8.158,57.472L7.997,56.428L8.52,55.47L8.748,53.628L8.547,51.69L8.319,50.708L8.507,49.72L8.024,48.775L7.045,47.916L7.126,47.074L7.213,46.145L7.923,45.598L8.533,44.548L8.413,43.865L9.056,42.433L10.095,41.136L10.718,40.807L11.214,39.613L11.254,38.514L11.924,37.235L13.164,36.475L14.351,34.34L14.384,34.312L15.316,33.503L17.051,33.271L18.512,31.823L19.451,31.253L21.006,29.468L20.536,26.779L21.247,24.899L21.495,23.736L22.694,22.239L24.558,21.219L25.938,20.293L27.185,17.949L27.768,16.549L29.142,16.557L30.261,17.529L32.03,17.37L33.96,17.876L34.771,17.899L36.561,16.65L38.571,16.254L39.744,15.302L41.54,14.597L44.697,14.184L47.773,13.995L48.711,14.338L50.467,13.423L52.458,13.404L53.215,13.944L54.488,13.806L56.512,12.861L57.819,13.143L57.759,14.322L59.341,13.467L59.475,13.913L58.543,15.052L58.53,16.117L59.173,16.689L58.932,18.661L57.705,19.797L58.061,21.022L59.019,21.06L59.488,22.122L60.198,22.469L62.383,23.235L63.167,23.043L64.722,23.411L67.189,24.397L68.06,26.348L69.735,26.768L72.356,27.679L74.339,28.751L75.251,28.192L76.142,27.195L75.707,25.527L76.29,24.457L77.63,23.422L78.917,23.122L81.43,23.576L82.067,24.561L82.764,24.568L83.354,24.944L85.203,25.204L85.659,25.926L88.132,25.889L89.928,26.466L91.771,27.11L92.636,27.448L94.07,26.757L94.834,26.133L96.476,25.952L97.803,26.229L98.306,27.309L98.741,26.598L100.229,27.114L101.683,27.235L102.601,26.687L103.64,29.839L103.821,30.394L103.298,31.253L102.896,32.856L102.394,33.956L101.958,34.323L101.335,33.642L100.497,32.702L99.17,29.646L98.976,29.839L99.746,32.092L100.893,34.216L102.3,37.467L102.984,38.591L103.587,39.756L105.255,42.02L104.887,42.375L104.947,43.693L107.112,45.503L107.44,45.914L108.043,47.879L107.635,48.24L107.903,50.283L108.586,52.638L109.297,53.12L110.315,53.847L111.394,56.105L111.91,57.885L112.929,58.828L115.469,60.648L116.501,61.74L117.513,62.846L118.096,63.503L119.008,64.078L119.45,64.669L119.39,65.458L118.331,65.916L119.128,66.433L119.738,66.784L120.1,67.57L120.938,68.362L121.863,68.369L123.619,67.885L125.643,67.66L127.285,67.07L128.21,66.944L128.873,66.597L129.932,66.533L130.528,66.495L131.386,66.212L132.371,66.022L133.256,65.371L133.96,65.365L134,65.89L133.832,66.996L133.839,67.991L133.444,68.676L132.921,70.719L132.023,72.819L130.87,75.219L129.275,77.963L127.687,80.053L125.495,82.597L123.632,84.108L120.851,85.955L119.115,87.373L117.078,89.626L116.649,90.61L116.227,91.051L114.92,91.795L114.464,92.571L113.767,92.709L113.499,94.022L112.902,94.773L112.54,96.014ZM131.038,111.317L131.534,112.127L131.996,113.39L132.298,115.7L132.78,116.6L132.593,117.529L132.264,118.099L131.634,116.963L131.279,117.535L131.634,118.972L131.473,119.794L130.957,120.245L130.837,121.898L130.106,124.187L129.188,126.914L128.035,130.705L127.325,133.518L126.487,135.887L124.973,136.374L123.344,137.246L122.272,136.719L120.797,135.984L120.281,134.902L120.161,133.094L119.504,131.48L119.329,130.031L119.665,128.587L120.522,128.242L120.529,127.577L121.42,126.074L121.588,124.812L121.152,123.877L120.804,122.64L120.65,120.839L121.3,119.748L121.555,118.515L122.479,118.443L123.518,118.046L124.208,117.696L125.026,117.673L126.085,116.571L127.62,115.384L128.176,114.418L127.921,113.597L128.712,113.827L129.738,112.499L129.778,111.349L130.394,110.498Z",
+    ],
+  },
+  "gulf-platform": {
+    viewBox: "0 0 140 100",
+    paths: [
+      "M98.747,49.688L99.182,52.463L100.613,54.854L102.387,56.116L104.711,56.574L106.6,57.203L108.031,59.19L108.89,60.334L110.035,60.771L110.023,61.54L108.867,63.584L108.363,64.544L107.024,65.636L105.833,67.962L104.391,67.784L103.727,68.593L103.223,70.311L103.612,72.565L103.314,72.975L101.849,72.964L99.857,74.22L99.548,75.853L98.827,76.561L96.846,76.532L95.598,77.374L95.61,78.717L94.076,79.646L92.324,79.331L90.195,80.45L88.729,80.641L86.428,81.528L85.81,83.002L85.741,84.126L82.57,85.516L77.487,87.054L74.637,89.371L73.24,89.554L72.29,89.36L70.424,90.718L68.397,91.349L65.73,91.515L64.928,91.703L64.23,92.565L63.394,92.802L62.902,93.63L61.334,93.559L60.315,94L58.117,93.835L57.292,91.929L57.384,90.141L56.857,89.177L56.239,86.748L55.323,85.394L55.964,85.232L55.632,83.724L56.022,83.086L55.884,81.646L55.461,80.231L54.51,79.23L54.259,77.899L52.622,76.702L50.927,73.896L50.023,71.151L47.825,68.828L46.405,68.272L44.299,65.03L43.932,62.65L44.07,60.614L42.249,56.78L40.761,55.42L39.044,54.701L37.991,52.694L38.162,51.905L37.281,50.082L36.354,49.294L35.117,46.654L33.171,43.779L31.557,41.311L29.965,41.329L30.469,39.342L30.607,38.077L30.996,36.622L34.545,37.202L35.919,36.078L36.674,34.759L39.101,34.249L39.628,33.023L40.681,32.392L37.51,28.681L43.875,26.807L44.482,26.242L43.2,21.633L50.24,17.651L51.442,12.951L51.145,10.084L52.885,9.107L54.51,6.623L55.873,6L59.582,6.521L60.693,7.534L62.215,6.859L64.276,11.584L66.359,12.759L66.6,15.037L65.009,16.376L64.264,19.382L66.474,23.009L70.366,25.083L72.003,27.935L71.477,30.633L72.496,30.633L72.53,32.598L74.282,34.535L72.404,34.355L73.068,35.973L72.782,36.807L73.801,39.544L75.049,42.656L76.617,43.476L77.155,44.73L79.33,46.233L79.514,47.694L79.204,48.875L79.605,50.064L80.521,51.048L80.945,52.202L81.414,53.062L81.208,50.506L82.066,48.653L82.937,48.27L83.898,49.377L83.955,51.441L83.257,53.506L83.864,54.842L84.425,54.671L84.551,55.627L87.035,55.078L89.668,55.167L91.591,55.273L93.767,52.908L96.136,50.655L98.151,48.48L99.067,47.274L99.468,47.58L99.17,49.042Z",
+    ],
+  },
+} as const;
+
+const defaultProjectCardIcon = "lucide:network";
+
+const projects = await getProjects();
+const publications = await getPublications();
+
+const topProjects = projects.map((project) => ({
+  title: project.title,
+  description: project.description,
+  meta: "Project",
+  hoverBg: project.color,
+  hoverTitle: "#ffffff",
+  hoverMeta: "rgba(255,255,255,0.76)",
+  hoverBody: "rgba(255,255,255,0.88)",
+  hoverIcon: "rgba(255,255,255,0.94)",
+  href: project.href,
+  visual:
+    project.slug in projectVisuals
+      ? {
+          kind: "custom" as const,
+          ...projectVisuals[project.slug as keyof typeof projectVisuals],
+        }
+      : {
+          kind: "icon" as const,
+          name: project.cardIcon || defaultProjectCardIcon,
+        },
+}));
+
+const archiveArticles = publications
+  .filter((publication) => publication.relatedProjectSlugs.length > 0)
+  .map((publication) => ({
+    title: publication.title,
+    summary: publication.previewText,
+    author: publication.author,
+    date: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(publication.pubDate),
+    topic: publication.topics[0] ?? "General",
+    platform: publication.relatedProjectTitles[0] ?? "Project",
+    hashtags: publication.hashtags.map((tag) => tag.label),
+    image: publication.image ?? "/blog/welcome.webp",
+    imageAlt: publication.title,
+    href: publication.href,
+    primaryLabel: publication.relatedProjectTitles[0] ?? "Project",
+    typeLabel: publication.outputType,
+  }));
+
+const metadata = {
+  title: "Projects",
+  description:
+    "Project briefings and articles across Libya Platform, Africa Nexus, and Gulf Platform.",
+};
+---
+
+<BaseLayout {metadata}>
+  <section id="projects-top-cards" class="bg-white">
+    <div class="mx-auto max-w-7xl px-4 pt-10 pb-2 sm:px-6 md:pt-12 md:pb-4 lg:px-8">
+      <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {topProjects.map((project) => (
+          <article
+            data-project-card
+            style={`--project-hover-bg:${project.hoverBg};--project-hover-title:${project.hoverTitle};--project-hover-meta:${project.hoverMeta};--project-hover-body:${project.hoverBody};--project-hover-icon:${project.hoverIcon};`}
+            class="group relative flex overflow-hidden border border-border bg-card p-8 shadow-sm transition-all hover:border-primary/50"
+          >
+            <div
+              data-project-card-bgicon
+              class="pointer-events-none absolute -right-4 -top-4 select-none text-primary opacity-[0.08] transition-transform group-hover:scale-110 group-hover:rotate-6"
+            >
+              {project.visual.kind === "custom" ? (
+                <svg
+                  viewBox={project.visual.viewBox}
+                  class="h-32 w-32 fill-none stroke-current stroke-[1.2]"
+                  aria-hidden="true"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  {project.visual.paths.map((path) => (
+                    <path d={path} vector-effect="non-scaling-stroke"></path>
+                  ))}
+                </svg>
+              ) : (
+                <Icon name={project.visual.name} class="h-32 w-32 stroke-[1.2]" aria-hidden="true" />
+              )}
+            </div>
+
+            <div class="relative z-10 flex h-full flex-col text-left">
+              <div data-project-card-icon class="mb-6 text-primary">
+                {project.visual.kind === "custom" ? (
+                  <svg
+                    viewBox={project.visual.viewBox}
+                    class="h-11 w-11 fill-none stroke-current stroke-[1.7]"
+                    aria-hidden="true"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    {project.visual.paths.map((path) => (
+                      <path d={path} vector-effect="non-scaling-stroke"></path>
+                    ))}
+                  </svg>
+                ) : (
+                  <Icon name={project.visual.name} class="h-11 w-11 stroke-[1.7]" aria-hidden="true" />
+                )}
+              </div>
+              <p
+                data-project-card-meta
+                class="mb-2 text-[0.76rem] font-semibold uppercase tracking-[0.08em] text-primary/55"
+              >
+                <span data-ui-i18n="project.label">Project</span>
+              </p>
+              <h2 data-project-card-title class="mb-4 text-2xl font-bold text-foreground">
+                {project.title}
+              </h2>
+              <p data-project-card-body class="text-muted-foreground leading-relaxed">
+                {project.description}
+              </p>
+              <a
+                href={project.href}
+                data-project-card-cta
+                class="mt-auto inline-flex items-center gap-2 pt-8 font-semibold text-primary transition-all hover:underline"
+              >
+                <span data-ui-i18n="project.viewDetails">View details</span>
+                <span class="transition-transform group-hover:translate-x-1">→</span>
+              </a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <FilteredArticleArchive
+    items={archiveArticles}
+    containerClass="mx-auto max-w-7xl px-4 pt-0 pb-10 sm:px-6 md:pb-12 lg:px-8"
+    resultsId="projects-results"
+    searchPlaceholder="Search project articles"
+    searchPlaceholderKey="archive.searchProjectArticlesGeneric"
+  />
+</BaseLayout>
+
+<style is:inline>
+  [data-project-card]:hover {
+    background-color: var(--project-hover-bg);
+  }
+
+  [data-project-card]:hover [data-project-card-title] {
+    color: var(--project-hover-title);
+  }
+
+  [data-project-card]:hover [data-project-card-meta] {
+    color: var(--project-hover-meta);
+  }
+
+  [data-project-card]:hover [data-project-card-body],
+  [data-project-card]:hover [data-project-card-cta],
+  [data-project-card]:hover [data-project-card-icon] {
+    color: var(--project-hover-body);
+  }
+
+  [data-project-card]:hover [data-project-card-icon],
+  [data-project-card]:hover [data-project-card-icon] svg {
+    color: var(--project-hover-icon);
+  }
+
+  [data-project-card]:hover [data-project-card-bgicon] {
+    color: var(--project-hover-icon);
+    opacity: 0.12;
+  }
+</style>

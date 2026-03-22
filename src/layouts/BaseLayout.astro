@@ -4,12 +4,18 @@ interface Props {
   description?: string;
   ogImage?: string;
   canonical?: string;
+  noindex?: boolean;
+  ogType?: string;
+  publishedTime?: string | Date;
   hideAnnouncementBar?: boolean;
   metadata?: {
     title?: string;
     description?: string;
     ogImage?: string;
     canonical?: string;
+    noindex?: boolean;
+    ogType?: string;
+    publishedTime?: string | Date;
     ignoreTitleTemplate?: boolean;
   };
 }
@@ -28,12 +34,15 @@ import { siteConfig } from "../config/site";
 import { getAnnouncementBarSettings } from "../lib/site-data";
 import { defaultUiLanguage, uiTranslations } from "../lib/ui-i18n";
 
-const { title, description, ogImage, canonical, metadata, hideAnnouncementBar = false } = Astro.props;
+const { title, description, ogImage, canonical, noindex, ogType, publishedTime, metadata, hideAnnouncementBar = false } = Astro.props;
 
 const finalTitle = metadata?.title || title;
 const finalDescription = metadata?.description || description;
 const finalOgImage = metadata?.ogImage || ogImage;
 const finalCanonical = metadata?.canonical || canonical;
+const finalNoindex = metadata?.noindex ?? noindex ?? false;
+const finalOgType = metadata?.ogType || ogType;
+const finalPublishedTime = metadata?.publishedTime || publishedTime;
 const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
 const announcementSettings = hideAnnouncementBar ? undefined : await getAnnouncementBarSettings();
 ---
@@ -46,6 +55,9 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
       description={finalDescription}
       ogImage={finalOgImage}
       canonical={finalCanonical}
+      noindex={finalNoindex}
+      ogType={finalOgType}
+      publishedTime={finalPublishedTime}
       ignoreTitleTemplate={finalIgnoreTitleTemplate}
     />
     <Schema type="WebSite" data={{}} />

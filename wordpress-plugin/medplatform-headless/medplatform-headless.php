@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.5
+ * Version: 0.1.6
  * Author: Codex
  */
 
@@ -175,7 +175,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.5',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.6',
 	);
 }
 
@@ -737,8 +737,120 @@ function mp_headless_get_site_settings_payload() {
 			'youtube'   => trim((string) get_option('mp_headless_site_youtube_url', '')),
 			'instagram' => trim((string) get_option('mp_headless_site_instagram_url', '')),
 		),
+		'seoDefaults'              => array(
+			'description' => trim((string) get_option('mp_headless_default_meta_description', '')),
+			'ogImage'     => trim((string) get_option('mp_headless_default_og_image', '')),
+		),
 		'showPublicDownloadCounts' => (bool) get_option('mp_headless_show_public_download_counts', false),
 	);
+}
+
+function mp_headless_get_post_seo_values($post_id) {
+	$post_id = (int) $post_id;
+
+	return array(
+		'title'       => trim((string) get_post_meta($post_id, 'mp_seo_title', true)),
+		'description' => trim((string) get_post_meta($post_id, 'mp_seo_description', true)),
+		'og_image'    => trim((string) get_post_meta($post_id, 'mp_seo_og_image', true)),
+		'canonical'   => trim((string) get_post_meta($post_id, 'mp_seo_canonical_url', true)),
+		'noindex'     => (bool) get_post_meta($post_id, 'mp_seo_noindex', true),
+	);
+}
+
+function mp_headless_render_seo_fields($post_id, $args = array()) {
+	$values       = mp_headless_get_post_seo_values($post_id);
+	$heading      = isset($args['heading']) ? (string) $args['heading'] : __('SEO Settings', 'medplatform-headless');
+	$description  = isset($args['description']) ? (string) $args['description'] : __('Optional. These fields override the default Astro SEO output for this page.', 'medplatform-headless');
+	$wrap_open    = ! empty($args['wrap']);
+	$compact_mode = ! empty($args['compact']);
+
+	if ($wrap_open) :
+		?>
+		<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
+			<h2 style="margin-top:0;"><?php echo esc_html($heading); ?></h2>
+			<p style="margin-top:0; color:#50575e;"><?php echo esc_html($description); ?></p>
+		<?php
+	endif;
+	?>
+	<div style="display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+		<div>
+			<label for="mp_seo_title"><strong><?php esc_html_e('SEO Title', 'medplatform-headless'); ?></strong></label>
+			<input type="text" id="mp_seo_title" name="mp_seo_title" class="widefat" value="<?php echo esc_attr($values['title']); ?>" style="margin-top:8px;" />
+			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the normal page title.', 'medplatform-headless'); ?></p>
+		</div>
+		<div>
+			<label for="mp_seo_canonical_url"><strong><?php esc_html_e('Canonical URL', 'medplatform-headless'); ?></strong></label>
+			<input type="url" id="mp_seo_canonical_url" name="mp_seo_canonical_url" class="widefat" value="<?php echo esc_attr($values['canonical']); ?>" style="margin-top:8px;" placeholder="https://mediplatform.org/example-page/" />
+			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to let Astro generate the canonical URL from the public page path.', 'medplatform-headless'); ?></p>
+		</div>
+		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
+			<label for="mp_seo_description"><strong><?php esc_html_e('Meta Description', 'medplatform-headless'); ?></strong></label>
+			<textarea id="mp_seo_description" class="widefat" rows="4" name="mp_seo_description" style="margin-top:8px;"><?php echo esc_textarea($values['description']); ?></textarea>
+			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the default page summary.', 'medplatform-headless'); ?></p>
+		</div>
+		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1; max-width:520px;' : ''; ?>">
+			<?php
+			mp_headless_render_media_field(
+				array(
+					'label'        => __('Social Share Image', 'medplatform-headless'),
+					'name'         => 'mp_seo_og_image',
+					'value'        => $values['og_image'],
+					'button_label' => __('Upload social image', 'medplatform-headless'),
+					'library_type' => 'image',
+					'description'  => __('Optional. Used for Open Graph and social sharing. Leave empty to use the normal page image or the site default share image.', 'medplatform-headless'),
+				)
+			);
+			?>
+		</div>
+		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
+			<input type="hidden" name="mp_seo_noindex" value="0" />
+			<label>
+				<input type="checkbox" name="mp_seo_noindex" value="1" <?php checked($values['noindex']); ?> />
+				<?php esc_html_e('Tell search engines not to index this page', 'medplatform-headless'); ?>
+			</label>
+			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Use this only when you intentionally want the page hidden from search results.', 'medplatform-headless'); ?></p>
+		</div>
+	</div>
+	<?php
+	if ($wrap_open) :
+		?>
+		</div>
+		<?php
+	endif;
+}
+
+function mp_headless_save_post_seo_meta($post_id, $request = null) {
+	$request = is_array($request) ? $request : $_POST;
+
+	if (
+		! is_array($request) ||
+		(
+			! array_key_exists('mp_seo_title', $request) &&
+			! array_key_exists('mp_seo_description', $request) &&
+			! array_key_exists('mp_seo_og_image', $request) &&
+			! array_key_exists('mp_seo_canonical_url', $request) &&
+			! array_key_exists('mp_seo_noindex', $request)
+		)
+	) {
+		return;
+	}
+
+	$values = array(
+		'mp_seo_title'         => sanitize_text_field(wp_unslash($request['mp_seo_title'] ?? '')),
+		'mp_seo_description'   => sanitize_textarea_field(wp_unslash($request['mp_seo_description'] ?? '')),
+		'mp_seo_og_image'      => esc_url_raw(wp_unslash($request['mp_seo_og_image'] ?? '')),
+		'mp_seo_canonical_url' => esc_url_raw(wp_unslash($request['mp_seo_canonical_url'] ?? '')),
+	);
+
+	foreach ($values as $meta_key => $meta_value) {
+		if ($meta_value === '') {
+			delete_post_meta($post_id, $meta_key);
+		} else {
+			update_post_meta($post_id, $meta_key, $meta_value);
+		}
+	}
+
+	update_post_meta($post_id, 'mp_seo_noindex', ! empty($request['mp_seo_noindex']));
 }
 
 function mp_headless_get_publication_download_count($publication_id) {
@@ -772,7 +884,7 @@ function mp_headless_get_frontend_post_path($post) {
 		case 'mp_publication':
 			return '/blog/' . $post->post_name;
 		case 'mp_project':
-			return '/services/' . $post->post_name;
+			return '/projects/' . $post->post_name;
 		case 'mp_person':
 			return '/team/' . $post->post_name;
 		case 'mp_homepage':
@@ -856,7 +968,7 @@ function mp_headless_get_frontend_redirect_url() {
 	}
 
 	if (is_post_type_archive('mp_project')) {
-		return mp_headless_get_frontend_url('/services');
+		return mp_headless_get_frontend_url('/projects');
 	}
 
 	if (is_post_type_archive('mp_person')) {
@@ -1156,6 +1268,16 @@ function mp_headless_register_meta() {
 			return current_user_can('edit_posts');
 		},
 	);
+	$rest_boolean = array(
+		'single'            => true,
+		'type'              => 'boolean',
+		'default'           => false,
+		'sanitize_callback' => 'mp_headless_sanitize_bool_value',
+		'show_in_rest'      => true,
+		'auth_callback'     => function() {
+			return current_user_can('edit_posts');
+		},
+	);
 
 	register_post_meta('mp_publication', 'mp_author_name', $rest_string);
 	register_post_meta('mp_publication', 'mp_author_role', $rest_string);
@@ -1164,6 +1286,11 @@ function mp_headless_register_meta() {
 	register_post_meta('mp_publication', 'mp_audio_url', $rest_string);
 	register_post_meta('mp_publication', 'mp_download_url', $rest_string);
 	register_post_meta('mp_publication', 'mp_download_label', $rest_string);
+	register_post_meta('mp_publication', 'mp_seo_title', $rest_string);
+	register_post_meta('mp_publication', 'mp_seo_description', $rest_string);
+	register_post_meta('mp_publication', 'mp_seo_og_image', $rest_string);
+	register_post_meta('mp_publication', 'mp_seo_canonical_url', $rest_string);
+	register_post_meta('mp_publication', 'mp_seo_noindex', $rest_boolean);
 	register_post_meta(
 		'mp_publication',
 		'mp_author_person_id',
@@ -1304,6 +1431,11 @@ function mp_headless_register_meta() {
 	);
 
 	register_post_meta('mp_project', 'mp_color', $rest_string);
+	register_post_meta('mp_project', 'mp_seo_title', $rest_string);
+	register_post_meta('mp_project', 'mp_seo_description', $rest_string);
+	register_post_meta('mp_project', 'mp_seo_og_image', $rest_string);
+	register_post_meta('mp_project', 'mp_seo_canonical_url', $rest_string);
+	register_post_meta('mp_project', 'mp_seo_noindex', $rest_boolean);
 	register_post_meta(
 		'mp_project',
 		'mp_progress_color',
@@ -2423,6 +2555,17 @@ function mp_headless_render_publication_meta_box($post) {
 			</label>
 		<?php endforeach; ?>
 	</div>
+	<hr style="margin:20px 0; border:0; border-top:1px solid #dcdcde;" />
+	<?php
+	mp_headless_render_seo_fields(
+		$post->ID,
+		array(
+			'heading'     => __('SEO Settings', 'medplatform-headless'),
+			'description' => __('Optional. These values control the title, description, share image, canonical URL, and noindex behavior used by the Astro frontend for this publication.', 'medplatform-headless'),
+			'compact'     => true,
+		)
+	);
+	?>
 	</div>
 	<?php
 }
@@ -2535,7 +2678,7 @@ function mp_headless_render_project_meta_box($post) {
 		<?php endforeach; ?>
 	</select></p>
 	<p class="description" style="margin-top:-8px;">
-		<?php esc_html_e('Used on the /services project cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?>
+		<?php esc_html_e('Used on the /projects cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?>
 	</p>
 	<p>
 		<label>
@@ -2617,6 +2760,17 @@ function mp_headless_render_project_meta_box($post) {
 		}
 	?></textarea></p>
 	<p style="margin-top:8px;"><?php esc_html_e('Use the main editor for the right-column project body text and the excerpt for the short project description. Project short descriptions are capped at 25 words.', 'medplatform-headless'); ?></p>
+	<hr style="margin:20px 0; border:0; border-top:1px solid #dcdcde;" />
+	<?php
+	mp_headless_render_seo_fields(
+		$post->ID,
+		array(
+			'heading'     => __('SEO Settings', 'medplatform-headless'),
+			'description' => __('Optional. These values control the title, description, share image, canonical URL, and noindex behavior used by the Astro frontend for this project page.', 'medplatform-headless'),
+			'compact'     => true,
+		)
+	);
+	?>
 	<?php
 }
 
@@ -2812,6 +2966,7 @@ function mp_headless_save_meta_boxes($post_id) {
 		update_post_meta($post_id, 'mp_contributor_names', mp_headless_parse_lines($_POST['mp_contributor_names'] ?? ''));
 		update_post_meta($post_id, 'mp_related_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_related_project_ids'] ?? array())));
 		update_post_meta($post_id, 'mp_references', mp_headless_parse_named_links($_POST['mp_references'] ?? ''));
+		mp_headless_save_post_seo_meta($post_id, $_POST);
 	}
 
 	if ($post_type === 'mp_person') {
@@ -2888,6 +3043,7 @@ function mp_headless_save_meta_boxes($post_id) {
 		update_post_meta($post_id, 'mp_updates', mp_headless_parse_lines($_POST['mp_updates'] ?? ''));
 		update_post_meta($post_id, 'mp_donors', mp_headless_parse_named_assets($_POST['mp_donors'] ?? ''));
 		update_post_meta($post_id, 'mp_focus_areas', mp_headless_parse_focus_areas($_POST['mp_focus_areas'] ?? ''));
+		mp_headless_save_post_seo_meta($post_id, $_POST);
 	}
 
 	if ($post_type === 'mp_homepage') {
@@ -3528,7 +3684,7 @@ function mp_headless_render_project_settings_page() {
 						<div>
 							<label for="mp_project_slug"><strong><?php esc_html_e('Project Slug', 'medplatform-headless'); ?></strong></label>
 							<input type="text" id="mp_project_slug" name="mp_project_slug" class="widefat" value="<?php echo esc_attr($project_slug); ?>" style="margin-top:8px;" />
-							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Used in the public project URL, for example /services/gulf-platform.', 'medplatform-headless'); ?></p>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Used in the public project URL, for example /projects/gulf-platform.', 'medplatform-headless'); ?></p>
 						</div>
 						<div style="display:grid; gap:10px;">
 							<label for="mp_color"><strong><?php esc_html_e('Accent Color', 'medplatform-headless'); ?></strong></label>
@@ -3559,7 +3715,7 @@ function mp_headless_render_project_settings_page() {
 									<option value="<?php echo esc_attr($icon_value); ?>" <?php selected($project_card_icon, $icon_value); ?>><?php echo esc_html($icon_label); ?></option>
 								<?php endforeach; ?>
 							</select>
-							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Used on the /services project cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?></p>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Used on the /projects cards for newer projects. Libya Platform, Africa Nexus, and Gulf Platform keep their custom artwork.', 'medplatform-headless'); ?></p>
 						</div>
 						<div style="grid-column:1 / -1;">
 							<label>
@@ -3752,6 +3908,17 @@ function mp_headless_render_project_settings_page() {
 						<textarea id="mp_updates" class="widefat" rows="5" name="mp_updates" style="margin-top:8px;" placeholder="One update per line"><?php echo esc_textarea(implode("\n", $updates)); ?></textarea>
 					</p>
 				</div>
+
+				<?php
+				mp_headless_render_seo_fields(
+					$is_editing ? $project->ID : 0,
+					array(
+						'wrap'        => true,
+						'heading'     => __('SEO Settings', 'medplatform-headless'),
+						'description' => __('Optional. These values control the title, description, share image, canonical URL, and noindex behavior used by the Astro frontend for this project page.', 'medplatform-headless'),
+					)
+				);
+				?>
 			</div>
 
 			<?php submit_button($is_editing ? __('Save Project', 'medplatform-headless') : __('Create Project', 'medplatform-headless')); ?>
@@ -3933,6 +4100,7 @@ function mp_headless_save_project_settings() {
 	update_post_meta($project_id, 'mp_focus_area_slugs', $focus_area_slugs);
 	update_post_meta($project_id, 'mp_custom_focus_areas', $custom_focus_areas);
 	update_post_meta($project_id, 'mp_focus_areas', $focus_area_objects);
+	mp_headless_save_post_seo_meta($project_id, $_POST);
 
 	clean_post_cache($project_id);
 	mp_headless_trigger_build('project_settings_update:' . $project_id);
@@ -4143,6 +4311,8 @@ function mp_headless_render_site_settings_page() {
 	$linkedin_url                 = (string) ($site_settings['socialLinks']['linkedin'] ?? '');
 	$youtube_url                  = (string) ($site_settings['socialLinks']['youtube'] ?? '');
 	$instagram_url                = (string) ($site_settings['socialLinks']['instagram'] ?? '');
+	$default_meta_description     = (string) ($site_settings['seoDefaults']['description'] ?? '');
+	$default_og_image             = (string) ($site_settings['seoDefaults']['ogImage'] ?? '');
 	$show_public_download_counts  = ! empty($site_settings['showPublicDownloadCounts']);
 	$updated                      = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
 	?>
@@ -4188,6 +4358,31 @@ function mp_headless_render_site_settings_page() {
 						</label>
 					</p>
 					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('WordPress will keep tracking downloads either way. This setting only controls whether the count is visible to visitors.', 'medplatform-headless'); ?></p>
+				</div>
+
+				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
+					<h2 style="margin-top:0;"><?php esc_html_e('Default SEO', 'medplatform-headless'); ?></h2>
+					<p style="margin-top:0; color:#50575e;"><?php esc_html_e('These defaults are used by Astro when a page does not have its own custom SEO values. They are especially useful for the homepage, archive pages, and any content without a page-specific social image.', 'medplatform-headless'); ?></p>
+					<div style="display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+						<div style="grid-column:1 / -1;">
+							<label for="mp_default_meta_description"><strong><?php esc_html_e('Default Meta Description', 'medplatform-headless'); ?></strong></label>
+							<textarea id="mp_default_meta_description" name="mp_default_meta_description" class="widefat" rows="4" style="margin-top:8px;"><?php echo esc_textarea($default_meta_description); ?></textarea>
+						</div>
+						<div style="max-width:520px;">
+							<?php
+							mp_headless_render_media_field(
+								array(
+									'label'        => __('Default Social Share Image', 'medplatform-headless'),
+									'name'         => 'mp_default_og_image',
+									'value'        => $default_og_image,
+									'button_label' => __('Upload default social image', 'medplatform-headless'),
+									'library_type' => 'image',
+									'description'  => __('Used for Open Graph and social sharing when a page does not provide its own image.', 'medplatform-headless'),
+								)
+							);
+							?>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -4321,6 +4516,8 @@ function mp_headless_save_site_settings() {
 	update_option('mp_headless_site_linkedin_url', esc_url_raw(wp_unslash($_POST['mp_site_linkedin_url'] ?? '')));
 	update_option('mp_headless_site_youtube_url', esc_url_raw(wp_unslash($_POST['mp_site_youtube_url'] ?? '')));
 	update_option('mp_headless_site_instagram_url', esc_url_raw(wp_unslash($_POST['mp_site_instagram_url'] ?? '')));
+	update_option('mp_headless_default_meta_description', sanitize_textarea_field(wp_unslash($_POST['mp_default_meta_description'] ?? '')));
+	update_option('mp_headless_default_og_image', esc_url_raw(wp_unslash($_POST['mp_default_og_image'] ?? '')));
 	update_option('mp_headless_show_public_download_counts', ! empty($_POST['mp_show_public_download_counts']));
 
 	mp_headless_trigger_build('site_settings_update');

@@ -102,6 +102,9 @@ const relatedProjectsLeadLabel =
     ? "This Publication is part of"
     : "This Publication is part of the following projects";
 const seoDescription = publication.previewText || publication.description;
+const publicationSeoTitle = publication.seo.title || publication.title;
+const publicationSeoDescription = publication.seo.description || seoDescription;
+const publicationSeoImage = publication.seo.ogImage || publication.image;
 
 const getProjectButtonTextColor = (color: string) => {
   const normalized = color.trim().replace("#", "");
@@ -169,9 +172,14 @@ if (fileDownloadHref) {
 }
 
 const metadata = {
-  title: publication.title,
-  description: seoDescription,
-  ogImage: publication.image,
+  title: publicationSeoTitle,
+  description: publicationSeoDescription,
+  ogImage: publicationSeoImage,
+  canonical: publication.seo.canonical,
+  noindex: publication.seo.noindex,
+  ogType: "article",
+  publishedTime: publication.pubDate,
+  ignoreTitleTemplate: Boolean(publication.seo.title),
 };
 ---
 
@@ -180,11 +188,11 @@ const metadata = {
     type="BlogPosting"
     data={{
       title: publication.title,
-      description: seoDescription,
-      image: publication.image,
+      description: publicationSeoDescription,
+      image: publicationSeoImage,
       pubDate: publication.pubDate,
       author: publication.author,
-      url: Astro.url.href,
+      url: publication.seo.canonical || Astro.url.href,
     }}
   />
 
