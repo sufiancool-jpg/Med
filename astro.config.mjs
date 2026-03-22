@@ -6,7 +6,12 @@ import remarkReadingTime from "remark-reading-time";
 
 export default defineConfig({
   site: "https://mediplatform.org/",
-  integrations: [sitemap(), icon()],
+  integrations: [
+    sitemap({
+      filter: (page) => !page.includes("/services"),
+    }),
+    icon(),
+  ],
   markdown: {
     remarkPlugins: [
       remarkReadingTime,
