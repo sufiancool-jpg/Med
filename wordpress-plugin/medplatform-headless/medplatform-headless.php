@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.7
+ * Version: 0.1.8
  * Author: Codex
  */
 
@@ -156,6 +156,23 @@ function mp_headless_sanitize_ga4_property_id($value) {
 	return preg_replace('/\D+/', '', (string) wp_unslash($value));
 }
 
+function mp_headless_normalize_private_key($private_key) {
+	$private_key = trim((string) $private_key);
+
+	if ($private_key === '') {
+		return '';
+	}
+
+	$private_key = str_replace(array("\r\n", "\r"), "\n", $private_key);
+	$private_key = str_replace('\\n', "\n", $private_key);
+
+	if (substr($private_key, -1) !== "\n") {
+		$private_key .= "\n";
+	}
+
+	return $private_key;
+}
+
 function mp_headless_sanitize_ga4_service_account_json($value) {
 	$raw = trim((string) wp_unslash($value));
 
@@ -172,7 +189,7 @@ function mp_headless_sanitize_ga4_service_account_json($value) {
 		'type'                        => sanitize_text_field((string) ($decoded['type'] ?? '')),
 		'project_id'                  => sanitize_text_field((string) ($decoded['project_id'] ?? '')),
 		'private_key_id'              => sanitize_text_field((string) ($decoded['private_key_id'] ?? '')),
-		'private_key'                 => str_replace("\r\n", "\n", (string) ($decoded['private_key'] ?? '')),
+		'private_key'                 => mp_headless_normalize_private_key((string) ($decoded['private_key'] ?? '')),
 		'client_email'                => sanitize_email((string) ($decoded['client_email'] ?? '')),
 		'client_id'                   => sanitize_text_field((string) ($decoded['client_id'] ?? '')),
 		'auth_uri'                    => esc_url_raw((string) ($decoded['auth_uri'] ?? '')),
@@ -220,7 +237,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.7',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.8',
 	);
 }
 
@@ -5389,12 +5406,13 @@ function mp_headless_base64url_encode($value) {
 function mp_headless_get_ga4_access_token() {
 	$settings        = mp_headless_get_ga4_settings();
 	$service_account = $settings['service_account'];
+	$private_key     = mp_headless_normalize_private_key((string) ($service_account['private_key'] ?? ''));
 
 	if (empty($settings['property_id'])) {
 		return new WP_Error('mp_headless_ga4_property_missing', __('Add the GA4 Property ID in Med Platform Headless settings first.', 'medplatform-headless'));
 	}
 
-	if (empty($service_account['client_email']) || empty($service_account['private_key'])) {
+	if (empty($service_account['client_email']) || $private_key === '') {
 		return new WP_Error('mp_headless_ga4_service_account_missing', __('Paste a valid Google service-account JSON key in Med Platform Headless settings first.', 'medplatform-headless'));
 	}
 
@@ -5426,9 +5444,42 @@ function mp_headless_get_ga4_access_token() {
 	);
 	$unsigned  = implode('.', $segments);
 	$signature = '';
+	$key       = openssl_pkey_get_private($private_key);
 
-	if (! openssl_sign($unsigned, $signature, (string) $service_account['private_key'], OPENSSL_ALGO_SHA256)) {
-		return new WP_Error('mp_headless_ga4_signing_failed', __('Google Analytics authentication failed while signing the service-account request.', 'medplatform-headless'));
+	if (! $key) {
+		$errors = array();
+		while ($error = openssl_error_string()) {
+			$errors[] = $error;
+		}
+
+		$message = __('Google Analytics could not read the private key from the service-account JSON.', 'medplatform-headless');
+		if (! empty($errors)) {
+			$message .= ' ' . implode(' | ', $errors);
+		}
+
+		return new WP_Error('mp_headless_ga4_private_key_invalid', $message);
+	}
+
+	if (! openssl_sign($unsigned, $signature, $key, OPENSSL_ALGO_SHA256)) {
+		$errors = array();
+		while ($error = openssl_error_string()) {
+			$errors[] = $error;
+		}
+
+		if (is_resource($key)) {
+			openssl_free_key($key);
+		}
+
+		$message = __('Google Analytics authentication failed while signing the service-account request.', 'medplatform-headless');
+		if (! empty($errors)) {
+			$message .= ' ' . implode(' | ', $errors);
+		}
+
+		return new WP_Error('mp_headless_ga4_signing_failed', $message);
+	}
+
+	if (is_resource($key)) {
+		openssl_free_key($key);
 	}
 
 	$response = wp_remote_post(
