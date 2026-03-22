@@ -255,8 +255,10 @@ foreach ($publications as $publication) {
 	update_post_meta($publication_id, 'mp_author_role', $publication['authorRole'] ?? '');
 	update_post_meta($publication_id, 'mp_author_image', $author_person_id ? get_post_meta($author_person_id, 'mp_photo', true) : ($publication['authorImage'] ?? ''));
 	update_post_meta($publication_id, 'mp_cover_image', $publication['imageUrl'] ?? '');
+	update_post_meta($publication_id, 'mp_slider_thumbnail', $publication['sliderThumbnailUrl'] ?? '');
+	update_post_meta($publication_id, 'mp_has_download_file', ! empty($publication['downloadUrl']));
 	update_post_meta($publication_id, 'mp_download_url', $publication['downloadUrl'] ?? '');
-	update_post_meta($publication_id, 'mp_download_label', $publication['downloadLabel'] ?? '');
+	update_post_meta($publication_id, 'mp_download_label', '');
 	update_post_meta($publication_id, 'mp_references', $publication['references'] ?? array());
 	$contributor_person_ids = array();
 	foreach (($publication['contributorPersonSlugs'] ?? array()) as $person_slug) {

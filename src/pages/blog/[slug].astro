@@ -66,11 +66,7 @@ const downloadCountApiHref =
   publication.source === "wordpress"
     ? publication.downloadCountApiHref
     : undefined;
-const resolvedDownloadLabel =
-  publication.downloadLabel ||
-  (fileDownloadHref?.toLowerCase().endsWith(".pdf")
-    ? "Download PDF"
-    : "Download publication");
+const resolvedDownloadLabel = "Download publication";
 const showLeadPreview = shouldShowPublicationLead(publication);
 const publicationAuthors =
   publication.authorPeople.length > 0

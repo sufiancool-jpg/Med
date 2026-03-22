@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.11
+ * Version: 0.1.12
  * Author: Codex
  */
 
@@ -251,7 +251,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.11',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.12',
 	);
 }
 
@@ -844,50 +844,56 @@ function mp_headless_render_seo_fields($post_id, $args = array()) {
 	if ($wrap_open) :
 		?>
 		<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
-			<h2 style="margin-top:0;"><?php echo esc_html($heading); ?></h2>
-			<p style="margin-top:0; color:#50575e;"><?php echo esc_html($description); ?></p>
 		<?php
 	endif;
 	?>
-	<div style="display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
-		<div>
-			<label for="mp_seo_title"><strong><?php esc_html_e('SEO Title', 'medplatform-headless'); ?></strong></label>
-			<input type="text" id="mp_seo_title" name="mp_seo_title" class="widefat" value="<?php echo esc_attr($values['title']); ?>" style="margin-top:8px;" />
-			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the normal page title.', 'medplatform-headless'); ?></p>
+	<details style="border:1px solid #dcdcde; background:#fff;">
+		<summary style="cursor:pointer; padding:16px 18px; font-weight:600;">
+			<span><?php echo esc_html($heading); ?></span>
+			<span style="display:block; margin-top:6px; font-weight:400; color:#50575e;"><?php echo esc_html($description); ?></span>
+		</summary>
+		<div style="padding:0 18px 18px;">
+			<div style="display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+				<div>
+					<label for="mp_seo_title"><strong><?php esc_html_e('SEO Title', 'medplatform-headless'); ?></strong></label>
+					<input type="text" id="mp_seo_title" name="mp_seo_title" class="widefat" value="<?php echo esc_attr($values['title']); ?>" style="margin-top:8px;" />
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the normal page title.', 'medplatform-headless'); ?></p>
+				</div>
+				<div>
+					<label for="mp_seo_canonical_url"><strong><?php esc_html_e('Canonical URL', 'medplatform-headless'); ?></strong></label>
+					<input type="url" id="mp_seo_canonical_url" name="mp_seo_canonical_url" class="widefat" value="<?php echo esc_attr($values['canonical']); ?>" style="margin-top:8px;" placeholder="https://mediplatform.org/example-page/" />
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to let Astro generate the canonical URL from the public page path.', 'medplatform-headless'); ?></p>
+				</div>
+				<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
+					<label for="mp_seo_description"><strong><?php esc_html_e('Meta Description', 'medplatform-headless'); ?></strong></label>
+					<textarea id="mp_seo_description" class="widefat" rows="4" name="mp_seo_description" style="margin-top:8px;"><?php echo esc_textarea($values['description']); ?></textarea>
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the default page summary.', 'medplatform-headless'); ?></p>
+				</div>
+				<div style="<?php echo $compact_mode ? 'grid-column:1 / -1; max-width:520px;' : ''; ?>">
+					<?php
+					mp_headless_render_media_field(
+						array(
+							'label'        => __('Social Share Image', 'medplatform-headless'),
+							'name'         => 'mp_seo_og_image',
+							'value'        => $values['og_image'],
+							'button_label' => __('Upload social image', 'medplatform-headless'),
+							'library_type' => 'image',
+							'description'  => __('Optional. Used for Open Graph and social sharing. Leave empty to use the normal page image or the site default share image.', 'medplatform-headless'),
+						)
+					);
+					?>
+				</div>
+				<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
+					<input type="hidden" name="mp_seo_noindex" value="0" />
+					<label>
+						<input type="checkbox" name="mp_seo_noindex" value="1" <?php checked($values['noindex']); ?> />
+						<?php esc_html_e('Tell search engines not to index this page', 'medplatform-headless'); ?>
+					</label>
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Use this only when you intentionally want the page hidden from search results.', 'medplatform-headless'); ?></p>
+				</div>
+			</div>
 		</div>
-		<div>
-			<label for="mp_seo_canonical_url"><strong><?php esc_html_e('Canonical URL', 'medplatform-headless'); ?></strong></label>
-			<input type="url" id="mp_seo_canonical_url" name="mp_seo_canonical_url" class="widefat" value="<?php echo esc_attr($values['canonical']); ?>" style="margin-top:8px;" placeholder="https://mediplatform.org/example-page/" />
-			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to let Astro generate the canonical URL from the public page path.', 'medplatform-headless'); ?></p>
-		</div>
-		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
-			<label for="mp_seo_description"><strong><?php esc_html_e('Meta Description', 'medplatform-headless'); ?></strong></label>
-			<textarea id="mp_seo_description" class="widefat" rows="4" name="mp_seo_description" style="margin-top:8px;"><?php echo esc_textarea($values['description']); ?></textarea>
-			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Optional. Leave empty to use the default page summary.', 'medplatform-headless'); ?></p>
-		</div>
-		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1; max-width:520px;' : ''; ?>">
-			<?php
-			mp_headless_render_media_field(
-				array(
-					'label'        => __('Social Share Image', 'medplatform-headless'),
-					'name'         => 'mp_seo_og_image',
-					'value'        => $values['og_image'],
-					'button_label' => __('Upload social image', 'medplatform-headless'),
-					'library_type' => 'image',
-					'description'  => __('Optional. Used for Open Graph and social sharing. Leave empty to use the normal page image or the site default share image.', 'medplatform-headless'),
-				)
-			);
-			?>
-		</div>
-		<div style="<?php echo $compact_mode ? 'grid-column:1 / -1;' : ''; ?>">
-			<input type="hidden" name="mp_seo_noindex" value="0" />
-			<label>
-				<input type="checkbox" name="mp_seo_noindex" value="1" <?php checked($values['noindex']); ?> />
-				<?php esc_html_e('Tell search engines not to index this page', 'medplatform-headless'); ?>
-			</label>
-			<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Use this only when you intentionally want the page hidden from search results.', 'medplatform-headless'); ?></p>
-		</div>
-	</div>
+	</details>
 	<?php
 	if ($wrap_open) :
 		?>
@@ -1360,8 +1366,10 @@ function mp_headless_register_meta() {
 	register_post_meta('mp_publication', 'mp_author_role', $rest_string);
 	register_post_meta('mp_publication', 'mp_author_image', $rest_string);
 	register_post_meta('mp_publication', 'mp_cover_image', $rest_string);
+	register_post_meta('mp_publication', 'mp_slider_thumbnail', $rest_string);
 	register_post_meta('mp_publication', 'mp_audio_url', $rest_string);
 	register_post_meta('mp_publication', 'mp_download_url', $rest_string);
+	register_post_meta('mp_publication', 'mp_has_download_file', $rest_boolean);
 	register_post_meta('mp_publication', 'mp_download_label', $rest_string);
 	register_post_meta('mp_publication', 'mp_seo_title', $rest_string);
 	register_post_meta('mp_publication', 'mp_seo_description', $rest_string);
@@ -2227,7 +2235,6 @@ function mp_headless_import_bundled_seed_content() {
 		$asset_url       = (string) ($publication['downloadUrl'] ?? '');
 		$download_url    = $is_podcast ? '' : $asset_url;
 		$audio_url       = $is_podcast ? $asset_url : (string) ($publication['audioUrl'] ?? '');
-		$download_label  = $is_podcast ? '' : (string) ($publication['downloadLabel'] ?? '');
 		$author_name     = ! empty($author_names) ? implode(', ', $author_names) : (string) ($publication['authorName'] ?? '');
 
 		update_post_meta($publication_id, 'mp_author_name', $author_name);
@@ -2236,9 +2243,11 @@ function mp_headless_import_bundled_seed_content() {
 		update_post_meta($publication_id, 'mp_author_role', (string) ($publication['authorRole'] ?? ''));
 		update_post_meta($publication_id, 'mp_author_image', $author_person_id ? (string) get_post_meta($author_person_id, 'mp_photo', true) : (string) ($publication['authorImage'] ?? ''));
 		update_post_meta($publication_id, 'mp_cover_image', (string) ($publication['imageUrl'] ?? ''));
+		update_post_meta($publication_id, 'mp_slider_thumbnail', (string) ($publication['sliderThumbnailUrl'] ?? ''));
 		update_post_meta($publication_id, 'mp_audio_url', $audio_url);
+		update_post_meta($publication_id, 'mp_has_download_file', ! $is_podcast && $download_url !== '');
 		update_post_meta($publication_id, 'mp_download_url', $download_url);
-		update_post_meta($publication_id, 'mp_download_label', $download_label);
+		update_post_meta($publication_id, 'mp_download_label', '');
 		update_post_meta($publication_id, 'mp_references', (array) ($publication['references'] ?? array()));
 
 		$contributor_person_ids = array();
@@ -2529,6 +2538,11 @@ function mp_headless_render_publication_meta_box($post) {
 	$contributor_person_ids = is_array($contributor_person_ids) ? $contributor_person_ids : array();
 	$contributor_names = is_array($contributor_names) ? $contributor_names : array();
 	$references = is_array($references) ? $references : array();
+	$download_url = (string) get_post_meta($post->ID, 'mp_download_url', true);
+	$has_download_file = (bool) get_post_meta($post->ID, 'mp_has_download_file', true);
+	if (! $has_download_file && $download_url !== '') {
+		$has_download_file = true;
+	}
 	?>
 	<div style="display:grid; gap:18px;">
 	<p><label for="mp_output_type_term"><strong><?php esc_html_e('Output Type', 'medplatform-headless'); ?></strong></label><br />
@@ -2561,6 +2575,16 @@ function mp_headless_render_publication_meta_box($post) {
 			'library_type' => 'image',
 		)
 	);
+	mp_headless_render_media_field(
+		array(
+			'label'        => __('Homepage Slider Thumbnail', 'medplatform-headless'),
+			'name'         => 'mp_slider_thumbnail',
+			'value'        => get_post_meta($post->ID, 'mp_slider_thumbnail', true),
+			'button_label' => __('Upload slider thumbnail', 'medplatform-headless'),
+			'library_type' => 'image',
+			'description'  => __('Optional. Used on the homepage article slider instead of the main cover image.', 'medplatform-headless'),
+		)
+	);
 	?>
 	<div data-mp-podcast-fields>
 		<?php
@@ -2581,21 +2605,28 @@ function mp_headless_render_publication_meta_box($post) {
 		</p>
 	</div>
 	<div data-mp-publication-download-fields>
-		<?php
-		mp_headless_render_media_field(
+		<input type="hidden" name="mp_has_download_file" value="0" />
+		<p style="margin-bottom:0;">
+			<label>
+				<input type="checkbox" name="mp_has_download_file" value="1" data-mp-publication-download-toggle <?php checked($has_download_file); ?> />
+				<?php esc_html_e('This publication has a downloadable file', 'medplatform-headless'); ?>
+			</label>
+		</p>
+		<div data-mp-publication-download-fields-inner <?php echo $has_download_file ? '' : 'hidden'; ?>>
+			<?php
+			mp_headless_render_media_field(
 				array(
 					'label'        => __('Publication File URL', 'medplatform-headless'),
 					'name'         => 'mp_download_url',
-					'value'        => get_post_meta($post->ID, 'mp_download_url', true),
+					'value'        => $download_url,
 					'button_label' => __('Upload PDF or document', 'medplatform-headless'),
 					'library_type' => 'application/pdf',
-					'description'  => __('Leave this empty if the publication should not show a download button on the frontend. Podcast entries do not use this field.', 'medplatform-headless'),
+					'description'  => __('Attach the downloadable file here. The frontend uses a standard Download publication button automatically.', 'medplatform-headless'),
 					'max_size_mb'  => 5,
 				)
 			);
 			?>
-		<p><label><strong><?php esc_html_e('File Button Label', 'medplatform-headless'); ?></strong></label><br />
-		<input type="text" class="widefat" name="mp_download_label" value="<?php echo esc_attr(get_post_meta($post->ID, 'mp_download_label', true)); ?>" /></p>
+		</div>
 	</div>
 	<p><label><strong><?php esc_html_e('References', 'medplatform-headless'); ?></strong></label><br />
 	<textarea class="widefat" rows="5" name="mp_references" placeholder="One reference per line: Reference Name | https://example.com"><?php
@@ -3022,12 +3053,12 @@ function mp_headless_save_meta_boxes($post_id) {
 			$selected_output_type = 'insights';
 		}
 
-		$download_url = $selected_output_type === 'pod-cast'
+		$has_download_file = $selected_output_type === 'pod-cast'
+			? false
+			: ! empty($_POST['mp_has_download_file']);
+		$download_url = ($selected_output_type === 'pod-cast' || ! $has_download_file)
 			? ''
 			: esc_url_raw(wp_unslash($_POST['mp_download_url'] ?? ''));
-		$download_label = $selected_output_type === 'pod-cast'
-			? ''
-			: sanitize_text_field(wp_unslash($_POST['mp_download_label'] ?? ''));
 
 		wp_set_object_terms($post_id, array($selected_output_type), 'mp_output_type', false);
 		update_post_meta($post_id, 'mp_author_name', sanitize_text_field($author_name));
@@ -3036,9 +3067,11 @@ function mp_headless_save_meta_boxes($post_id) {
 		update_post_meta($post_id, 'mp_author_role', sanitize_text_field(wp_unslash($_POST['mp_author_role'] ?? '')));
 		update_post_meta($post_id, 'mp_author_image', esc_url_raw($author_image));
 		update_post_meta($post_id, 'mp_cover_image', esc_url_raw(wp_unslash($_POST['mp_cover_image'] ?? '')));
+		update_post_meta($post_id, 'mp_slider_thumbnail', esc_url_raw(wp_unslash($_POST['mp_slider_thumbnail'] ?? '')));
 		update_post_meta($post_id, 'mp_audio_url', esc_url_raw(wp_unslash($_POST['mp_audio_url'] ?? '')));
+		update_post_meta($post_id, 'mp_has_download_file', $has_download_file);
 		update_post_meta($post_id, 'mp_download_url', $download_url);
-		update_post_meta($post_id, 'mp_download_label', $download_label);
+		update_post_meta($post_id, 'mp_download_label', '');
 		update_post_meta($post_id, 'mp_contributor_person_ids', $contributor_person_ids);
 		update_post_meta($post_id, 'mp_contributor_names', mp_headless_parse_lines($_POST['mp_contributor_names'] ?? ''));
 		update_post_meta($post_id, 'mp_related_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_related_project_ids'] ?? array())));
@@ -4943,25 +4976,6 @@ function mp_headless_register_settings() {
 		)
 	);
 
-	register_setting(
-		'mp_headless_settings',
-		'mp_headless_ga4_property_id',
-		array(
-			'type'              => 'string',
-			'sanitize_callback' => 'mp_headless_sanitize_ga4_property_id',
-			'default'           => '',
-		)
-	);
-
-	register_setting(
-		'mp_headless_settings',
-		'mp_headless_ga4_service_account_json',
-		array(
-			'type'              => 'string',
-			'sanitize_callback' => 'mp_headless_sanitize_ga4_service_account_json',
-			'default'           => '',
-		)
-	);
 }
 add_action('admin_init', 'mp_headless_register_settings');
 
@@ -4973,10 +4987,6 @@ function mp_headless_render_settings_page() {
 	$github_trigger_path      = (string) get_option('mp_headless_github_trigger_path', '.hostinger/deploy-trigger.json');
 	$github_auto_push_enabled = mp_headless_github_auto_push_enabled();
 	$github_last_status       = get_option('mp_headless_github_last_status', array());
-	$ga4_property_id          = (string) get_option('mp_headless_ga4_property_id', '');
-	$ga4_service_account_json = (string) get_option('mp_headless_ga4_service_account_json', '');
-	$ga4_service_account      = $ga4_service_account_json !== '' ? json_decode($ga4_service_account_json, true) : array();
-	$ga4_service_email        = is_array($ga4_service_account) ? (string) ($ga4_service_account['client_email'] ?? '') : '';
 	$github_recent_versions   = array();
 	$github_recent_error      = null;
 	if ($github_repo_owner !== '' && $github_repo_name !== '' && $github_token !== '') {
@@ -5078,40 +5088,6 @@ function mp_headless_render_settings_page() {
 							<?php esc_html_e('Automatically push GitHub deploy updates after CMS changes', 'medplatform-headless'); ?>
 						</label>
 						<p class="description"><?php esc_html_e('Turn this off if you want WordPress content changes to wait until you manually click Push Update.', 'medplatform-headless'); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row" colspan="2" style="padding-bottom:0;">
-						<h2 style="margin:0;"><?php esc_html_e('Google Analytics Dashboard', 'medplatform-headless'); ?></h2>
-						<p class="description" style="margin:6px 0 0;"><?php esc_html_e('Optional. This adds a read-only GA4 widget to the WordPress dashboard so the team can see website traffic without installing Site Kit or adding another frontend tracking snippet.', 'medplatform-headless'); ?></p>
-					</th>
-				</tr>
-				<tr>
-					<th scope="row"><label for="mp_headless_ga4_property_id"><?php esc_html_e('GA4 Property ID', 'medplatform-headless'); ?></label></th>
-					<td>
-						<input id="mp_headless_ga4_property_id" type="text" class="regular-text code" name="mp_headless_ga4_property_id" value="<?php echo esc_attr($ga4_property_id); ?>" placeholder="529452010" />
-						<p class="description"><?php esc_html_e('Use the numeric GA4 property ID for the live frontend site.', 'medplatform-headless'); ?></p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row"><label for="mp_headless_ga4_service_account_json"><?php esc_html_e('Service Account JSON', 'medplatform-headless'); ?></label></th>
-					<td>
-						<textarea id="mp_headless_ga4_service_account_json" class="large-text code" rows="12" name="mp_headless_ga4_service_account_json" spellcheck="false"><?php echo esc_textarea($ga4_service_account_json); ?></textarea>
-						<p class="description"><?php esc_html_e('Paste the full Google service-account JSON key here. The plugin uses it only to read GA4 dashboard reports for the configured property.', 'medplatform-headless'); ?></p>
-						<?php if ($ga4_service_email !== '') : ?>
-							<p class="description" style="margin-top:6px;">
-								<?php
-								echo esc_html(
-									sprintf(
-										/* translators: %s: service account email */
-										__('Current service account email: %s', 'medplatform-headless'),
-										$ga4_service_email
-									)
-								);
-								?>
-							</p>
-						<?php endif; ?>
-						<p class="description" style="margin-top:6px;"><?php esc_html_e('In Google Analytics, add that service-account email as a Viewer or Analyst on the GA4 property. This does not inject anything into the frontend.', 'medplatform-headless'); ?></p>
 					</td>
 				</tr>
 				<tr>
@@ -5849,12 +5825,6 @@ function mp_headless_register_dashboard_widgets() {
 		'mp_headless_download_stats',
 		__('Publication Download Stats', 'medplatform-headless'),
 		'mp_headless_render_download_dashboard_widget'
-	);
-
-	wp_add_dashboard_widget(
-		'mp_headless_ga4_stats',
-		__('Website Visit Stats (GA4)', 'medplatform-headless'),
-		'mp_headless_render_ga4_dashboard_widget'
 	);
 }
 add_action('wp_dashboard_setup', 'mp_headless_register_dashboard_widgets');

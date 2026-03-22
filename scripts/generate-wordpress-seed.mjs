@@ -61,6 +61,7 @@ for (const fileName of markdownFiles) {
     hashtags: tags,
     projectSlugs: projectSlugByPublicationSlug[slug] ?? [],
     imageUrl: data.image ? String(data.image) : "",
+    sliderThumbnailUrl: data.sliderThumbnail ? String(data.sliderThumbnail) : "",
     downloadUrl: data.downloadHref ? String(data.downloadHref) : "",
     downloadLabel: data.downloadLabel ? String(data.downloadLabel) : "",
     contributorPersonSlugs: Array.isArray(data.contributorPersonSlugs)

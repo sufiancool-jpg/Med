@@ -302,22 +302,24 @@ const metadata = {
             set:html={project.contentHtml}
           ></div>
 
-          <section class="mt-10">
-            <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
-              <span data-ui-i18n="project.currentUpdates">Current Updates</span>
-            </p>
-            <ul class="mt-4 space-y-3 text-[0.98rem] leading-7 text-primary/74">
-              {project.updates.map((update) => (
-                <li class="flex items-start gap-3">
-                  <span
-                    class="mt-[0.6rem] h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={`background:${project.color};`}
-                  ></span>
-                  <span>{update}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {project.updates.length > 0 && (
+            <section class="mt-10">
+              <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">
+                <span data-ui-i18n="project.currentUpdates">Current Updates</span>
+              </p>
+              <ul class="mt-4 space-y-3 text-[0.98rem] leading-7 text-primary/74">
+                {project.updates.map((update) => (
+                  <li class="flex items-start gap-3">
+                    <span
+                      class="mt-[0.6rem] h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={`background:${project.color};`}
+                    ></span>
+                    <span>{update}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section class="mt-10">
             <p class="text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-primary/55">

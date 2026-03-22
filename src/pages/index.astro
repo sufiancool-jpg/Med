@@ -97,7 +97,7 @@ const midPageSliderItems = homepageSelections.sliderPublications.map((publicatio
   author: publication.author,
   date: getPublicationCardDate(publication),
   category: publication.outputType,
-  image: publication.image || "/blog/welcome.webp",
+  image: publication.sliderThumbnail || publication.image || "/blog/welcome.webp",
   hashtags: publication.hashtags
     .slice(0, 3)
     .map((tag) => `#${tag.label}`)

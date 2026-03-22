@@ -59,10 +59,14 @@
     $("[data-mp-podcast-fields]").toggle(isPodcast);
     $("[data-mp-publication-download-fields]").each(function () {
       const $group = $(this);
+      const $toggle = $group.find("[data-mp-publication-download-toggle]").first();
+      const $fields = $group.find("[data-mp-publication-download-fields-inner]").first();
+      const showDownloadFields = !isPodcast && $toggle.is(":checked");
+
       $group.toggle(!isPodcast);
-      $group
-        .find("input, textarea, select, button")
-        .prop("disabled", isPodcast);
+      $toggle.prop("disabled", isPodcast);
+      $fields.toggle(showDownloadFields);
+      $fields.find("input, textarea, select, button").prop("disabled", !showDownloadFields);
     });
   };
 
@@ -345,6 +349,7 @@
   });
 
   $(document).on("change", "[data-mp-output-type-select]", syncPublicationTypeUi);
+  $(document).on("change", "[data-mp-publication-download-toggle]", syncPublicationTypeUi);
   $(document).on("change", "[data-mp-team-select]", syncProjectLeadOptions);
   $(document).on("input", "[data-mp-stage-points-input]", syncProjectStageOptions);
   $(document).on("change", "[data-mp-parent-project-toggle]", syncParentProjectOptions);

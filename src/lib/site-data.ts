@@ -75,6 +75,7 @@ export interface PublicationSummary {
   authorPerson?: PublicationPerson;
   authorPeople: PublicationPerson[];
   image?: string;
+  sliderThumbnail?: string;
   audioHref?: string;
   outputType: string;
   outputTypeSlug: string;
@@ -670,7 +671,9 @@ const loadWordPressProjects = async (): Promise<ProjectSummary[] | null> => {
                 }))
               : [],
             updates: Array.isArray(record.meta?.mp_updates)
-              ? record.meta?.mp_updates.map((item) => String(item))
+              ? record.meta?.mp_updates
+                  .map((item) => String(item).trim())
+                  .filter(Boolean)
               : [],
             focusAreas: Array.isArray(record.meta?.mp_focus_areas)
               ? record.meta?.mp_focus_areas.map((item) => ({
@@ -774,6 +777,8 @@ const buildWordPressPublicationSummary = (
         image: "",
       })),
   ];
+  const downloadUrl = String(record.meta?.mp_download_url ?? "");
+  const hasDownloadFile = Boolean(record.meta?.mp_has_download_file) || downloadUrl.trim() !== "";
 
   return {
     id: record.id,
@@ -797,6 +802,7 @@ const buildWordPressPublicationSummary = (
     authorPerson: primaryAuthorPersonRecord ? toPublicationPerson(primaryAuthorPersonRecord) : undefined,
     authorPeople,
     image: String(record.meta?.mp_cover_image ?? ""),
+    sliderThumbnail: String(record.meta?.mp_slider_thumbnail ?? ""),
     audioHref: String(record.meta?.mp_audio_url ?? ""),
     outputType: outputTypeTerm?.name ?? "Insights",
     outputTypeSlug: outputTypeTerm?.slug ?? "insights",
@@ -818,16 +824,16 @@ const buildWordPressPublicationSummary = (
       color: project.color,
       cardIcon: project.cardIcon,
     })),
-    downloadTrackedHref: isPodcastOutput
+    downloadTrackedHref: isPodcastOutput || !hasDownloadFile
       ? undefined
       : buildWordPressAdminActionUrl({
           action: "mp_headless_track_publication_download",
           publication_id: record.id,
         }),
-    downloadCountApiHref: isPodcastOutput
+    downloadCountApiHref: isPodcastOutput || !hasDownloadFile
       ? undefined
       : buildWordPressApiEndpoint(`/mp-headless/v1/publications/${record.id}/download-stats`),
-    downloadHref: isPodcastOutput ? "" : String(record.meta?.mp_download_url ?? ""),
+    downloadHref: isPodcastOutput || !hasDownloadFile ? "" : downloadUrl,
     downloadLabel: String(record.meta?.mp_download_label ?? ""),
     seo: normalizeSeoFields(record.meta),
     source: "wordpress",
@@ -1065,6 +1071,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
             authorPerson,
             authorPeople,
             image: entry.data.image,
+            sliderThumbnail: entry.data.image,
             audioHref: outputType === "Pod-Cast" ? entry.data.downloadHref : undefined,
             outputType,
             outputTypeSlug: toRouteSlug(outputType),
