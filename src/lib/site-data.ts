@@ -190,6 +190,9 @@ export interface SiteSettings {
     description?: string;
     ogImage?: string;
   };
+  teamPage: {
+    personIds: number[];
+  };
 }
 
 interface WordPressTerm {
@@ -382,6 +385,9 @@ const defaultSiteSettings: SiteSettings = {
     description: siteConfig.description,
     ogImage: siteConfigOgImage,
   },
+  teamPage: {
+    personIds: [],
+  },
 };
 
 let wordpressProjectCache: Promise<ProjectSummary[] | null> | undefined;
@@ -532,13 +538,21 @@ const loadWordPressPeople = async (): Promise<PersonSummary[] | null> => {
 
   if (!wordpressPeopleCache) {
     wordpressPeopleCache = (async () => {
-      const records = await fetchWordPressJson<WordPressRecord[]>(
-        "/wp/v2/mp_person?per_page=100&status=publish&orderby=menu_order&order=asc",
-      );
+      const [records, siteSettings] = await Promise.all([
+        fetchWordPressJson<WordPressRecord[]>(
+          "/wp/v2/mp_person?per_page=100&status=publish",
+        ),
+        loadWordPressSiteSettings(),
+      ]);
 
       if (!records) {
         return null;
       }
+
+      const recordById = new Map(records.map((record) => [Number(record.id), record]));
+      const teamOrder = new Map(
+        (siteSettings?.teamPage.personIds ?? []).map((personId, index) => [Number(personId), index]),
+      );
 
       return records
         .map((record) => {
@@ -565,8 +579,23 @@ const loadWordPressPeople = async (): Promise<PersonSummary[] | null> => {
           };
         })
         .sort((a, b) => {
-          const orderDelta = (records.find((record) => record.slug === a.slug)?.menu_order ?? 0)
-            - (records.find((record) => record.slug === b.slug)?.menu_order ?? 0);
+          const aSiteOrder = teamOrder.get(Number(a.id));
+          const bSiteOrder = teamOrder.get(Number(b.id));
+
+          if (aSiteOrder !== undefined && bSiteOrder !== undefined && aSiteOrder !== bSiteOrder) {
+            return aSiteOrder - bSiteOrder;
+          }
+
+          if (aSiteOrder !== undefined) {
+            return -1;
+          }
+
+          if (bSiteOrder !== undefined) {
+            return 1;
+          }
+
+          const orderDelta = (recordById.get(Number(a.id))?.menu_order ?? 0)
+            - (recordById.get(Number(b.id))?.menu_order ?? 0);
           if (orderDelta !== 0) {
             return orderDelta;
           }
@@ -857,12 +886,12 @@ const loadWordPressPublications = async (): Promise<PublicationSummary[] | null>
         loadWordPressPeople(),
       ]);
 
-      if (!records || !projects || !people) {
+      if (!records || !projects) {
         return null;
       }
 
       const projectLookup = new Map(projects.map((project) => [Number(project.id), project]));
-      const peopleLookup = new Map(people.map((person) => [Number(person.id), person]));
+      const peopleLookup = new Map((people ?? []).map((person) => [Number(person.id), person]));
 
       return records
         .map((record) => buildWordPressPublicationSummary(record, projectLookup, peopleLookup))
@@ -913,6 +942,9 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
           description?: string;
           ogImage?: string;
         };
+        teamPage?: {
+          personIds?: Array<number | string>;
+        };
         showPublicDownloadCounts?: boolean;
       }>("/mp-headless/v1/site-settings");
 
@@ -934,6 +966,13 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
         seoDefaults: {
           description: normalizeOptionalText(settings.seoDefaults?.description) ?? siteConfig.description,
           ogImage: normalizeOptionalUrl(settings.seoDefaults?.ogImage) ?? siteConfigOgImage,
+        },
+        teamPage: {
+          personIds: Array.isArray(settings.teamPage?.personIds)
+            ? settings.teamPage.personIds
+                .map((personId) => Number(personId))
+                .filter((personId) => Number.isInteger(personId) && personId > 0)
+            : [],
         },
       };
     })();
@@ -1248,9 +1287,9 @@ export const getPublicationBySlug = async (slug: string): Promise<PublicationDet
       loadWordPressPeople(),
     ]);
 
-    if (record?.length && projects && people) {
+    if (record?.length && projects) {
       const projectLookup = new Map(projects.map((project) => [Number(project.id), project]));
-      const peopleLookup = new Map(people.map((person) => [Number(person.id), person]));
+      const peopleLookup = new Map((people ?? []).map((person) => [Number(person.id), person]));
       const summary = buildWordPressPublicationSummary(record[0], projectLookup, peopleLookup);
       return {
         ...summary,
