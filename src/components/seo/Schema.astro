@@ -18,6 +18,7 @@ const { type, data } = Astro.props;
 const siteSettings = await getSiteSettings();
 const sameAs = [
   siteSettings.socialLinks.linkedin,
+  siteSettings.socialLinks.researchgate,
   siteSettings.socialLinks.youtube,
   siteSettings.socialLinks.instagram,
 ].filter(Boolean);

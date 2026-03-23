@@ -27,6 +27,7 @@
     "@astrojs/rss": "^4.0.15",
     "@astrojs/sitemap": "^3.6.1",
     "@iconify-json/lucide": "^1.2.86",
+    "@iconify-json/simple-icons": "^1.2.75",
     "@iconify-json/tabler": "^1.2.26",
     "@tailwindcss/vite": "^4.1.18",
     "@vercel/analytics": "^1.6.1",

@@ -810,9 +810,10 @@ function mp_headless_get_frontend_url($path = '/') {
 function mp_headless_get_site_settings_payload() {
 	return array(
 		'socialLinks'              => array(
-			'linkedin'  => trim((string) get_option('mp_headless_site_linkedin_url', '')),
-			'youtube'   => trim((string) get_option('mp_headless_site_youtube_url', '')),
-			'instagram' => trim((string) get_option('mp_headless_site_instagram_url', '')),
+			'linkedin'     => trim((string) get_option('mp_headless_site_linkedin_url', '')),
+			'researchgate' => trim((string) get_option('mp_headless_site_researchgate_url', '')),
+			'youtube'      => trim((string) get_option('mp_headless_site_youtube_url', '')),
+			'instagram'    => trim((string) get_option('mp_headless_site_instagram_url', '')),
 		),
 		'seoDefaults'              => array(
 			'description' => trim((string) get_option('mp_headless_default_meta_description', '')),
@@ -4419,6 +4420,7 @@ function mp_headless_render_site_settings_page() {
 
 	$site_settings                = mp_headless_get_site_settings_payload();
 	$linkedin_url                 = (string) ($site_settings['socialLinks']['linkedin'] ?? '');
+	$researchgate_url             = (string) ($site_settings['socialLinks']['researchgate'] ?? '');
 	$youtube_url                  = (string) ($site_settings['socialLinks']['youtube'] ?? '');
 	$instagram_url                = (string) ($site_settings['socialLinks']['instagram'] ?? '');
 	$default_meta_description     = (string) ($site_settings['seoDefaults']['description'] ?? '');
@@ -4446,6 +4448,10 @@ function mp_headless_render_site_settings_page() {
 						<div>
 							<label for="mp_site_linkedin_url"><strong><?php esc_html_e('LinkedIn URL', 'medplatform-headless'); ?></strong></label>
 							<input type="url" id="mp_site_linkedin_url" name="mp_site_linkedin_url" class="widefat" value="<?php echo esc_attr($linkedin_url); ?>" style="margin-top:8px;" placeholder="https://www.linkedin.com/company/..." />
+						</div>
+						<div>
+							<label for="mp_site_researchgate_url"><strong><?php esc_html_e('ResearchGate URL', 'medplatform-headless'); ?></strong></label>
+							<input type="url" id="mp_site_researchgate_url" name="mp_site_researchgate_url" class="widefat" value="<?php echo esc_attr($researchgate_url); ?>" style="margin-top:8px;" placeholder="https://www.researchgate.net/profile/..." />
 						</div>
 						<div>
 							<label for="mp_site_youtube_url"><strong><?php esc_html_e('YouTube URL', 'medplatform-headless'); ?></strong></label>
@@ -4624,6 +4630,7 @@ function mp_headless_save_site_settings() {
 	check_admin_referer('mp_headless_save_site_settings', 'mp_headless_site_settings_nonce');
 
 	update_option('mp_headless_site_linkedin_url', esc_url_raw(wp_unslash($_POST['mp_site_linkedin_url'] ?? '')));
+	update_option('mp_headless_site_researchgate_url', esc_url_raw(wp_unslash($_POST['mp_site_researchgate_url'] ?? '')));
 	update_option('mp_headless_site_youtube_url', esc_url_raw(wp_unslash($_POST['mp_site_youtube_url'] ?? '')));
 	update_option('mp_headless_site_instagram_url', esc_url_raw(wp_unslash($_POST['mp_site_instagram_url'] ?? '')));
 	update_option('mp_headless_default_meta_description', sanitize_textarea_field(wp_unslash($_POST['mp_default_meta_description'] ?? '')));

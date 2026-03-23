@@ -180,6 +180,7 @@ export interface AnnouncementBarSettings {
 export interface SiteSettings {
   socialLinks: {
     linkedin?: string;
+    researchgate?: string;
     youtube?: string;
     instagram?: string;
     contact?: string;
@@ -371,6 +372,7 @@ const siteConfigOgImage =
 const defaultSiteSettings: SiteSettings = {
   socialLinks: {
     linkedin: siteConfig.socialLinks.linkedin,
+    researchgate: siteConfig.socialLinks.researchgate,
     youtube: siteConfig.socialLinks.youtube,
     instagram: siteConfig.socialLinks.instagram,
     contact: siteConfig.socialLinks.contact,
@@ -903,6 +905,7 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
       const settings = await fetchWordPressJson<{
         socialLinks?: {
           linkedin?: string;
+          researchgate?: string;
           youtube?: string;
           instagram?: string;
         };
@@ -920,6 +923,9 @@ const loadWordPressSiteSettings = async (): Promise<SiteSettings | null> => {
       return {
         socialLinks: {
           linkedin: String(settings.socialLinks?.linkedin ?? "").trim(),
+          researchgate:
+            String(settings.socialLinks?.researchgate ?? "").trim() ||
+            siteConfig.socialLinks.researchgate,
           youtube: String(settings.socialLinks?.youtube ?? "").trim(),
           instagram: String(settings.socialLinks?.instagram ?? "").trim(),
           contact: siteConfig.socialLinks.contact,

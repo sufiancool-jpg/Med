@@ -86,9 +86,9 @@ const metadata = {
 
       {!project.hideProjectBar && project.stagePoints.length > 0 && (
         <div class="mx-auto mt-10 max-w-6xl">
-          <div class="space-y-4 md:hidden">
+          <div class="mx-auto max-w-sm space-y-5 md:hidden">
             {stageItems.map((item, index) => (
-              <div class="grid grid-cols-[1.2rem_minmax(0,1fr)] gap-4">
+              <div class="flex flex-col items-center text-center">
                 <div class="flex flex-col items-center">
                   <div
                     class:list={[
@@ -99,21 +99,19 @@ const metadata = {
                   ></div>
                   {index < stageItems.length - 1 && (
                     <div
-                      class="mt-2 w-[3px] flex-1 rounded-full"
-                      style={`min-height:3.25rem;background:${index < currentStageIndex ? project.progressColor : "rgba(10,18,32,0.1)"};`}
+                      class="mt-2 h-12 w-[3px] rounded-full"
+                      style={`background:${index < currentStageIndex ? project.progressColor : "rgba(10,18,32,0.1)"};`}
                     ></div>
                   )}
                 </div>
-                <div class="pb-3">
-                  <p
-                    class:list={[
-                      "text-[0.76rem] font-semibold uppercase tracking-[0.1em]",
-                      item.isCurrent ? "text-primary" : "text-primary/52",
-                    ]}
-                  >
-                    {item.stage}
-                  </p>
-                </div>
+                <p
+                  class:list={[
+                    "mt-3 max-w-[16rem] text-[0.76rem] font-semibold uppercase tracking-[0.1em]",
+                    item.isCurrent ? "text-primary" : "text-primary/52",
+                  ]}
+                >
+                  {item.stage}
+                </p>
               </div>
             ))}
           </div>

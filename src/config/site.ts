@@ -12,6 +12,7 @@ export const siteConfig = {
   ogImage: ogImage,
   socialLinks: {
     linkedin: "https://www.linkedin.com/",
+    researchgate: "https://www.researchgate.net/profile/Mediterranean-Platform",
     youtube: "https://www.youtube.com/",
     instagram: "",
     contact: "/contact",

@@ -20,7 +20,6 @@ const mainMenuLinks = [
 ];
 
 const siteSettings = await getSiteSettings();
-const isHomepage = Astro.url.pathname === "/";
 const socialLinks = [
   {
     label: "LinkedIn",
@@ -28,6 +27,13 @@ const socialLinks = [
     icon: "lucide:linkedin",
     className: "h-4 w-4",
     mobileClassName: "h-[18px] w-[18px]",
+  },
+  {
+    label: "ResearchGate",
+    href: siteSettings.socialLinks.researchgate,
+    icon: "simple-icons:researchgate",
+    className: "h-[15px] w-[15px]",
+    mobileClassName: "h-4 w-4",
   },
   {
     label: "YouTube",
@@ -53,25 +59,21 @@ const socialLinks = [
   <div
     class="relative flex w-full items-center justify-between overflow-visible px-4 py-2 sm:px-6 lg:px-8"
   >
-    <div class="flex items-center">
+    <div class="flex min-w-0 items-center">
       <a
         href="/"
-        class="mr-3 inline-flex items-center gap-2 md:hidden"
+        class="mr-3 flex min-w-0 flex-1 items-center gap-2 md:hidden"
         aria-label="Mediterranean Platform home"
       >
         <img
           src="/logo_Transparent.png"
           alt="Mediterranean Platform"
-          class="h-10 w-auto object-contain"
+          class="h-10 w-auto shrink-0 object-contain"
           loading="eager"
         />
-        {
-          isHomepage && (
-            <span class="max-w-[10rem] text-[0.8rem] font-semibold leading-[1.1] text-primary">
-              The Mediterranean Platform
-            </span>
-          )
-        }
+        <span class="block max-w-[13.5rem] whitespace-normal text-[0.82rem] font-semibold leading-[1.08] text-primary sm:max-w-none sm:text-[0.88rem]">
+          The Mediterranean Platform
+        </span>
       </a>
       <div class="hidden items-center gap-5 md:flex">
         {

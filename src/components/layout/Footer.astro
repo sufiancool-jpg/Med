@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import { siteConfig } from "../../config/site";
 import { getSiteSettings } from "../../lib/site-data";
 
@@ -48,14 +49,26 @@ const socialLinks = [
   {
     text: "LinkedIn",
     href: siteSettings.socialLinks.linkedin,
+    icon: "lucide:linkedin",
+    iconClassName: "h-4 w-4",
+  },
+  {
+    text: "ResearchGate",
+    href: siteSettings.socialLinks.researchgate,
+    icon: "simple-icons:researchgate",
+    iconClassName: "h-3.5 w-3.5",
   },
   {
     text: "YouTube",
     href: siteSettings.socialLinks.youtube,
+    icon: "lucide:youtube",
+    iconClassName: "h-4 w-4 translate-y-px",
   },
   {
     text: "Instagram",
     href: siteSettings.socialLinks.instagram,
+    icon: "lucide:instagram",
+    iconClassName: "h-4 w-4",
   },
 ].filter((link) => Boolean(link.href));
 
@@ -148,8 +161,9 @@ const footerHoverText = "Join the Network";
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              class="cursor-pointer transition-colors hover:text-hover"
+              class="inline-flex cursor-pointer items-center gap-1.5 transition-colors hover:text-hover"
             >
+              <Icon name={link.icon} class={link.iconClassName} />
               {link.text}
             </a>
           ))
