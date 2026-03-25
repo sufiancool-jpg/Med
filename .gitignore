@@ -21,6 +21,10 @@ pnpm-debug.log*
 .wp-local/
 wordpress/seed/generated-*.json
 
+# local plugin packaging artifacts
+/medplatform-headless*.zip
+/wordpress-plugin/medplatform-headless-plugin.zip
+
 # macOS-specific files
 .DS_Store
 
