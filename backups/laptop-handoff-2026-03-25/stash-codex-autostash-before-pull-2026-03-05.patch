@@ -1,0 +1,2498 @@
+diff --git a/package-lock.json b/package-lock.json
+index c2fe8a2..5ef1ce1 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -18,6 +18,7 @@
+         "@vercel/speed-insights": "^1.3.1",
+         "astro": "^5.16.8",
+         "astro-icon": "^1.1.5",
++        "lenis": "^1.3.17",
+         "remark-reading-time": "^2.0.2",
+         "tailwindcss": "^4.1.18",
+         "typescript": "^5.9.3"
+@@ -6520,6 +6521,32 @@
+         "node": ">=0.10"
+       }
+     },
++    "node_modules/lenis": {
++      "version": "1.3.17",
++      "resolved": "https://registry.npmjs.org/lenis/-/lenis-1.3.17.tgz",
++      "integrity": "sha512-k9T9rgcxne49ggJOvXCraWn5dt7u2mO+BNkhyu6yxuEnm9c092kAW5Bus5SO211zUvx7aCCEtzy9UWr0RB+oJw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/darkroomengineering"
++      },
++      "peerDependencies": {
++        "@nuxt/kit": ">=3.0.0",
++        "react": ">=17.0.0",
++        "vue": ">=3.0.0"
++      },
++      "peerDependenciesMeta": {
++        "@nuxt/kit": {
++          "optional": true
++        },
++        "react": {
++          "optional": true
++        },
++        "vue": {
++          "optional": true
++        }
++      }
++    },
+     "node_modules/levn": {
+       "version": "0.4.1",
+       "resolved": "https://registry.npmjs.org/levn/-/levn-0.4.1.tgz",
+diff --git a/package.json b/package.json
+index 7e95d0c..a163a86 100644
+--- a/package.json
++++ b/package.json
+@@ -27,6 +27,7 @@
+     "@vercel/speed-insights": "^1.3.1",
+     "astro": "^5.16.8",
+     "astro-icon": "^1.1.5",
++    "lenis": "^1.3.17",
+     "remark-reading-time": "^2.0.2",
+     "tailwindcss": "^4.1.18",
+     "typescript": "^5.9.3"
+diff --git a/src/components/layout/Footer.astro b/src/components/layout/Footer.astro
+index 83fb70c..2dd5d7e 100644
+--- a/src/components/layout/Footer.astro
++++ b/src/components/layout/Footer.astro
+@@ -13,25 +13,23 @@ import { siteConfig } from "../../config/site";
+       </div>
+       <div class="flex items-center gap-6">
+         <a
+-          href={siteConfig.socialLinks.twitter}
++          href={siteConfig.socialLinks.linkedin}
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-muted-foreground transition-colors hover:text-primary"
+-          >Twitter</a
++          >LinkedIn</a
+         >
+         <a
+-          href={siteConfig.socialLinks.github}
++          href={siteConfig.socialLinks.youtube}
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-muted-foreground transition-colors hover:text-primary"
+-          >GitHub</a
++          >YouTube</a
+         >
+         <a
+-          href={siteConfig.socialLinks.discord}
+-          target="_blank"
+-          rel="noopener noreferrer"
++          href={siteConfig.socialLinks.contact}
+           class="text-muted-foreground transition-colors hover:text-primary"
+-          >Discord</a
++          >Contact</a
+         >
+       </div>
+     </div>
+diff --git a/src/components/layout/Navbar.astro b/src/components/layout/Navbar.astro
+index 03e1fe1..9199f70 100644
+--- a/src/components/layout/Navbar.astro
++++ b/src/components/layout/Navbar.astro
+@@ -1,31 +1,47 @@
+ ---
+ import { siteConfig } from "../../config/site";
+-import ThemeToggle from "../ui/ThemeToggle.astro";
++import { Icon } from "astro-icon/components";
++
++const mainMenuLinks = [
++  { text: "About", href: "/about" },
++  { text: "Publications", href: "/blog" },
++  { text: "Contact", href: "/contact" },
++];
++
++const socialLinks = {
++  linkedin: "https://www.linkedin.com/",
++  youtube: "https://www.youtube.com/",
++};
+ ---
+ 
+ <nav
+-  class="fixed top-0 z-50 w-full border-b border-border bg-background md:bg-background/50 md:backdrop-blur"
++  class="fixed top-0 z-50 w-full bg-[#6089a8] shadow-[0_8px_14px_-12px_rgba(20,44,84,0.55)]"
+ >
+   <div
+-    class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8"
++    class="relative flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
+   >
+     <div class="flex items-center gap-2">
+       <a
+         href="/"
+-        class="text-xl font-bold tracking-tight text-foreground transition-colors hover:text-primary"
++        class="inline-flex items-center"
+       >
+-        {siteConfig.name}
++        <img
++          src="/Logo1.png"
++          alt={siteConfig.name}
++          class="h-[58px] w-auto object-contain md:h-[67px]"
++        />
++        <span class="sr-only">{siteConfig.name}</span>
+       </a>
+     </div>
+ 
+     <!-- Desktop Menu -->
+-    <div class="hidden md:block">
+-      <div class="ml-10 flex items-baseline space-x-8">
++    <div class="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 md:block">
++      <div class="pointer-events-auto flex items-baseline space-x-8">
+         {
+-          siteConfig.navLinks.map((link) => (
++          mainMenuLinks.map((link) => (
+             <a
+               href={link.href}
+-              class="text-sm font-medium text-foreground transition-colors hover:text-primary"
++              class="text-[1.05rem] font-medium tracking-[0.03em] text-white transition-colors hover:text-white/80"
+             >
+               {link.text}
+             </a>
+@@ -34,16 +50,30 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
+       </div>
+     </div>
+ 
+-    <div class="hidden md:flex items-center gap-4">
+-      <a
+-        href={siteConfig.socialLinks.github}
+-        target="_blank"
+-        rel="noopener noreferrer"
+-        class="rounded-full bg-foreground/10 px-4 py-2 text-sm font-semibold text-foreground transition-all hover:bg-foreground/20"
+-      >
+-        GitHub
+-      </a>
+-      <ThemeToggle />
++    <div class="hidden items-center md:flex">
++      <div class="flex h-8 items-center text-[1.05rem] font-medium leading-none tracking-[0.03em] text-white">
++        AR <span class="mx-1 text-white/70">|</span> FR
++      </div>
++      <div class="ml-4 flex h-8 items-center gap-2 border-l border-border pl-4">
++        <a
++          href={socialLinks.linkedin}
++          target="_blank"
++          rel="noopener noreferrer"
++          aria-label="LinkedIn"
++          class="inline-flex h-8 w-8 shrink-0 items-center justify-center leading-none text-white transition-colors hover:text-white/80"
++        >
++          <Icon name="lucide:linkedin" class="h-[18px] w-[18px]" />
++        </a>
++        <a
++          href={socialLinks.youtube}
++          target="_blank"
++          rel="noopener noreferrer"
++          aria-label="YouTube"
++          class="inline-flex h-8 w-8 shrink-0 items-center justify-center leading-none text-white transition-colors hover:text-white/80"
++        >
++          <Icon name="lucide:youtube" class="h-[18px] w-[18px] translate-y-px" />
++        </a>
++      </div>
+     </div>
+ 
+     <!-- Mobile Menu Button -->
+@@ -51,7 +81,7 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
+       <button
+         id="mobile-menu-button"
+         type="button"
+-        class="inline-flex items-center justify-center p-2 rounded-md text-foreground hover:text-white hover:bg-white/10 focus:outline-none transition-colors"
++        class="inline-flex items-center justify-center p-2 text-white transition-colors hover:bg-accent/20 focus:outline-none"
+         aria-controls="mobile-menu"
+         aria-expanded="false"
+       >
+@@ -87,32 +117,46 @@ import ThemeToggle from "../ui/ThemeToggle.astro";
+             d="M6 18L18 6M6 6l12 12"></path>
+         </svg>
+       </button>
+-      <div class="ml-2">
+-        <ThemeToggle />
+-      </div>
+     </div>
+   </div>
+ 
+   <div class="hidden md:hidden" id="mobile-menu">
+     <div
+-      class="space-y-1 border-b border-border bg-background/90 px-2 pb-3 pt-2 sm:px-3"
++      class="space-y-1 border-b border-border bg-[#6089a8] px-2 pb-3 pt-2 sm:px-3"
+     >
+       {
+-        siteConfig.navLinks.map((link) => (
++        mainMenuLinks.map((link) => (
+           <a
+             href={link.href}
+-            class="block rounded-md px-3 py-2 text-base font-medium text-foreground transition-colors hover:bg-white/10 hover:text-primary"
++            class="block px-3 py-2 text-base font-medium text-white transition-colors hover:bg-accent/20 hover:text-white/80"
+           >
+             {link.text}
+           </a>
+         ))
+       }
+-      <a
+-        href={siteConfig.socialLinks.github}
+-        target="_blank"
+-        class="block rounded-md px-3 py-2 text-base font-medium text-blue-400 transition-colors hover:cursor-pointer hover:bg-blue-500/10 hover:text-blue-300"
+-        >GitHub</a
+-      >
++      <div class="px-3 py-2 text-base font-medium text-white">
++        AR <span class="mx-1 text-white/70">|</span> FR
++      </div>
++      <div class="flex h-8 items-center gap-2 px-3 py-2">
++        <a
++          href={socialLinks.linkedin}
++          target="_blank"
++          rel="noopener noreferrer"
++          aria-label="LinkedIn"
++          class="inline-flex h-8 w-8 shrink-0 items-center justify-center leading-none text-white transition-colors hover:text-white/80"
++        >
++          <Icon name="lucide:linkedin" class="h-[18px] w-[18px]" />
++        </a>
++        <a
++          href={socialLinks.youtube}
++          target="_blank"
++          rel="noopener noreferrer"
++          aria-label="YouTube"
++          class="inline-flex h-8 w-8 shrink-0 items-center justify-center leading-none text-white transition-colors hover:text-white/80"
++        >
++          <Icon name="lucide:youtube" class="h-[18px] w-[18px] translate-y-px" />
++        </a>
++      </div>
+     </div>
+   </div>
+ </nav>
+diff --git a/src/components/seo/Schema.astro b/src/components/seo/Schema.astro
+index 90782dd..36499ae 100644
+--- a/src/components/seo/Schema.astro
++++ b/src/components/seo/Schema.astro
+@@ -28,7 +28,7 @@ if (type === "WebSite") {
+       "@type": "Person",
+       name: siteConfig.author,
+     },
+-    sameAs: [siteConfig.socialLinks.twitter, siteConfig.socialLinks.github],
++    sameAs: [siteConfig.socialLinks.linkedin, siteConfig.socialLinks.youtube],
+   };
+ } else if (type === "BlogPosting") {
+   schema = {
+diff --git a/src/components/ui/Button.astro b/src/components/ui/Button.astro
+index 9d987e4..67b6207 100644
+--- a/src/components/ui/Button.astro
++++ b/src/components/ui/Button.astro
+@@ -20,14 +20,14 @@ const {
+ } = Astro.props;
+ 
+ const baseStyles =
+-  "inline-flex items-center justify-center font-bold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-xl";
++  "inline-flex items-center justify-center font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none rounded-none";
+ 
+ const variants = {
+   primary:
+-    "bg-foreground text-background hover:bg-foreground/90 transform hover:scale-105 shadow-lg shadow-primary/20",
+-  secondary: "bg-muted text-foreground border border-border hover:bg-muted/80",
++    "border border-primary bg-primary text-white hover:border-hover hover:bg-hover",
++  secondary: "border border-border bg-transparent text-foreground hover:bg-accent/20",
+   tertiary:
+-    "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
++    "bg-transparent text-primary underline decoration-accent underline-offset-4 hover:text-hover",
+ };
+ 
+ const sizes = {
+diff --git a/src/components/ui/Tags.astro b/src/components/ui/Tags.astro
+index 73b6718..604fe29 100644
+--- a/src/components/ui/Tags.astro
++++ b/src/components/ui/Tags.astro
+@@ -5,6 +5,7 @@ export interface Props {
+ }
+ 
+ const { tags, class: className = "text-sm" } = Astro.props;
++const toLabel = (tag: string) => tag.replace(/-/g, " ");
+ ---
+ 
+ {
+@@ -13,10 +14,10 @@ const { tags, class: className = "text-sm" } = Astro.props;
+       {tags.map((tag) => (
+         <li class="inline-block relative">
+           <a
+-            href={`/blog/tags/${tag}`}
+-            class="inline-block bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground px-3 py-1 rounded-full border border-border transition-colors duration-200"
++            href={`/blog/tags/${encodeURIComponent(tag)}`}
++            class="inline-block rounded-full border border-accent bg-accent/15 px-3 py-1 text-foreground transition-colors duration-200 hover:bg-accent/30"
+           >
+-            #{tag}
++            #{toLabel(tag)}
+           </a>
+         </li>
+       ))}
+diff --git a/src/components/widgets/Content2.astro b/src/components/widgets/Content2.astro
+index 3ea521f..85e6eb7 100644
+--- a/src/components/widgets/Content2.astro
++++ b/src/components/widgets/Content2.astro
+@@ -122,7 +122,7 @@ const { container: containerClassProp = "", ...otherClasses } = classes;
+             <Image
+               src={image}
+               alt={imageAlt}
+-              class="mx-auto w-full rounded-lg bg-gray-500 shadow-lg"
++              class="mx-auto w-full rounded-lg bg-muted shadow-lg"
+             />
+           </div>
+         )
+diff --git a/src/components/widgets/Hero.astro b/src/components/widgets/Hero.astro
+index 22849ff..76ca4b3 100644
+--- a/src/components/widgets/Hero.astro
++++ b/src/components/widgets/Hero.astro
+@@ -5,6 +5,8 @@ import Headline from "../ui/Headline.astro";
+ import Button from "../ui/Button.astro";
+ import { Icon } from "astro-icon/components";
+ 
++type HeroLayout = "centered" | "editorial";
++
+ const {
+   title = await Astro.slots.render("title"),
+   tagline,
+@@ -14,65 +16,173 @@ const {
+   isDark = false,
+   classes = {},
+   bg = await Astro.slots.render("bg"),
+-} = Astro.props as HeroProps;
++  image,
++  layout = "centered",
++} = Astro.props as HeroProps & { layout?: HeroLayout };
+ 
+ const { container: containerClassProp = "" } = classes;
++const hasFeaturedSlot = Astro.slots.has("default");
++const heroImageUrl = typeof image === "string" ? image : image?.src;
++const hasLeadContent = Boolean(
++  tagline ||
++    title ||
++    description ||
++    (Array.isArray(actions) && actions.length > 0),
++);
++const isSliderOnly = layout === "editorial" && hasFeaturedSlot && !hasLeadContent;
+ ---
+ 
+ <WidgetWrapper
+   id={id}
+   isDark={isDark}
+-  containerClass={`min-h-[calc(100vh-72px)] flex flex-col justify-center ${containerClassProp}`}
++  containerClass={`${layout === "editorial"
++    ? `!max-w-none !px-0 md:!px-0 !py-0 md:!py-0 ${containerClassProp}`
++    : `min-h-[calc(100vh-84px)] md:min-h-[calc(100vh-96px)] flex flex-col justify-center ${containerClassProp}`}`}
+   bg={bg}
+ >
+-  <div class="text-center">
+-    {
+-      tagline && (
+-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
+-          <span class="relative flex h-2 w-2" aria-hidden="true">
+-            <span class="absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75 animate-ping motion-reduce:animate-none" />
+-            <span class="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+-          </span>
+-          {tagline}
+-        </div>
+-      )
+-    }
+-    {
+-      (title || description) && (
+-        <Headline
+-          title={title}
+-          subtitle={description}
+-          titleAs="h1"
+-          classes={{
+-            container: "mb-0 max-w-none",
+-            title:
+-              "text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6",
+-            subtitle: "max-w-2xl mx-auto text-xl text-muted-foreground mb-10",
+-          }}
+-        />
+-      )
+-    }
++  {
++    layout === "editorial" ? (
++      <section class:list={["relative bg-card", { "border-y border-border": !isSliderOnly }]}>
++        {heroImageUrl && (
++          <div
++            class="absolute inset-0 bg-cover bg-center opacity-10"
++            style={`background-image: url('${heroImageUrl}')`}
++          />
++        )}
++        {heroImageUrl && <div class="absolute inset-0 bg-background/90" />}
+ 
+-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+-      {
+-        Array.isArray(actions) &&
+-          actions.length > 0 &&
+-          actions.map((action) => (
+-            <Button
+-              href={action.href}
+-              variant={action.variant as "primary" | "secondary"}
+-              size="lg"
+-              aria-label={action.ariaLabel}
+-              class="w-full sm:w-auto"
++        <div
++          class:list={[
++            isSliderOnly
++              ? "relative w-full"
++              : "relative mx-auto max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:px-8 lg:py-20",
++            { "grid lg:grid-cols-12": hasLeadContent || hasFeaturedSlot },
++          ]}
++        >
++          {hasLeadContent && (
++            <div
++              class:list={[
++                "text-left",
++                hasFeaturedSlot ? "lg:col-span-7" : "lg:col-span-12",
++              ]}
+             >
+-              {action.icon && (
+-                <Icon name={action.icon} class="w-5 h-5 mr-2 -ml-1" />
++              {tagline && (
++                <p class="mb-6 inline-block border-b border-accent pb-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary">
++                  {tagline}
++                </p>
++              )}
++
++              {(title || description) && (
++                <Headline
++                  title={title}
++                  subtitle={description}
++                  titleAs="h1"
++                  classes={{
++                    container: "mb-0 max-w-none",
++                    title:
++                      "font-heading text-5xl font-semibold leading-tight text-foreground md:text-7xl",
++                    subtitle:
++                      "mt-6 max-w-2xl text-base text-muted-foreground md:text-lg",
++                  }}
++                />
++              )}
++
++              {Array.isArray(actions) && actions.length > 0 && (
++                <div class="mt-10 flex flex-wrap items-center gap-6">
++                  {actions.map((action, index) =>
++                    index === 0 || action.variant === "primary" ? (
++                      <Button
++                        href={action.href}
++                        variant="primary"
++                        size="md"
++                        aria-label={action.ariaLabel}
++                        class="w-auto px-6 py-3"
++                      >
++                        {action.icon && (
++                          <Icon name={action.icon} class="mr-2 h-5 w-5" />
++                        )}
++                        {action.text}
++                      </Button>
++                    ) : (
++                      <a
++                        href={action.href}
++                        aria-label={action.ariaLabel}
++                        class="inline-flex items-center gap-2 text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
++                      >
++                        {action.icon && (
++                          <Icon name={action.icon} class="h-5 w-5" />
++                        )}
++                        {action.text}
++                      </a>
++                    ),
++                  )}
++                </div>
+               )}
+-              {action.text}
+-            </Button>
+-          ))
+-      }
+-    </div>
+-  </div>
+-  <slot />
++            </div>
++          )}
++
++          {hasFeaturedSlot && (
++            <aside
++              class:list={[
++                isSliderOnly
++                  ? "w-full"
++                  : "self-start border border-border bg-background/95 p-6 md:p-8",
++                hasLeadContent ? "lg:col-span-5" : "lg:col-span-12",
++              ]}
++            >
++              <slot />
++            </aside>
++          )}
++        </div>
++      </section>
++    ) : (
++      <div class="text-center">
++        {
++          tagline && (
++            <div class="mb-6 inline-flex items-center gap-2 border border-border px-3 py-1 text-xs font-semibold text-primary">
++              <span class="relative inline-flex h-2 w-2 rounded-full bg-primary" />
++              {tagline}
++            </div>
++          )
++        }
++        {
++          (title || description) && (
++            <Headline
++              title={title}
++              subtitle={description}
++              titleAs="h1"
++              classes={{
++                container: "mb-0 max-w-none",
++                title:
++                  "font-heading text-5xl font-semibold leading-tight text-foreground md:text-7xl",
++                subtitle:
++                  "mx-auto mb-10 mt-6 max-w-2xl text-xl text-muted-foreground",
++              }}
++            />
++          )
++        }
++
++        <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
++          {
++            Array.isArray(actions) &&
++              actions.length > 0 &&
++              actions.map((action) => (
++                <Button
++                  href={action.href}
++                  variant={action.variant as "primary" | "secondary"}
++                  size="lg"
++                  aria-label={action.ariaLabel}
++                  class="w-full sm:w-auto"
++                >
++                  {action.icon && (
++                    <Icon name={action.icon} class="mr-2 h-5 w-5 -ml-1" />
++                  )}
++                  {action.text}
++                </Button>
++              ))
++          }
++        </div>
++      </div>
++    )
++  }
+ </WidgetWrapper>
+diff --git a/src/components/widgets/WidgetWrapper.astro b/src/components/widgets/WidgetWrapper.astro
+index f37f7a3..842e157 100644
+--- a/src/components/widgets/WidgetWrapper.astro
++++ b/src/components/widgets/WidgetWrapper.astro
+@@ -17,7 +17,7 @@ const wrapperClasses = {
+ 
+ <div
+   id={id}
+-  class:list={["relative not-prose scroll-mt-[72px]", bg, { dark: isDark }]}
++  class:list={["relative not-prose scroll-mt-[84px]", bg, { dark: isDark }]}
+ >
+   <div
+     class:list={[
+diff --git a/src/config/site.ts b/src/config/site.ts
+index 578aede..10f7079 100644
+--- a/src/config/site.ts
++++ b/src/config/site.ts
+@@ -1,26 +1,25 @@
+ import ogImage from "../assets/og-image.png";
+ 
+ export const siteConfig = {
+-  name: "Astro Starter Pro",
++  name: "Mediterranean Platform",
+   description:
+-    "Starter template optimized for SEO and performance. A solid foundation to start your projects with best practices.",
+-  url: "https://astrostarterpro.com",
++    "Research, dialogue, and educational programme promoting informed policymaking and advocacy across the Mediterranean space.",
++  url: "https://mediterranean-platform.org",
+   lang: "en",
+   locale: "en_US",
+-  author: "Devgelo",
+-  twitter: "@Devgelo",
++  author: "Mediterranean Platform",
++  twitter: "@medplatform",
+   ogImage: ogImage,
+   socialLinks: {
+-    twitter: "https://twitter.com",
+-    github: "https://github.com/devgelo-labs/astro-starter-pro",
+-    discord: "https://discord.com",
++    linkedin: "https://www.linkedin.com/",
++    youtube: "https://www.youtube.com/",
++    contact: "/contact",
+   },
+   navLinks: [
+-    { text: "Home", href: "/" },
+     { text: "About", href: "/about" },
+-    { text: "Services", href: "/services" },
+-    { text: "Blog", href: "/blog" },
++    { text: "Activities", href: "/services" },
++    { text: "Publications", href: "/blog" },
++    { text: "Events", href: "/widgets" },
+     { text: "Contact", href: "/contact" },
+-    { text: "Widgets", href: "/widgets" },
+   ],
+ };
+diff --git a/src/content/blog/aenean-commodo-ligula.md b/src/content/blog/aenean-commodo-ligula.md
+index daa3cb6..6b8cefd 100644
+--- a/src/content/blog/aenean-commodo-ligula.md
++++ b/src/content/blog/aenean-commodo-ligula.md
+@@ -3,8 +3,8 @@ title: "Aenean Commodo Ligula Eget Dolor"
+ pubDate: "2026-01-18"
+ description: "Exploring the depths of layout variations with standard dummy text."
+ author: "Lorem"
+-category: "Tech"
+-tags: ["testing", "coding"]
++category: "Policy Paper"
++tags: ["scenario-making", "policy-dialogue"]
+ image: "/blog/blog_post_1_1768848683359.webp"
+ ---
+ 
+diff --git a/src/content/blog/cras-risus-ipsum.md b/src/content/blog/cras-risus-ipsum.md
+index 5c0e96c..9313e31 100644
+--- a/src/content/blog/cras-risus-ipsum.md
++++ b/src/content/blog/cras-risus-ipsum.md
+@@ -1,10 +1,10 @@
+ ---
+ title: "Cras Risus Ipsum"
+ pubDate: "2026-01-09"
+-description: "Why elegant code is as important as elegant design."
++description: "Why policy-relevant research is as important as inclusive dialogue."
+ author: "Lorem"
+-category: "General"
+-tags: ["features", "welcome"]
++category: "Policy Brief"
++tags: ["policy-relevant", "collective-reflection"]
+ image: "/blog/blog_post_10_1768850582328.webp"
+ ---
+ 
+@@ -14,6 +14,6 @@ Faucibus ut, ullamcorper id, varius ac, leo. Morbi mollis tellus ac sapien. Nunc
+ 
+ Donec posuere vulputate arcu. Phasellus accumsan cursus velit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed aliquam, nisi quis porttitor congue, elit erat euismod orci, ac placerat dolor lectus quis orci.
+ 
+-## Luxury in Code
++## Policy Priorities
+ 
+ Phasellus consectetuer vestibulum elit. Aenean tellus metus, bibendum sed, posuere ac, mattis non, nunc. Vestibulum fringilla pede sit amet augue. In turpis. Pellentesque posuere.
+diff --git a/src/content/blog/curabitur-ullamcorper-ultricies.md b/src/content/blog/curabitur-ullamcorper-ultricies.md
+index d0de25e..e1dad85 100644
+--- a/src/content/blog/curabitur-ullamcorper-ultricies.md
++++ b/src/content/blog/curabitur-ullamcorper-ultricies.md
+@@ -3,8 +3,8 @@ title: "Curabitur Ullamcorper Ultricies Nisi"
+ pubDate: "2026-01-15"
+ description: "Extensive reading on the topic of automated content generation."
+ author: "Lorem"
+-category: "Tech"
+-tags: ["tutorial", "testing"]
++category: "Policy Paper"
++tags: ["capacity-building", "scenario-making"]
+ image: "/blog/blog_post_4_1768848735398.webp"
+ ---
+ 
+diff --git a/src/content/blog/donec-quam-felis.md b/src/content/blog/donec-quam-felis.md
+index 5f1e54e..edcaac6 100644
+--- a/src/content/blog/donec-quam-felis.md
++++ b/src/content/blog/donec-quam-felis.md
+@@ -3,8 +3,8 @@ title: "Donec Quam Felis Ultricies Nec"
+ pubDate: "2026-01-17"
+ description: "A deep dive into the philosophy of placeholder text."
+ author: "Lorem"
+-category: "Astro"
+-tags: ["testing", "tutorial"]
++category: "Series"
++tags: ["scenario-making", "capacity-building"]
+ image: "/blog/blog_post_2_1768848698871.webp"
+ ---
+ 
+diff --git a/src/content/blog/fusce-vulputate-eleifend.md b/src/content/blog/fusce-vulputate-eleifend.md
+index 033f160..5e017b6 100644
+--- a/src/content/blog/fusce-vulputate-eleifend.md
++++ b/src/content/blog/fusce-vulputate-eleifend.md
+@@ -3,8 +3,8 @@ title: "Fusce Vulputate Eleifend"
+ pubDate: "2026-01-11"
+ description: "Exploring the retro wave aesthetic in modern web interfaces."
+ author: "Lorem"
+-category: "Design"
+-tags: ["web-design", "news"]
++category: "Research Report"
++tags: ["sustainable-development", "regional-security"]
+ image: "/blog/blog_post_8_1768850554501.webp"
+ ---
+ 
+diff --git a/src/content/blog/integer-tincidunt-cras.md b/src/content/blog/integer-tincidunt-cras.md
+index 5dd9f30..5b27750 100644
+--- a/src/content/blog/integer-tincidunt-cras.md
++++ b/src/content/blog/integer-tincidunt-cras.md
+@@ -3,8 +3,8 @@ title: "Integer Tincidunt Cras"
+ pubDate: "2026-01-08"
+ description: "Building tiny worlds: Component-based architecture explained."
+ author: "Lorem"
+-category: "Tech"
+-tags: ["coding", "astro"]
++category: "Policy Paper"
++tags: ["policy-dialogue", "mediterranean-connectivity"]
+ image: "/blog/blog_post_11_1768850597259.webp"
+ ---
+ 
+diff --git a/src/content/blog/maecenas-tempus-tellus.md b/src/content/blog/maecenas-tempus-tellus.md
+index 0776377..bd41964 100644
+--- a/src/content/blog/maecenas-tempus-tellus.md
++++ b/src/content/blog/maecenas-tempus-tellus.md
+@@ -3,8 +3,8 @@ title: "Maecenas Tempus Tellus Eget"
+ pubDate: "2026-01-14"
+ description: "Structured chaos: Ordering the random words."
+ author: "Lorem"
+-category: "Tech"
+-tags: ["coding", "news"]
++category: "Policy Paper"
++tags: ["policy-dialogue", "regional-security"]
+ image: "/blog/blog_post_5_1768848750922.webp"
+ ---
+ 
+diff --git a/src/content/blog/markdown-features.md b/src/content/blog/markdown-features.md
+index d1d118f..57486ef 100644
+--- a/src/content/blog/markdown-features.md
++++ b/src/content/blog/markdown-features.md
+@@ -1,25 +1,23 @@
+ ---
+-title: "Markdown Features"
++title: "Policy Brief: Regional Security and Diplomacy"
+ pubDate: "2026-01-19"
+-description: "Exploring the capabilities of Markdown in our blog."
+-author: "Angelo Pescetto"
+-category: "Tech"
+-tags: ["markdown", "features", "astro"]
++description: "A short policy brief format for dialogue support and informed policymaking."
++author: "Mediterranean Platform Editorial Team"
++category: "Policy Brief"
++tags: ["policy-brief", "policy-relevant", "regional-security"]
+ image: "/blog/markdown.webp"
+ ---
+ 
+-# Markdown is Great
++# Policy Brief Format
+ 
+-You can write **bold** text, _italic_ text, and even lists:
++This brief highlights current regional security and diplomacy priorities across the Mediterranean space.
+ 
+-- Item 1
+-- Item 2
+-- Item 3
++- Policy-relevant framing
++- Dialogue support orientation
++- National and transnational perspective
+ 
+-## Code Blocks
++## Key Notes
+ 
+-```javascript
+-console.log("Hello, world!");
+-```
+-
+-Enjoy writing!
++1. Support informed policymaking.
++2. Strengthen collective reflection.
++3. Advance practical cooperation pathways.
+diff --git a/src/content/blog/nam-quam-nunc-blandit.md b/src/content/blog/nam-quam-nunc-blandit.md
+index 81236ae..757adc1 100644
+--- a/src/content/blog/nam-quam-nunc-blandit.md
++++ b/src/content/blog/nam-quam-nunc-blandit.md
+@@ -3,8 +3,8 @@ title: "Nam Quam Nunc Blandit Vel"
+ pubDate: "2026-01-13"
+ description: "Short, punchy, and direct to the point."
+ author: "Lorem"
+-category: "General"
+-tags: ["news", "tutorial"]
++category: "Policy Brief"
++tags: ["regional-security", "capacity-building"]
+ image: "/blog/blog_post_6_1768848765056.webp"
+ ---
+ 
+diff --git a/src/content/blog/phasellus-viverra-nulla.md b/src/content/blog/phasellus-viverra-nulla.md
+index 85a55fc..e907b6b 100644
+--- a/src/content/blog/phasellus-viverra-nulla.md
++++ b/src/content/blog/phasellus-viverra-nulla.md
+@@ -1,10 +1,10 @@
+ ---
+ title: "Phasellus Viverra Nulla Ut Metus"
+ pubDate: "2026-01-16"
+-description: "Analyzing code blocks and italicized text in modern web design."
++description: "Analyzing policy briefs and research notes for stronger regional dialogue."
+ author: "Lorem"
+-category: "Design"
+-tags: ["coding", "astro"]
++category: "Research Report"
++tags: ["policy-dialogue", "mediterranean-connectivity"]
+ image: "/blog/blog_post_3_1768848720552.webp"
+ ---
+ 
+diff --git a/src/content/blog/suspendisse-potenti-nullam.md b/src/content/blog/suspendisse-potenti-nullam.md
+index 55c12a9..5046477 100644
+--- a/src/content/blog/suspendisse-potenti-nullam.md
++++ b/src/content/blog/suspendisse-potenti-nullam.md
+@@ -3,8 +3,8 @@ title: "Suspendisse Potenti Nullam"
+ pubDate: "2026-01-12"
+ description: "Minimalist architecture and its influence on digital design patterns."
+ author: "Lorem"
+-category: "Design"
+-tags: ["web-design"]
++category: "Research Report"
++tags: ["sustainable-development"]
+ image: "/blog/blog_post_7_1768850538178.webp"
+ ---
+ 
+diff --git a/src/content/blog/vestibulum-purus-quam.md b/src/content/blog/vestibulum-purus-quam.md
+index b471bc0..70a7399 100644
+--- a/src/content/blog/vestibulum-purus-quam.md
++++ b/src/content/blog/vestibulum-purus-quam.md
+@@ -1,10 +1,10 @@
+ ---
+ title: "Vestibulum Purus Quam"
+ pubDate: "2026-01-10"
+-description: "The art of macro photography and its relation to detail-oriented coding."
++description: "The value of detail-oriented analysis in policy research and dialogue."
+ author: "Lorem"
+-category: "General"
+-tags: ["features"]
++category: "Policy Brief"
++tags: ["policy-relevant"]
+ image: "/blog/blog_post_9_1768850568154.webp"
+ ---
+ 
+diff --git a/src/content/blog/vivamus-elementum-semper.md b/src/content/blog/vivamus-elementum-semper.md
+index b859db6..cb210b8 100644
+--- a/src/content/blog/vivamus-elementum-semper.md
++++ b/src/content/blog/vivamus-elementum-semper.md
+@@ -3,8 +3,8 @@ title: "Vivamus Elementum Semper"
+ pubDate: "2026-01-07"
+ description: "Next-gen interfaces and the future of dashboard design."
+ author: "Lorem"
+-category: "Tech"
+-tags: ["tutorial", "news"]
++category: "Policy Paper"
++tags: ["capacity-building", "regional-security"]
+ image: "/blog/blog_post_12_1768850610966.webp"
+ ---
+ 
+diff --git a/src/content/blog/welcome.md b/src/content/blog/welcome.md
+index 1364976..4943263 100644
+--- a/src/content/blog/welcome.md
++++ b/src/content/blog/welcome.md
+@@ -1,17 +1,17 @@
+ ---
+-title: "Welcome to the New Blog"
++title: "Mediterranean Talks: In Conversation"
+ pubDate: "2026-01-19"
+-description: "This is the first post on our new Astro-powered blog."
+-author: "Angelo Pescetto"
+-category: "General"
+-tags: ["welcome", "community", "astro"]
++description: "An editorial update on talks, events, and policy dialogue priorities."
++author: "Mediterranean Platform Editorial Team"
++category: "Series"
++tags: ["collective-reflection", "knowledge-exchange", "mediterranean-connectivity"]
+ image: "/blog/welcome.webp"
+ ---
+ 
+-# Welcome!
++# Mediterranean Talks
+ 
+-We are excited to launch our new blog. Here we will share updates, tutorials, and more.
++This editorial stream shares updates on events, publications, and policy dialogue across the broader Mediterranean.
+ 
+-## Why Astro?
++## Current Focus
+ 
+-Astro is fast, flexible, and perfect for content-driven websites like this blog.
++Work concentrates on governance transitions, regional security, diplomacy, and scenario-making for informed policymaking.
+diff --git a/src/layouts/BaseLayout.astro b/src/layouts/BaseLayout.astro
+index 7503a2b..2ee8a5c 100644
+--- a/src/layouts/BaseLayout.astro
++++ b/src/layouts/BaseLayout.astro
+@@ -33,7 +33,7 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
+ ---
+ 
+ <!doctype html>
+-<html lang={siteConfig.lang} class="scroll-smooth">
++<html lang={siteConfig.lang}>
+   <head>
+     <Seo
+       title={finalTitle}
+@@ -68,34 +68,41 @@ const finalIgnoreTitleTemplate = metadata?.ignoreTitleTemplate || false;
+     </script>
+   </head>
+   <body
+-    class="bg-background text-foreground antialiased selection:bg-blue-500/30 dark:selection:text-blue-200"
++    class="bg-background text-foreground antialiased selection:bg-accent/30 selection:text-foreground"
+   >
+     <a
+       href="#main-content"
+-      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md bg-primary px-4 py-2 text-white shadow-lg ring-2 ring-white"
++      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 rounded-md bg-primary px-4 py-2 text-white shadow-lg ring-2 ring-primary"
+     >
+       Skip to content
+     </a>
+ 
+     <div class="relative flex min-h-screen flex-col overflow-x-hidden">
+-      <!-- Background Glow -->
+-      <div class="pointer-events-none fixed inset-0 z-0 hidden md:block">
+-        <div
+-          class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.15)_0%,transparent_50%)]"
+-        >
+-        </div>
+-        <div
+-          class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.15)_0%,transparent_50%)]"
+-        >
+-        </div>
+-      </div>
+-
+       <Navbar />
+-      <main id="main-content" class="relative z-10 grow pt-[72px]">
++      <main id="main-content" class="relative z-10 grow pt-[84px] md:pt-[96px]">
+         <slot />
+       </main>
+       <Footer />
+     </div>
++    <script>
++      import Lenis from "lenis";
++
++      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
++        const lenis = new Lenis({
++          duration: 1.05,
++          smoothWheel: true,
++          wheelMultiplier: 0.95,
++          touchMultiplier: 1,
++        });
++
++        const raf = (time) => {
++          lenis.raf(time);
++          window.requestAnimationFrame(raf);
++        };
++
++        window.requestAnimationFrame(raf);
++      }
++    </script>
+     <SpeedInsights />
+     <Analytics />
+   </body>
+diff --git a/src/pages/404.astro b/src/pages/404.astro
+index aa9ea05..dd0a93a 100644
+--- a/src/pages/404.astro
++++ b/src/pages/404.astro
+@@ -11,7 +11,7 @@ const metadata = {
+ 
+ <BaseLayout {metadata}>
+   <Hero
+-    title={`<h1 class="bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent text-[12rem] font-extrabold tracking-tighter mb-4">404</h1>`}
++    title={`<h1 class="text-primary text-[12rem] font-extrabold tracking-tighter mb-4">404</h1>`}
+     description="We're sorry, we can't find the page you're looking for. It may have been moved or deleted."
+     actions={[
+       {
+diff --git a/src/pages/about.astro b/src/pages/about.astro
+index 832c265..2b13afb 100644
+--- a/src/pages/about.astro
++++ b/src/pages/about.astro
+@@ -8,39 +8,39 @@ import aboutImage from "../assets/images/about-office.webp";
+ const metadata = {
+   title: "About us",
+   description:
+-    "Learn more about our vision, values, and the team behind Astro Starter Pro.",
++    "Research, dialogue, and educational programme offering collective reflection and informed policymaking at national and transnational levels.",
+ };
+ 
+ const values = [
+   {
+-    title: "Innovation",
++    title: "Collective Reflection",
+     description:
+-      "Curabitur dignissim, felis non sollicitudin molestie, urna mauris pellentesque velit, ut eleifend.",
++      "The platform offers a space for collective reflection on governance, diplomacy, and regional transformations.",
+   },
+   {
+-    title: "Commitment",
++    title: "Policy-Relevant Research",
+     description:
+-      "Aenean condimentum finibus mauris, a fermentum justo pan eget. Sed ultricies, neque quis.",
++      "Multi-disciplinary and policy-relevant outputs support informed policymaking and advocacy.",
+   },
+   {
+-    title: "Quality",
++    title: "Dialogue Support",
+     description:
+-      "Donec sed orci tincidunt, aliquam nisl a, condimentum nunc. Nulla varius ex nec ante feugiat.",
++      "Dialogue support and track-two engagement connect experts, stakeholders, and decision-makers.",
+   },
+   {
+-    title: "Transparency",
++    title: "Capacity Building",
+     description:
+-      "Phasellus tristique, elit dapibus cursus facilisis, lorem augue fringilla nunc, vitae fermentum.",
++      "Mentorship and knowledge exchange strengthen local research capabilities and policy participation.",
+   },
+   {
+-    title: "Teamwork",
++    title: "Regional Cooperation",
+     description:
+-      "In hac habitasse platea dictumst. Vivamus adipiscing fermentum quam volutpat aliquam. Integer et.",
++      "Workstreams foster cooperation across the Mediterranean, Africa, and Gulf policy spaces.",
+   },
+   {
+-    title: "Excellence",
++    title: "Scenario-Making",
+     description:
+-      "Fusce at massa nec sapien auctor gravida in in tellus. Vivamus a tristique metus, et molestie.",
++      "Future studies and scenario-making help shape long-term strategic policy discussions.",
+   },
+ ];
+ 
+@@ -53,24 +53,24 @@ const optimizedImage = await getImage({
+ <BaseLayout {metadata}>
+   <link slot="head" rel="preload" href={optimizedImage.src} as="image" />
+   <Content2
+-    title="Our Vision"
++    title="About the Platform"
+     description={[
+-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+-      "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
++      "The Mediterranean Platform is a research, dialogue, and educational programme focused on informed policymaking and advocacy.",
++      "It addresses political, socio-economic and security transformations, MENA geopolitics, regional security and diplomacy, and future studies for the broader Mediterranean.",
+     ]}
+-    tagline="About"
++    tagline="About us"
+     image={aboutImage}
+-    imageAlt="Modern web development office"
++    imageAlt="Mediterranean policy dialogue and research"
+     actions={[
+       {
+-        text: "Contact Us",
++        text: "Contact",
+         href: "/contact",
+         variant: "primary",
+         icon: "lucide:mail",
+       },
+       {
+-        text: "View Details",
+-        href: "#",
++        text: "Publications",
++        href: "/blog",
+         variant: "secondary",
+         icon: "lucide:arrow-right",
+       },
+@@ -79,8 +79,8 @@ const optimizedImage = await getImage({
+   <Values
+     items={values}
+     columns={3}
+-    tagline="Our Values"
+-    title="What Defines Us"
+-    subtitle="Principles that guide our daily work"
++    tagline="Approach"
++    title="What Defines Our Work"
++    subtitle="Principles guiding research, dialogue, and policy engagement"
+   />
+ </BaseLayout>
+diff --git a/src/pages/blog/[...page].astro b/src/pages/blog/[...page].astro
+index 635e94e..23d64c7 100644
+--- a/src/pages/blog/[...page].astro
++++ b/src/pages/blog/[...page].astro
+@@ -19,24 +19,22 @@ const { page } = Astro.props;
+ const blog = page.data;
+ 
+ const metadata = {
+-  title: "Blog",
+-  description: "Latest news and updates from our team.",
++  title: "Publications",
++  description: "Policy-relevant publications, briefs, reports, and editorial analysis.",
+ };
+ ---
+ 
+ <BaseLayout metadata={metadata}>
+   <section class="relative px-4 py-8 sm:px-6 lg:px-8 md:py-12">
+     <div class="absolute inset-0 z-0">
+-      <div
+-        class="absolute inset-0 bg-linear-to-br from-blue-500/5 via-transparent to-pink-500/5"
+-      >
++      <div class="absolute inset-0 bg-accent/10">
+       </div>
+     </div>
+     <div class="relative mx-auto max-w-5xl">
+       <Headline
+-        tagline="Blog"
++        tagline="Publications"
+         title="Our Publications"
+-        subtitle="Explore the latest news, tutorials, and articles from our team."
++        subtitle="Explore policy papers, briefs, reports, and current regional analysis."
+         classes={{
+           container: "mb-12 text-center",
+           title:
+diff --git a/src/pages/blog/[...slug].astro b/src/pages/blog/[...slug].astro
+index 739e1d2..d7a2085 100644
+--- a/src/pages/blog/[...slug].astro
++++ b/src/pages/blog/[...slug].astro
+@@ -68,7 +68,7 @@ const metadata = {
+       }
+ 
+       <div
+-        class="prose prose-lg dark:prose-invert mx-auto prose-headings:text-foreground prose-a:text-primary hover:prose-a:underline prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-code:text-primary"
++        class="prose prose-lg mx-auto prose-headings:text-foreground prose-a:text-primary prose-a:decoration-accent hover:prose-a:underline prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground prose-code:text-primary"
+       >
+         <Content />
+       </div>
+diff --git a/src/pages/blog/category/[category].astro b/src/pages/blog/category/[category].astro
+index cfa6e4e..f2ef48f 100644
+--- a/src/pages/blog/category/[category].astro
++++ b/src/pages/blog/category/[category].astro
+@@ -30,7 +30,7 @@ const { category, posts } = Astro.props;
+ 
+ const metadata = {
+   title: `Category: ${category}`,
+-  description: `Articles in the ${category} category.`,
++  description: `Publications in the ${category} category.`,
+ };
+ ---
+ 
+@@ -40,7 +40,7 @@ const metadata = {
+       <Headline
+         tagline="Category"
+         title={category}
+-        subtitle={`Showing ${posts.length} article${posts.length === 1 ? "" : "s"}.`}
++        subtitle={`Showing ${posts.length} publication${posts.length === 1 ? "" : "s"}.`}
+         classes={{
+           container: "mb-12 text-center",
+           title:
+@@ -50,7 +50,7 @@ const metadata = {
+       />
+ 
+       <div class="mb-8 text-center">
+-        <a href="/blog" class="text-primary hover:underline">← Back to blog</a>
++        <a href="/blog" class="text-primary hover:underline">← Back to publications</a>
+       </div>
+ 
+       <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+diff --git a/src/pages/blog/tags/[tag].astro b/src/pages/blog/tags/[tag].astro
+index ba2a322..3a3b39c 100644
+--- a/src/pages/blog/tags/[tag].astro
++++ b/src/pages/blog/tags/[tag].astro
+@@ -25,10 +25,11 @@ export async function getStaticPaths() {
+ }
+ 
+ const { tag, posts } = Astro.props;
++const label = String(tag).replace(/-/g, " ");
+ 
+ const metadata = {
+-  title: `Posts tagged with '${tag}'`,
+-  description: `Explore our articles about ${tag}.`,
++  title: `Publications tagged '${label}'`,
++  description: `Explore publications related to ${label}.`,
+ };
+ ---
+ 
+@@ -37,8 +38,8 @@ const metadata = {
+     <div class="relative mx-auto max-w-5xl">
+       <Headline
+         tagline="Tag"
+-        title={`#${tag}`}
+-        subtitle={`Showing ${posts.length} article${posts.length === 1 ? "" : "s"}.`}
++        title={`#${label}`}
++        subtitle={`Showing ${posts.length} publication${posts.length === 1 ? "" : "s"}.`}
+         classes={{
+           container: "mb-12 text-center",
+           title:
+@@ -48,7 +49,7 @@ const metadata = {
+       />
+ 
+       <div class="mb-8 text-center">
+-        <a href="/blog" class="text-primary hover:underline">← Back to blog</a>
++        <a href="/blog" class="text-primary hover:underline">← Back to publications</a>
+       </div>
+ 
+       <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+diff --git a/src/pages/contact.astro b/src/pages/contact.astro
+index 4d18182..8b739b8 100644
+--- a/src/pages/contact.astro
++++ b/src/pages/contact.astro
+@@ -6,60 +6,63 @@ import Form from "../components/ui/Form.astro";
+ 
+ const metadata = {
+   title: "Contact",
+-  description: "Get in touch with us to discuss your next project.",
++  description:
++    "Get in touch regarding publications, activity platforms, policy dialogue, and events.",
+ };
+ 
+-const visionText = ["Get in touch with us to discuss your next project."];
++const contactText = [
++  "Contact the team for publications, policy dialogue, activity platforms, and event participation.",
++];
+ ---
+ 
+ <BaseLayout {metadata}>
+-  <Content tagline="Contact" title="Contact" description={visionText} />
++  <Content tagline="Contact" title="Contact" description={contactText} />
+   <div
+-    class="mx-auto max-w-xl bg-card border border-border rounded-3xl p-8 shadow-sm mb-12 md:mb-16"
++    class="mx-auto mb-12 max-w-xl border border-border bg-card p-8 shadow-sm md:mb-16"
+   >
+     <Form />
+   </div>
+   <Features
+-    tagline="Contact Means"
+-    title="We are here to help you"
+-    subtitle="Choose the communication channel you prefer. We respond in less than 24 hours."
++    tagline="Contact Information"
++    title="How to Reach the Team"
++    subtitle="Direct channels for events, publications, and policy engagement."
+     classes={{ container: "pt-0 md:pt-0" }}
+     features={[
+       {
+-        title: "Phone",
+-        description: "+123 456 7890",
+-        icon: "lucide:phone",
+-        iconClass: "bg-green-500/10 text-green-400",
++        title: "Address",
++        description: "Via di Villa Emiliani 14, 00197 Rome, Italy",
++        icon: "lucide:map-pin",
++        iconClass: "bg-primary/10 text-primary",
+       },
+       {
+-        title: "Email",
+-        description: "contact@company.com",
+-        icon: "lucide:mail",
+-        iconClass: "bg-yellow-500/10 text-yellow-400",
++        title: "Telephone",
++        description: "(+39) 06 8522 5052",
++        icon: "lucide:phone",
++        iconClass: "bg-accent/20 text-primary",
+       },
+       {
+-        title: "Location",
+-        description: "City, Country",
+-        icon: "lucide:map-pin",
+-        iconClass: "bg-red-500/10 text-red-400",
++        title: "Mailing List",
++        description: "Subscription available for publications and event updates",
++        icon: "lucide:mail",
++        iconClass: "bg-primary/10 text-primary",
+       },
+       {
+-        title: "Personalized Attention",
+-        description: "We understand your needs to offer tailored solutions.",
+-        icon: "lucide:user-check",
+-        iconClass: "bg-blue-500/10 text-blue-400",
++        title: "Publications",
++        description: "Policy Paper, Policy Brief, Research Report, E-Book, Series, and Take-Aways",
++        icon: "lucide:file-text",
++        iconClass: "bg-accent/20 text-primary",
+       },
+       {
+-        title: "Technical Support",
+-        description: "We resolve any doubt or technical incident quickly.",
+-        icon: "lucide:wrench",
+-        iconClass: "bg-purple-500/10 text-purple-400",
++        title: "Events",
++        description: "Events, Mediterranean Talks, African Talks, Roundtable, and Public Lecture",
++        icon: "lucide:calendar-days",
++        iconClass: "bg-primary/10 text-primary",
+       },
+       {
+-        title: "Strategic Consulting",
+-        description: "We advise you to ensure the success of your project.",
+-        icon: "lucide:briefcase",
+-        iconClass: "bg-pink-500/10 text-pink-400",
++        title: "Activities",
++        description: "Libya Platform, Africa Nexus, Mediterranean Connectivity Platform, and Gulf Platform",
++        icon: "lucide:network",
++        iconClass: "bg-accent/20 text-primary",
+       },
+     ]}
+   />
+diff --git a/src/pages/index.astro b/src/pages/index.astro
+index 88827b7..240a795 100644
+--- a/src/pages/index.astro
++++ b/src/pages/index.astro
+@@ -2,133 +2,490 @@
+ import BaseLayout from "../layouts/BaseLayout.astro";
+ import { siteConfig } from "../config/site";
+ import Hero from "../components/widgets/Hero.astro";
+-import Features from "../components/widgets/Features.astro";
+-import devImg from "../assets/images/dev_balanced.png";
+-import openSourceImg from "../assets/images/open-source.png";
+-import Content2 from "../components/widgets/Content2.astro";
++import HeroArticleSlider from "../components/widgets/HeroArticleSlider.astro";
++
++const toHashtag = (value: string) =>
++  `#${value
++    .toLowerCase()
++    .replace(/[^\w\s-]/g, "")
++    .trim()
++    .replace(/\s+/g, "")}`;
++
++const sliderNarratives = [
++  {
++    title: "The Red Sea: Divided by Water, United by Opportunities",
++    href: "/blog",
++    excerpt:
++      "Policy-relevant analysis on regional integration, cooperation, and shared opportunities across the Mediterranean and Red Sea space.",
++    author: "Ghanem, Narbone, Palleschi, and Maru (ed.)",
++    date: "Feb 25, 2026",
++    category: "E-Book",
++    hashtags: `${toHashtag("Policy relevant")} ${toHashtag("Red Sea")} ${toHashtag("Mediterranean")}`,
++  },
++  {
++    title: "Distribution of Powers in Libya’s Future Local Governance System",
++    href: "/blog",
++    excerpt:
++      "A policy-oriented assessment of local governance design and pathways for effective institutional balance.",
++    author: "Intissar Kherigi",
++    date: "Feb 5, 2026",
++    category: "Policy Paper",
++    hashtags: `${toHashtag("Policy Paper")} ${toHashtag("Libya Platform")} ${toHashtag("Governance")}`,
++  },
++  {
++    title:
++      "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya’s Peace Process",
++    href: "/blog",
++    excerpt:
++      "Comparative lessons for inclusive dialogue support and local governance in conflict-affected environments.",
++    author: "Mohamed Aziz Mrad",
++    date: "Jan 8, 2026",
++    category: "Policy Paper",
++    hashtags: `${toHashtag("Dialogue Support")} ${toHashtag("Policy Analysis")} ${toHashtag("Libya Platform")}`,
++  },
++  {
++    title:
++      "Youth as Catalysts for Shaping Libya’s Future Pathways for Inclusion in National Dialogue and Vision-Making",
++    href: "/blog",
++    excerpt:
++      "An inclusion-focused paper on youth participation, skills and knowledge building, and national dialogue processes.",
++    author: "Abdelkarim Skouri",
++    date: "Dec 2, 2025",
++    category: "Policy Paper",
++    hashtags: `${toHashtag("Youth Platform")} ${toHashtag("Capacity Building")} ${toHashtag("National Dialogue")}`,
++  },
++  {
++    title:
++      "Hydrogen Valleys and Sustainable Development in Algeria: Pivoting from Hydrocarbons to an Inclusive Euro Mediterranean Hydrogen Economy",
++    href: "/blog",
++    excerpt:
++      "Research on natural resources governance, energy transition, and climate-linked development in the region.",
++    author: "Leon Stille",
++    date: "Nov 21, 2025",
++    category: "Policy Paper",
++    hashtags: `${toHashtag("Energy Transition")} ${toHashtag("Climate Change")} ${toHashtag("Sustainable Development")}`,
++  },
++  {
++    title:
++      "Mediterranean Connectivity Platform: Energy, Transport, Logistics, and Digital Shifts",
++    href: "/services",
++    excerpt:
++      "Dialogue and research on how connectivity initiatives shape integration opportunities and policy choices.",
++    author: "Mediterranean Connectivity Team",
++    date: "Latest update",
++    category: "Research Report",
++    hashtags: `${toHashtag("Mediterranean Connectivity Platform")} ${toHashtag("Policy Dialogue")} ${toHashtag("Research")}`,
++  },
++  {
++    title: "Africa Nexus: Building an African-European Knowledge Ecosystem",
++    href: "/services",
++    excerpt:
++      "A platform connecting experts, young scholars, and policymakers through policy analyses and knowledge exchange.",
++    author: "Africa Nexus Team",
++    date: "Latest update",
++    category: "Policy Brief",
++    hashtags: `${toHashtag("Africa Nexus")} ${toHashtag("Crossroads exchanges")} ${toHashtag("Knowledge Exchange")}`,
++  },
++  {
++    title:
++      "Gulf Platform: Europe–Gulf Dialogue on Geopolitical, Economic, and Societal Trends",
++    href: "/services",
++    excerpt:
++      "Policy-relevant research and dialogue support for decision-makers and regional security discussions.",
++    author: "Gulf Platform Team",
++    date: "Latest update",
++    category: "Series",
++    hashtags: `${toHashtag("Gulf Platform")} ${toHashtag("Regional Security")} ${toHashtag("Policy Relevant")}`,
++  },
++];
++
++const featuredPublications = [
++  {
++    type: "E-Book",
++    title: "The Red Sea: Divided by Water, United by Opportunities",
++    authors: "Ghanem, Narbone, Palleschi, and Maru (ed.)",
++    date: "Feb 25, 2026",
++    excerpt:
++      "A multi-disciplinary publication on regional opportunity structures, cooperation pathways, and strategic dialogue.",
++    href: "/blog",
++  },
++  {
++    type: "Policy Paper",
++    title: "Distribution of Powers in Libya’s Future Local Governance System",
++    authors: "Intissar Kherigi",
++    date: "Feb 5, 2026",
++    excerpt:
++      "Policy paper on governance architecture and local institutional design for stability and inclusive policymaking.",
++    href: "/blog",
++  },
++  {
++    type: "Policy Paper",
++    title:
++      "Subnational Governance in Divided Societies: Learning from Yemen to Inform Libya’s Peace Process",
++    authors: "Mohamed Aziz Mrad",
++    date: "Jan 8, 2026",
++    excerpt:
++      "Comparative insights connecting local governance, peace process design, and practical dialogue support.",
++    href: "/blog",
++  },
++  {
++    type: "Policy Paper",
++    title:
++      "Youth as Catalysts for Shaping Libya’s Future Pathways for Inclusion in National Dialogue and Vision-Making",
++    authors: "Abdelkarim Skouri",
++    date: "Dec 2, 2025",
++    excerpt:
++      "Evidence-led paper on youth inclusion, national dialogue, and long-term vision-making processes.",
++    href: "/blog",
++  },
++];
++
++const activityThemes = [
++  {
++    title: "Libya Platform",
++    summary:
++      "Multi-track initiative combining field-based research, capacity building, and dialogue support.",
++    meta: "Activity platform",
++  },
++  {
++    title: "Africa Nexus",
++    summary:
++      "Policy analyses and crossroads exchanges to strengthen African-European knowledge ecosystems.",
++    meta: "Activity platform",
++  },
++  {
++    title: "Mediterranean Connectivity Platform",
++    summary:
++      "Research and policy dialogue on energy, transport, logistics, and digital shifts in the region.",
++    meta: "Activity platform",
++  },
++  {
++    title: "Gulf Platform",
++    summary:
++      "Research and dialogue on Europe-Gulf relations, societal trends, and sectoral cooperation.",
++    meta: "Activity platform",
++  },
++  {
++    title: "Youth Dynamics and Policies",
++    summary:
++      "Further project stream focused on youth pathways, participation, and policy impact.",
++    meta: "Further project",
++  },
++  {
++    title: "EU Inclusive Open Strategic Autonomy Centre",
++    summary:
++      "Further project supporting policy reflection on strategic autonomy and inclusive cooperation.",
++    meta: "Further project",
++  },
++];
++
++const latestAnalysis = [
++  {
++    date: "Latest analysis",
++    author: "Mediterranean Platform Team",
++    title: "Political, Socio-Economic, and Security Transformations in the Mediterranean Space",
++    excerpt:
++      "Current analysis on governance trends, social transitions, and security dynamics shaping policy choices.",
++    href: "/blog",
++  },
++  {
++    date: "Latest analysis",
++    author: "Mediterranean Platform Team",
++    title: "MENA Geopolitics, Regional Security, and Diplomacy",
++    excerpt:
++      "Policy-oriented reading of current geopolitical alignments and diplomatic initiatives in the region.",
++    href: "/blog",
++  },
++  {
++    date: "Latest analysis",
++    author: "Mediterranean Platform Team",
++    title:
++      "Political Economy and Mega-Trends: Governance of Natural Resources, Energy Transition, and Climate Change",
++    excerpt:
++      "Research synthesis on natural resources governance, energy transitions, and climate-linked policy priorities.",
++    href: "/blog",
++  },
++  {
++    date: "Latest analysis",
++    author: "Mediterranean Platform Team",
++    title: "Future Studies and Scenario-Making for the Broader Mediterranean",
++    excerpt:
++      "Scenario-making and strategic foresight to support informed policymaking at national and transnational levels.",
++    href: "/blog",
++  },
++];
++
++const decodeEntities = (value: string) =>
++  value
++    .replace(/&amp;/g, "&")
++    .replace(/&lt;/g, "<")
++    .replace(/&gt;/g, ">")
++    .replace(/&quot;/g, '"')
++    .replace(/&#39;/g, "'");
++
++const stripCdata = (value: string) =>
++  value.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
++
++const extractTag = (input: string, tagName: string) => {
++  const match = input.match(
++    new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`),
++  );
++  return match?.[1] ?? "";
++};
++
++const extractAttr = (input: string, tagName: string, attrName: string) => {
++  const match = input.match(
++    new RegExp(`<${tagName}[^>]*\\s${attrName}="([^"]+)"[^>]*\\/?>`),
++  );
++  return match?.[1] ?? "";
++};
++
++const normalizeLink = (value: string) =>
++  decodeEntities(stripCdata(value)).replace(/\?at_medium=RSS&at_campaign=rss$/, "");
++
++const upscaleBbcImage = (url: string) =>
++  url.includes("/standard/240/")
++    ? url.replace("/standard/240/", "/standard/1024/")
++    : url;
++
++const fillerImages = [
++  "/blog/blog_post_1_1768848683359.webp",
++  "/blog/blog_post_5_1768848750922.webp",
++  "/blog/blog_post_8_1768850554501.webp",
++  "/blog/blog_post_11_1768850597259.webp",
++  "/blog/blog_post_12_1768850610966.webp",
++];
++
++let heroSliderItems = sliderNarratives.map((item, index) => ({
++  ...item,
++  category: "BBC News",
++  image: fillerImages[index % fillerImages.length],
++}));
++
++try {
++  const bbcFeedResponse = await fetch("https://feeds.bbci.co.uk/news/rss.xml");
++  if (bbcFeedResponse.ok) {
++    const bbcFeedXml = await bbcFeedResponse.text();
++    const feedAssets = Array.from(bbcFeedXml.matchAll(/<item>([\s\S]*?)<\/item>/g))
++      .map((match) => match[1])
++      .map((itemXml) => {
++        const href = normalizeLink(extractTag(itemXml, "link"));
++        const image =
++          extractAttr(itemXml, "media:thumbnail", "url") ||
++          extractAttr(itemXml, "media:content", "url");
++        return { href, image: image ? upscaleBbcImage(image) : "" };
++      })
++      .filter((item) => item.image);
++
++    if (feedAssets.length > 0) {
++      heroSliderItems = sliderNarratives.map((item, index) => {
++        const asset = feedAssets[index % feedAssets.length];
++        return {
++          ...item,
++          href: asset.href || item.href,
++          category: "BBC News",
++          image: asset.image,
++        };
++      });
++    }
++  }
++} catch (error) {
++  console.error("Failed to load RSS imagery for hero slider:", error);
++}
++
++const announcement = {
++  label: "Our next event",
++  date: "20 May 2026",
++  title:
++    "African Talks: South African foreign policy in a multilateral world",
++  ctaText: "Register",
++  ctaHref: "/contact",
++};
++
+ const metadata = {
+-  title: `${siteConfig.name} — The next step for your project`,
++  title: `${siteConfig.name} — Research, Dialogue, and Policy Analysis`,
+   description:
+-    "A modern and professional template for your web projects with Astro and Tailwind CSS. Boost your development with a solid foundation.",
++    "Editorial homepage focused on policy-relevant publications, activity platforms, and current regional analysis.",
+   ignoreTitleTemplate: true,
+ };
+ ---
+ 
+ <BaseLayout {metadata}>
+-  <Hero
+-    title={`Starter Template for <br class="hidden md:block" /> <span class="bg-linear-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Web Developers</span>`}
+-    tagline="Astro v5 + Tailwind v4"
+-    description={`${siteConfig.description}`}
+-    actions={[
+-      {
+-        text: "Get Started",
+-        href: "https://github.com/devgelo-labs/astro-starter-pro",
+-        variant: "primary",
+-        icon: "lucide:github",
+-      },
+-      {
+-        text: "Our Services",
+-        href: "/services",
+-        variant: "secondary",
+-        icon: "lucide:arrow-right",
+-        ariaLabel: "Learn more about our services",
+-      },
+-    ]}
+-  />
+-  <Features
+-    tagline="Features"
+-    title="What's Included"
+-    subtitle="A selection of tools and configurations to streamline your workflow."
+-    features={[
+-      {
+-        title: "Optimized SEO",
+-        description:
+-          "Base configuration for Meta tags, Open Graph, and Sitemap generation.",
+-        icon: "lucide:scan-search",
+-        iconClass: "bg-blue-500/10 text-blue-400",
+-      },
+-      {
+-        title: "High Performance",
+-        description: "Lightweight structure for fast load times.",
+-        icon: "lucide:zap",
+-        iconClass: "bg-purple-500/10 text-purple-400",
+-      },
+-      {
+-        title: "Tailwind v4",
+-        description:
+-          "Integrated configuration with the latest version of Tailwind CSS.",
+-        icon: "lucide:palette",
+-        iconClass: "bg-pink-500/10 text-pink-400",
+-      },
+-    ]}
+-  />
+-  <Content2
+-    items={[
+-      {
+-        title: "Responsive Design",
+-        description:
+-          "Base configuration for Meta tags, Open Graph, and Sitemap generation.",
+-        icon: "lucide:scan-search",
+-        iconClass: "bg-blue-500/10 text-blue-400",
+-      },
+-      {
+-        title: "High Performance",
+-        description: "Lightweight structure for fast load times.",
+-        icon: "lucide:zap",
+-        iconClass: "bg-purple-500/10 text-purple-400",
+-      },
+-      {
+-        title: "Tailwind v4",
+-        description:
+-          "Integrated configuration with the latest version of Tailwind CSS.",
+-        icon: "lucide:palette",
+-        iconClass: "bg-pink-500/10 text-pink-400",
+-      },
+-    ]}
+-    image={devImg}
+-    imageAlt="Development"
+-  >
+-    <Fragment>
+-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
+-        Development
+-      </h3>
+-      We provide a solid foundation to start your projects with best practices.
+-    </Fragment>
+-  </Content2>
+-  <Content2
+-    items={[
+-      {
+-        title: "Open Source",
+-        description:
+-          "Developed under the MIT license, free for personal and commercial use.",
+-        icon: "lucide:github",
+-        iconClass: "bg-indigo-500/10 text-indigo-400",
+-      },
+-      {
+-        title: "Community Driven",
+-        description:
+-          "Built with the feedback and contributions of the developer community.",
+-        icon: "lucide:users",
+-        iconClass: "bg-orange-500/10 text-orange-400",
+-      },
+-      {
+-        title: "Regular Updates",
+-        description:
+-          "Continuously improved with the latest technologies and best practices.",
+-        icon: "lucide:refresh-cw",
+-        iconClass: "bg-teal-500/10 text-teal-400",
+-      },
+-    ]}
+-    image={openSourceImg}
+-    imageAlt="Community and Open Source"
+-    isReversed={true}
+-  >
+-    <Fragment>
+-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
+-        Open Source & Community
+-      </h3>
+-      Join the revolution of modern web development. This project is open for everyone
+-      to use, learn from, and contribute to.
+-    </Fragment>
+-  </Content2>
++  <section class="flex min-h-[calc(100svh-84px)] flex-col md:min-h-[calc(100svh-96px)]">
++    <div class="flex flex-1 items-center justify-center">
++      <div class="mx-auto flex h-full w-full max-w-6xl flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
++        <form
++          action="/blog"
++          method="get"
++          class="w-full max-w-[22rem] transition-[max-width] duration-500 ease-in-out focus-within:max-w-[28.6rem] sm:max-w-[28rem] sm:focus-within:max-w-[36.4rem]"
++          role="search"
++        >
++          <label for="hero-search" class="sr-only">Search publications, events, and activities</label>
++          <div class="group flex h-11 items-center rounded-full border border-border bg-background px-4 transition-colors focus-within:border-accent md:h-12">
++            <svg
++              viewBox="0 0 24 24"
++              class="mr-2 h-4 w-4 shrink-0 text-foreground/70 transition-colors group-focus-within:text-foreground md:mr-2.5 md:h-5 md:w-5"
++              fill="none"
++              stroke="currentColor"
++              stroke-width="2"
++              stroke-linecap="round"
++              stroke-linejoin="round"
++              aria-hidden="true"
++            >
++              <circle cx="11" cy="11" r="7"></circle>
++              <path d="m20 20-3.5-3.5"></path>
++            </svg>
++            <input
++              id="hero-search"
++              name="q"
++              type="search"
++              placeholder="Search publications, talks, and activity platforms"
++              class="h-full w-full bg-transparent text-sm text-foreground placeholder:text-foreground/55 focus:outline-none md:text-base"
++            />
++          </div>
++        </form>
++      </div>
++    </div>
++
++    <Hero layout="editorial">
++      <HeroArticleSlider items={heroSliderItems} />
++    </Hero>
++
++    <section class="mt-1 h-[168px] border-t border-border bg-[#f3ead6] text-foreground md:h-[190px]">
++      <div
++        class="mx-auto grid h-full max-w-6xl items-center gap-5 px-4 sm:px-6 md:grid-cols-[290px_1fr] md:gap-10 lg:px-8"
++      >
++        <div class="self-center">
++          <p class="text-base italic leading-none text-foreground/80 md:text-lg md:leading-none">
++            {announcement.label}
++          </p>
++          <p class="mt-2 text-2xl font-semibold leading-none md:mt-3 md:text-3xl">
++            {announcement.date}
++          </p>
++          <a
++            href={announcement.ctaHref}
++            class="mt-3 inline-flex border-2 border-primary px-4 py-2 text-sm font-semibold leading-none transition-colors hover:border-hover hover:bg-hover hover:text-white md:mt-4 md:text-base"
++          >
++            {announcement.ctaText}
++          </a>
++        </div>
++        <h2 class="line-clamp-2 text-left text-2xl font-semibold leading-tight md:text-3xl">
++          {announcement.title}
++        </h2>
++      </div>
++    </section>
++  </section>
++
++  <section class="border-b border-border">
++    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
++      <div class="mb-10 flex flex-wrap items-end justify-between gap-4">
++        <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
++          Publications
++        </h2>
++        <a
++          href="/blog"
++          class="text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
++        >
++          View all publications
++        </a>
++      </div>
++
++      <div class="grid gap-px border border-border bg-border md:grid-cols-2">
++        {featuredPublications.map((item) => (
++          <article class="bg-background p-6 md:p-8">
++            <p class="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
++              {item.type} - {item.date}
++            </p>
++            <h3 class="mt-3 text-2xl font-semibold leading-tight md:text-3xl">
++              <a
++                href={item.href}
++                class="transition-colors hover:text-hover"
++              >
++                {item.title}
++              </a>
++            </h3>
++            <p class="mt-3 text-sm font-medium text-primary/85">
++              {item.authors}
++            </p>
++            <p class="mt-4 text-base text-muted-foreground">
++              {item.excerpt}
++            </p>
++            <a
++              href={item.href}
++              class="mt-6 inline-flex text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
++            >
++              Open publication
++            </a>
++          </article>
++        ))}
++      </div>
++    </div>
++  </section>
++
++  <section class="border-b border-border">
++    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
++      <div class="mb-10">
++        <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
++          Activities and Platforms
++        </h2>
++        <p class="mt-4 max-w-2xl text-base text-muted-foreground">
++          Core platforms and further projects focused on research, policy dialogue, and capacity building.
++        </p>
++      </div>
++
++      <div class="grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
++        {activityThemes.map((item) => (
++          <article class="bg-background p-6">
++            <h3 class="text-2xl font-semibold leading-tight">{item.title}</h3>
++            <p class="mt-3 text-sm font-medium uppercase tracking-[0.08em] text-primary/85">
++              {item.meta}
++            </p>
++            <p class="mt-4 text-sm text-muted-foreground">
++              {item.summary}
++            </p>
++          </article>
++        ))}
++      </div>
++    </div>
++  </section>
++
++  <section>
++    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20 lg:px-8">
++      <div class="mb-10">
++        <h2 class="text-4xl font-semibold leading-tight md:text-5xl">
++          Latest Analysis
++        </h2>
++        <p class="mt-4 max-w-2xl text-base text-muted-foreground">
++          Recent policy analysis on governance, regional security, diplomacy, and scenario-making.
++        </p>
++      </div>
++
++      <div class="border border-border">
++        {latestAnalysis.map((item) => (
++          <article class="border-b border-border p-6 last:border-b-0 md:p-8">
++            <p class="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
++              {item.date} - {item.author}
++            </p>
++            <h3 class="mt-3 text-2xl font-semibold leading-tight md:text-3xl">
++              <a
++                href={item.href}
++                class="transition-colors hover:text-hover"
++              >
++                {item.title}
++              </a>
++            </h3>
++            <p class="mt-4 text-base text-muted-foreground">
++              {item.excerpt}
++            </p>
++            <a
++              href={item.href}
++              class="mt-6 inline-flex text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors hover:text-hover"
++            >
++              Read analysis
++            </a>
++          </article>
++        ))}
++      </div>
++    </div>
++  </section>
+ </BaseLayout>
+diff --git a/src/pages/services.astro b/src/pages/services.astro
+index ae0ee94..0e3acff 100644
+--- a/src/pages/services.astro
++++ b/src/pages/services.astro
+@@ -7,70 +7,71 @@ import webDevImg from "../assets/images/services/web-dev.webp";
+ import seoImg from "../assets/images/services/seo.webp";
+ import consultingImg from "../assets/images/services/consulting.webp";
+ 
+-const services = [
++const platforms = [
+   {
+-    title: "Web Development",
+-    description: "Static and dynamic sites built for the modern era.",
+-    icon: "lucide:globe",
++    title: "Libya Platform",
++    description: "Field-based research, capacity building, and dialogue support.",
++    icon: "lucide:users",
+   },
+   {
+-    title: "SEO Optimization",
+-    description: "We ensure your content is found by those looking for it.",
+-    icon: "lucide:search",
++    title: "Africa Nexus",
++    description: "Policy analyses, crossroads exchanges, and knowledge ecosystems.",
++    icon: "lucide:network",
+   },
+   {
+-    title: "IT Consulting",
+-    description: "Technical advice to scale your projects to the next level.",
+-    icon: "lucide:rocket",
++    title: "Mediterranean Connectivity Platform",
++    description: "Policy dialogue on energy, transport/logistics, and digital shifts.",
++    icon: "lucide:link",
+   },
+ ];
++
+ const metadata = {
+-  title: "Services",
++  title: "Activities",
+   description:
+-    "Discover our web development, SEO optimization, and technology consulting services.",
++    "Activity platforms focused on policy-relevant research, dialogue support, and regional cooperation.",
+ };
+ ---
+ 
+ <BaseLayout {metadata}>
+   <Content
+-    tagline="Services"
+-    title="Our Services"
++    tagline="Activities"
++    title="Core Activity Platforms"
+     description={[
+-      "Comprehensive solutions designed to maximize the potential of your digital presence.",
++      "Research and dialogue platforms addressing governance, regional security, diplomacy, and strategic policy transitions.",
+     ]}
+   />
+-  <ServiceList services={services} classes={{ container: "pt-0 md:pt-0" }} />
++  <ServiceList services={platforms} classes={{ container: "pt-0 md:pt-0" }} />
++
+   <Content
+-    tagline="Web Development"
+-    title="Modern Web Development"
++    tagline="Libya Platform"
++    title="Field-Based Research and Dialogue Support"
+     description={[
+-      "We specialize in building fast, secure, and scalable websites using the latest technologies. We transform your vision into an impactful digital experience.",
++      "Multi-track activity combining capacity building, youth participation, and policy mentorship with dialogue facilitation.",
+     ]}
+     classes={{ container: "pb-0 md:pb-0" }}
+   />
+   <Content2
+     items={[
+       {
+-        title: "Responsive Design",
++        title: "Permanent Political Platform",
+         description:
+-          "Your site will look perfect on any device, from mobiles to desktop screens.",
++          "Sustained policy dialogue and engagement pathways for inclusive governance processes.",
+       },
+       {
+-        title: "Optimized Performance",
++        title: "Youth Economic Research Forum",
+         description:
+-          "Fast loading to improve user experience and SEO positioning.",
++          "Knowledge building and policy-oriented research opportunities for youth participation.",
+       },
+     ]}
+     image={webDevImg}
+-    imageAlt="Modern Web Development"
++    imageAlt="Libya platform dialogue and research"
+     classes={{ container: "pt-0 md:pt-0" }}
+   >
+     <Fragment>
+-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
+-        Modern Web Development
++      <h3 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
++        Libya Platform
+       </h3>
+-      We specialize in building fast, secure, and scalable websites using the latest
+-      technologies. We transform your vision into an impactful digital experience.
++      Multi-track initiative combining field-based research, capacity building, and dialogue support.
+     </Fragment>
+   </Content2>
+ 
+@@ -78,51 +79,48 @@ const metadata = {
+     isReversed={true}
+     items={[
+       {
+-        title: "SEO Audit",
++        title: "Policy Analyses",
+         description:
+-          "We deeply analyze your website to identify technical and content improvement opportunities.",
++          "Timely policy-oriented analyses for decision-makers and communities of practice.",
+       },
+       {
+-        title: "Content Strategy",
++        title: "Crossroads Exchanges",
+         description:
+-          "We create relevant content plans that attract and retain your target audience.",
++          "Knowledge exchange linking experts, young scholars, and policymakers across regions.",
+       },
+     ]}
+     image={seoImg}
+-    imageAlt="SEO Strategies"
++    imageAlt="Africa nexus policy analysis and exchange"
+   >
+     <Fragment>
+-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
+-        SEO Optimization
++      <h3 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
++        Africa Nexus
+       </h3>
+-      We help your business get found by the right people. Our organic positioning
+-      strategies are designed to improve your organic visibility.
++      Mission-focused work to create a thriving African-European knowledge ecosystem and support shared prosperity and sustainability.
+     </Fragment>
+   </Content2>
+ 
+   <Content2
+     items={[
+       {
+-        title: "Digital Transformation",
++        title: "Policy Dialogue",
+         description:
+-          "We guide you in adopting new technologies to optimize your business processes.",
++          "Dialogue and research on energy, transport/logistics, and digital connectivity initiatives.",
+       },
+       {
+-        title: "Software Architecture",
++        title: "Research",
+         description:
+-          "We design robust and scalable systems prepared for future growth.",
++          "Policy-relevant studies on regional integration and sustainable development opportunities.",
+       },
+     ]}
+     image={consultingImg}
+-    imageAlt="Technology Consulting"
++    imageAlt="Mediterranean connectivity platform"
+   >
+     <Fragment>
+-      <h3 class="text-2xl font-bold tracking-tight sm:text-3xl mb-2">
+-        Technology Consulting
++      <h3 class="mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
++        Mediterranean Connectivity Platform
+       </h3>
+-      We accompany you in critical decision-making. We evaluate your current infrastructure
+-      and design personalized roadmaps to take your company to the next technological
+-      level.
++      Hub for research and dialogue on how connectivity shifts are reshaping the Mediterranean region.
+     </Fragment>
+   </Content2>
+ </BaseLayout>
+diff --git a/src/pages/widgets.astro b/src/pages/widgets.astro
+index 4e5b49e..1f1af54 100644
+--- a/src/pages/widgets.astro
++++ b/src/pages/widgets.astro
+@@ -1,231 +1,67 @@
+ ---
+ import BaseLayout from "../layouts/BaseLayout.astro";
+-import Hero from "../components/widgets/Hero.astro";
+-import Features from "../components/widgets/Features.astro";
+ import Content from "../components/widgets/Content.astro";
+-import Content2 from "../components/widgets/Content2.astro";
++import Features from "../components/widgets/Features.astro";
+ import ServiceList from "../components/widgets/ServiceList.astro";
+-import Values from "../components/widgets/Values.astro";
+-import aboutImage from "../assets/images/about-office.webp";
+-
+-const heroProps = {
+-  title: "Lorem Ipsum Dolor Sit Amet",
+-  tagline: "Hero",
+-  description:
+-    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+-  actions: [
+-    {
+-      text: "Get Started",
+-      href: "https://github.com/devgelo-labs/astro-starter-pro",
+-      variant: "primary",
+-      icon: "lucide:github",
+-    },
+-    {
+-      text: "View Details",
+-      href: "#",
+-      variant: "secondary",
+-      icon: "lucide:arrow-right",
+-    },
+-  ],
+-};
+ 
+-const featuresProps = {
+-  title: "Quis Nostrud Exercitation",
+-  subtitle: "Ullamco laboris nisi ut aliquip ex ea commodo",
+-  tagline: "Features",
+-  features: [
+-    {
+-      title: "Lorem Ipsum",
+-      description: "Dolor sit amet, consectetur adipiscing elit.",
+-      icon: "lucide:box",
+-    },
+-    {
+-      title: "Sed Do Eiusmod",
+-      description: "Tempor incididunt ut labore et dolore magna aliqua.",
+-      icon: "lucide:check",
+-    },
+-    {
+-      title: "Ut Enim Ad",
+-      description: "Minim veniam, quis nostrud exercitation ullamco.",
+-      icon: "lucide:eye",
+-    },
+-  ],
+-};
+-
+-const contentProps = {
+-  title: "Duis Aute Irure Dolor",
+-  description: [
+-    "In reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+-    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+-  ],
+-  tagline: "Content",
+-  image: aboutImage,
+-  imageAlt: "Placeholder image",
+-  isReversed: false,
+-  actions: [
+-    {
+-      text: "Call to Action",
+-      href: "#",
+-      variant: "primary",
+-      icon: "lucide:github",
+-    },
+-    {
+-      text: "View details",
+-      href: "#",
+-      variant: "secondary",
+-      icon: "lucide:arrow-right",
+-    },
+-  ],
+-};
+-
+-const content2Props = {
+-  title: "Duis Aute Irure Dolor",
+-  description: [
+-    "In reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+-    "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+-  ],
+-  tagline: "Content2",
+-  image: aboutImage,
+-  imageAlt: "Placeholder image",
+-  isReversed: false,
+-  actions: [
+-    {
+-      text: "Call to Action",
+-      href: "#",
+-      variant: "primary",
+-      icon: "lucide:github",
+-    },
+-    {
+-      text: "View details",
+-      href: "#",
+-      variant: "secondary",
+-      icon: "lucide:arrow-right",
+-    },
+-  ],
+-};
+-
+-const content2InvertedProps = {
+-  items: [
+-    {
+-      title: "Open Source",
+-      description:
+-        "Developed under the MIT license, free for personal and commercial use.",
+-      icon: "lucide:github",
+-      iconClass: "bg-indigo-500/10 text-indigo-400",
+-    },
+-    {
+-      title: "Community Driven",
+-      description:
+-        "Built with the feedback and contributions of the developer community.",
+-      icon: "lucide:users",
+-      iconClass: "bg-orange-500/10 text-orange-400",
+-    },
+-    {
+-      title: "Regular Updates",
+-      description:
+-        "Continuously improved with the latest technologies and best practices.",
+-      icon: "lucide:refresh-cw",
+-      iconClass: "bg-teal-500/10 text-teal-400",
+-    },
+-  ],
+-  image: aboutImage,
+-  imageAlt: "Community and Open Source",
+-  isReversed: true,
+-  actions: [
+-    {
+-      text: "Call to Action",
+-      href: "#",
+-      variant: "primary",
+-      icon: "lucide:github",
+-    },
+-    {
+-      text: "View details",
+-      href: "#",
+-      variant: "secondary",
+-      icon: "lucide:arrow-right",
+-    },
+-  ],
+-  title: "Open Source",
+-  subtitle:
+-    "Built with the feedback and contributions of the developer community.",
+-  tagline: "Content2",
+-};
+-
+-const serviceListProps = {
+-  services: [
+-    {
+-      title: "Voluptatem Accusantium",
+-      description: "Doloremque laudantium, totam rem aperiam.",
+-      icon: "lucide:rocket",
+-    },
+-    {
+-      title: "Ipsa Quae Ab",
+-      description: "Illo inventore veritatis et quasi architecto.",
+-      icon: "lucide:lightbulb",
+-    },
+-    {
+-      title: "Beatae Vitae Dicta",
+-      description: "Sunt explicabo. Nemo enim ipsam voluptatem.",
+-      icon: "lucide:wrench",
+-    },
+-  ],
+-  title: "Services that will help you achieve your goals",
+-  subtitle: "What we offer",
+-  tagline: "Services",
+-};
+-
+-const valuesProps = {
+-  items: [
+-    {
+-      title: "Corporate",
+-      description:
+-        "Curabitur dignissim, felis non sollicitudin molestie, urna mauris pellentesque velit, ut eleifend.",
+-    },
+-    {
+-      title: "Creative",
+-      description:
+-        "Aenean condimentum finibus mauris, a fermentum justo pan eget. Sed ultricies, neque quis.",
+-    },
+-    {
+-      title: "Startups",
+-      description:
+-        "Donec sed orci tincidunt, aliquam nisl a, condimentum nunc. Nulla varius ex nec ante feugiat.",
+-    },
+-    {
+-      title: "SaaS",
+-      description:
+-        "Phasellus tristique, elit dapibus cursus facilisis, lorem augue fringilla nunc, vitae fermentum.",
+-    },
+-    {
+-      title: "Education",
+-      description:
+-        "In hac habitasse platea dictumst. Vivamus adipiscing fermentum quam volutpat aliquam. Integer et.",
+-    },
+-    {
+-      title: "Real Estate",
+-      description:
+-        "Fusce at massa nec sapien auctor gravida in in tellus. Vivamus a tristique metus, et molestie.",
+-    },
+-  ],
+-  columns: 3 as const,
+-  tagline: "Values",
+-  title: "What defines us",
+-  subtitle: "Principles that guide our daily work",
+-};
++const eventTypes = [
++  {
++    title: "Events",
++    description: "Public events focused on policy dialogue and regional cooperation.",
++    icon: "lucide:calendar-days",
++  },
++  {
++    title: "Mediterranean Talks",
++    description: "In-conversation sessions with experts on strategic Mediterranean issues.",
++    icon: "lucide:messages-square",
++  },
++  {
++    title: "African Talks",
++    description: "Dialogue sessions on African policy priorities and multilateral dynamics.",
++    icon: "lucide:globe-2",
++  },
++];
+ 
+ const metadata = {
+-  title: "Widgets - Astro Starter Pro",
+-  description: "Showcase of available components and widgets.",
++  title: "Events",
++  description:
++    "Events listings including Mediterranean Talks, African Talks, roundtables, and public lectures.",
+   ignoreTitleTemplate: true,
+ };
+ ---
+ 
+ <BaseLayout {metadata}>
+-  <Hero {...heroProps} />
+-  <Features {...featuresProps} />
+-  <Content {...contentProps} />
+-  <Content2 {...content2Props} />
+-  <Content2 {...content2InvertedProps} />
+-  <ServiceList {...serviceListProps} />
+-  <Values {...valuesProps} />
++  <Content
++    tagline="Events"
++    title="Events and Talks"
++    description={[
++      "Listings include Events, Mediterranean Talks, African Talks, Book Presentation, Roundtable, and Public Lecture formats.",
++    ]}
++  />
++
++  <ServiceList services={eventTypes} classes={{ container: "pt-0 md:pt-0" }} />
++
++  <Features
++    tagline="Recent examples"
++    title="Selected Event Topics"
++    subtitle="Illustrative event themes from current listings."
++    features={[
++      {
++        title:
++          "The Role of Tuareg and Fulani Nomadic Communities and Elites in the Sahel Conflicts",
++        description: "Event format focused on conflict dynamics and regional stabilization.",
++        icon: "lucide:book-open",
++      },
++      {
++        title: "Russian Power Practices and Repertoires",
++        description: "Conference-style dialogue on geopolitical practices and strategic repertoires.",
++        icon: "lucide:shield",
++      },
++      {
++        title: "Potential of Reconfigured Value Chains in Mediterranean Cooperation",
++        description: "Public discussion on strategic autonomy and regional economic transformation.",
++        icon: "lucide:chart-no-axes-combined",
++      },
++    ]}
++  />
+ </BaseLayout>
+diff --git a/src/styles/global.css b/src/styles/global.css
+index 57cc2bd..306c4a7 100644
+--- a/src/styles/global.css
++++ b/src/styles/global.css
+@@ -5,6 +5,9 @@
+   --color-background: var(--background);
+   --color-foreground: var(--foreground);
+   --color-primary: var(--primary);
++  --color-hover: var(--hover);
++  --color-accent: var(--accent);
++  --color-accent-foreground: var(--accent-foreground);
+   --color-border: var(--border);
+   --color-muted: var(--muted);
+   --color-muted-foreground: var(--muted-foreground);
+@@ -13,22 +16,28 @@
+ 
+ :root {
+   --background: #ffffff;
+-  --foreground: #0a0a0a;
+-  --primary: #0254d8;
+-  --border: #e5e7eb;
+-  --muted: #f4f4f5;
+-  --muted-foreground: #52525b;
++  --foreground: #142c54;
++  --primary: #142c54;
++  --hover: #325c85;
++  --accent: #daa650;
++  --accent-foreground: #142c54;
++  --border: #daa650;
++  --muted: #ffffff;
++  --muted-foreground: #142c54;
+   --card: #ffffff;
+ }
+ 
+ :root[data-theme="dark"] {
+-  --background: #030303;
+-  --foreground: #e5e7eb;
+-  --primary: #8bbcff;
+-  --border: #262626;
+-  --muted: #171717;
+-  --muted-foreground: #a1a1aa;
+-  --card: #0a0a0a;
++  --background: #ffffff;
++  --foreground: #142c54;
++  --primary: #142c54;
++  --hover: #325c85;
++  --accent: #daa650;
++  --accent-foreground: #142c54;
++  --border: #daa650;
++  --muted: #ffffff;
++  --muted-foreground: #142c54;
++  --card: #ffffff;
+ }
+ 
+ /* Base styles using variables */
+@@ -36,6 +45,27 @@
+   body {
+     background-color: var(--background);
+     color: var(--foreground);
++    font-family:
++      ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue",
++      Arial, sans-serif;
++    line-height: 1.65;
++  }
++
++  h1,
++  h2,
++  h3,
++  h4,
++  h5,
++  h6 {
++    color: var(--foreground);
++    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
++    letter-spacing: -0.01em;
++    line-height: 1.15;
++  }
++
++  p,
++  li {
++    line-height: 1.75;
+   }
+ 
+   :focus-visible {
+@@ -43,3 +73,22 @@
+     outline-offset: 2px;
+   }
+ }
++
++@layer utilities {
++  .font-heading {
++    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
++  }
++}
++
++html.lenis,
++html.lenis body {
++  height: auto;
++}
++
++.lenis.lenis-smooth {
++  scroll-behavior: auto !important;
++}
++
++.lenis.lenis-stopped {
++  overflow: hidden;
++}
+diff --git a/src/types/types.d.ts b/src/types/types.d.ts
+index 95cfef9..2491c0f 100644
+--- a/src/types/types.d.ts
++++ b/src/types/types.d.ts
+@@ -45,6 +45,7 @@ export interface HeroProps extends HeadlineProps {
+   description?: string; // override or additional? Hero has description, Headline has subtitle. Hero has actions.
+   actions?: string | CallToAction[];
+   image?: ImageMetadata | string; // Just in case, though checked Hero.astro and it uses slots mostly or props.
++  layout?: "centered" | "editorial";
+ }
+ 
+ export interface FeaturesProps extends HeadlineProps {
