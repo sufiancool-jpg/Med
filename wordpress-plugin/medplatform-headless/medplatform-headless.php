@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.12
+ * Version: 0.1.13
  * Author: Codex
  */
 
@@ -251,7 +251,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.12',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.13',
 	);
 }
 
@@ -807,6 +807,79 @@ function mp_headless_get_frontend_url($path = '/') {
 	return $base_url . '/' . ltrim($path, '/');
 }
 
+function mp_headless_get_people_for_admin_select() {
+	return get_posts(
+		array(
+			'post_type'      => 'mp_person',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'title',
+			'order'          => 'ASC',
+		)
+	);
+}
+
+function mp_headless_get_default_team_page_person_ids() {
+	$people = get_posts(
+		array(
+			'post_type'      => 'mp_person',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'orderby'        => 'menu_order title',
+			'order'          => 'ASC',
+			'fields'         => 'ids',
+		)
+	);
+
+	return array_values(array_map('intval', is_array($people) ? $people : array()));
+}
+
+function mp_headless_get_team_page_person_ids() {
+	$default_ids = mp_headless_get_default_team_page_person_ids();
+	$stored_ids  = get_option('mp_headless_team_page_person_ids', false);
+
+	if ($stored_ids === false) {
+		update_option('mp_headless_team_page_person_ids', $default_ids, false);
+		$stored_ids = $default_ids;
+	}
+
+	$stored_ids = is_array($stored_ids) ? mp_headless_sanitize_int_array($stored_ids) : array();
+	$valid_ids  = array_flip($default_ids);
+	$ordered    = array();
+
+	foreach ($stored_ids as $person_id) {
+		if (isset($valid_ids[$person_id]) && ! in_array($person_id, $ordered, true)) {
+			$ordered[] = $person_id;
+		}
+	}
+
+	foreach ($default_ids as $person_id) {
+		if (! in_array($person_id, $ordered, true)) {
+			$ordered[] = $person_id;
+		}
+	}
+
+	return $ordered;
+}
+
+function mp_headless_get_team_page_people() {
+	$person_ids = mp_headless_get_team_page_person_ids();
+	if (empty($person_ids)) {
+		return array();
+	}
+
+	return get_posts(
+		array(
+			'post_type'      => 'mp_person',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'post__in'       => $person_ids,
+			'orderby'        => 'post__in',
+			'order'          => 'ASC',
+		)
+	);
+}
+
 function mp_headless_get_site_settings_payload() {
 	return array(
 		'socialLinks'              => array(
@@ -818,6 +891,9 @@ function mp_headless_get_site_settings_payload() {
 		'seoDefaults'              => array(
 			'description' => trim((string) get_option('mp_headless_default_meta_description', '')),
 			'ogImage'     => trim((string) get_option('mp_headless_default_og_image', '')),
+		),
+		'teamPage'                 => array(
+			'personIds' => mp_headless_get_team_page_person_ids(),
 		),
 		'showPublicDownloadCounts' => (bool) get_option('mp_headless_show_public_download_counts', false),
 	);
@@ -1258,7 +1334,7 @@ function mp_headless_register_content_types() {
 			'has_archive'  => false,
 			'rewrite'      => false,
 			'menu_icon'    => 'dashicons-businessperson',
-			'supports'     => array('title', 'editor', 'excerpt', 'revisions', 'custom-fields', 'page-attributes'),
+			'supports'     => array('title', 'editor', 'excerpt', 'revisions', 'custom-fields'),
 		)
 	);
 
@@ -2511,10 +2587,34 @@ function mp_headless_render_media_field($args) {
 	<?php
 }
 
+function mp_headless_allow_publication_uploads_up_to_15mb($size) {
+	if (! is_admin()) {
+		return $size;
+	}
+
+	$post_type = isset($_REQUEST['post_type']) ? sanitize_key(wp_unslash($_REQUEST['post_type'])) : '';
+	$page      = isset($_REQUEST['page']) ? sanitize_key(wp_unslash($_REQUEST['page'])) : '';
+	$post_id   = isset($_REQUEST['post_id']) ? intval($_REQUEST['post_id']) : intval($_REQUEST['post'] ?? 0);
+
+	if ($post_type === 'mp_publication' || $page === 'mp-add-podcast') {
+		return max((int) $size, 15 * MB_IN_BYTES);
+	}
+
+	if ($post_id > 0) {
+		$post = get_post($post_id);
+		if ($post instanceof WP_Post && $post->post_type === 'mp_publication') {
+			return max((int) $size, 15 * MB_IN_BYTES);
+		}
+	}
+
+	return $size;
+}
+add_filter('upload_size_limit', 'mp_headless_allow_publication_uploads_up_to_15mb', 20);
+
 function mp_headless_render_publication_meta_box($post) {
 	wp_nonce_field('mp_headless_save_meta', 'mp_headless_meta_nonce');
 	$projects = get_posts(array('post_type' => 'mp_project', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
-	$people   = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
+	$people   = mp_headless_get_people_for_admin_select();
 	$output_type_options = mp_headless_get_output_type_options();
 	$author_person_id = (int) get_post_meta($post->ID, 'mp_author_person_id', true);
 	$author_person_ids = mp_headless_normalize_selected_person_ids(
@@ -2596,8 +2696,8 @@ function mp_headless_render_publication_meta_box($post) {
 				'value'        => get_post_meta($post->ID, 'mp_audio_url', true),
 				'button_label' => __('Upload audio file', 'medplatform-headless'),
 				'library_type' => 'audio',
-				'description'  => __('Use a WordPress media upload or local public path. MP3 files are limited to 10 MB.', 'medplatform-headless'),
-				'max_size_mb'  => 10,
+				'description'  => __('Use a WordPress media upload or local public path. Podcast audio files can be up to 15 MB, subject to your server upload limit.', 'medplatform-headless'),
+				'max_size_mb'  => 15,
 			)
 		);
 		?>
@@ -2711,13 +2811,13 @@ function mp_headless_render_person_meta_box($post) {
 			<?php esc_html_e('Include on the About team page', 'medplatform-headless'); ?>
 		</label>
 	</p>
-	<p style="margin-top:8px;"><?php esc_html_e('Use Team Page Bio for the shorter About-page text, Profile Page Bio for the longer personal page text, and page order for the team-page ordering.', 'medplatform-headless'); ?></p>
+	<p style="margin-top:8px;"><?php esc_html_e('Use Team Page Bio for the shorter About-page text, Profile Page Bio for the longer personal page text, and Site Settings to control team-page order.', 'medplatform-headless'); ?></p>
 	<?php
 }
 
 function mp_headless_render_project_meta_box($post) {
 	wp_nonce_field('mp_headless_save_meta', 'mp_headless_meta_nonce');
-	$people                    = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
+	$people                    = mp_headless_get_people_for_admin_select();
 	$project_card_icon_options = mp_headless_project_card_icon_options();
 	$team_members              = get_post_meta($post->ID, 'mp_team_members', true);
 	$team_member_ids           = get_post_meta($post->ID, 'mp_team_member_ids', true);
@@ -2964,11 +3064,12 @@ add_action('add_meta_boxes', 'mp_headless_add_meta_boxes');
 function mp_headless_enqueue_admin_assets($hook_suffix) {
 	$is_post_editor = in_array($hook_suffix, array('post.php', 'post-new.php'), true);
 	$is_homepage_settings = $hook_suffix === 'toplevel_page_mp-homepage-settings';
+	$is_site_settings = $hook_suffix === 'toplevel_page_mp-site-settings';
 	$is_person_settings = isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === 'mp-person-profile';
 	$is_project_settings = isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === 'mp-project-profile';
 	$screen = null;
 
-	if (! $is_post_editor && ! $is_homepage_settings && ! $is_person_settings && ! $is_project_settings) {
+	if (! $is_post_editor && ! $is_homepage_settings && ! $is_site_settings && ! $is_person_settings && ! $is_project_settings) {
 		return;
 	}
 
@@ -2979,7 +3080,7 @@ function mp_headless_enqueue_admin_assets($hook_suffix) {
 		}
 	}
 
-	if ($is_post_editor || $is_person_settings || $is_project_settings) {
+	if ($is_post_editor || $is_site_settings || $is_person_settings || $is_project_settings) {
 		wp_enqueue_media();
 	}
 	wp_enqueue_script(
@@ -3403,7 +3504,6 @@ function mp_headless_render_person_settings_page() {
 	$short_bio       = $is_editing ? (string) get_post_meta($person->ID, 'mp_short_bio', true) : '';
 	$profile_bio     = $is_editing ? (string) get_post_meta($person->ID, 'mp_profile_bio', true) : '';
 	$show_on_team    = $is_editing ? (bool) get_post_meta($person->ID, 'mp_show_on_team_page', true) : false;
-	$team_order      = $is_editing ? intval($person->menu_order) : 0;
 	$people_list_url = admin_url('edit.php?post_type=mp_person');
 
 	if ($is_editing && $short_bio === '') {
@@ -3448,11 +3548,6 @@ function mp_headless_render_person_settings_page() {
 						<div>
 							<label for="mp_role"><strong><?php esc_html_e('Role', 'medplatform-headless'); ?></strong></label>
 							<input type="text" id="mp_role" name="mp_role" class="widefat" value="<?php echo esc_attr($role); ?>" style="margin-top:8px;" />
-						</div>
-						<div>
-							<label for="mp_person_menu_order"><strong><?php esc_html_e('Team Order', 'medplatform-headless'); ?></strong></label>
-							<input type="number" id="mp_person_menu_order" name="mp_person_menu_order" class="widefat" value="<?php echo esc_attr((string) $team_order); ?>" style="margin-top:8px;" />
-							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Lower numbers appear earlier on the team page.', 'medplatform-headless'); ?></p>
 						</div>
 					</div>
 				</div>
@@ -3505,6 +3600,7 @@ function mp_headless_render_person_settings_page() {
 							<?php esc_html_e('Include this person on the About team page', 'medplatform-headless'); ?>
 						</label>
 					</p>
+					<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Team page order is controlled centrally from Site Settings.', 'medplatform-headless'); ?></p>
 				</div>
 			</div>
 
@@ -3537,7 +3633,6 @@ function mp_headless_save_person_settings() {
 	$photo       = esc_url_raw(wp_unslash($_POST['mp_photo'] ?? ''));
 	$short_bio   = sanitize_textarea_field(wp_unslash($_POST['mp_short_bio'] ?? ''));
 	$profile_bio = sanitize_textarea_field(wp_unslash($_POST['mp_profile_bio'] ?? ''));
-	$team_order  = intval($_POST['mp_person_menu_order'] ?? 0);
 
 	if ($name === '') {
 		wp_die(esc_html__('Name is required.', 'medplatform-headless'));
@@ -3560,7 +3655,6 @@ function mp_headless_save_person_settings() {
 			'post_name'    => $slug,
 			'post_excerpt' => $short_bio,
 			'post_content' => $profile_bio,
-			'menu_order'   => $team_order,
 		),
 		true
 	);
@@ -3599,6 +3693,82 @@ function mp_headless_save_person_settings() {
 }
 add_action('admin_post_mp_headless_save_person_settings', 'mp_headless_save_person_settings');
 
+function mp_headless_render_team_page_order_list($args = array()) {
+	$section_id         = isset($args['section_id']) ? sanitize_html_class((string) $args['section_id']) : wp_unique_id('mp-team-order-list-');
+	$title              = isset($args['title']) ? (string) $args['title'] : __('Team Page', 'medplatform-headless');
+	$description        = isset($args['description']) ? (string) $args['description'] : '';
+	$search_placeholder = isset($args['search_placeholder']) ? (string) $args['search_placeholder'] : __('Search people...', 'medplatform-headless');
+	$empty_search_label = isset($args['empty_search_label']) ? (string) $args['empty_search_label'] : __('No people match this search.', 'medplatform-headless');
+	$empty_list_label   = isset($args['empty_list_label']) ? (string) $args['empty_list_label'] : __('No people available yet.', 'medplatform-headless');
+	$people             = isset($args['people']) && is_array($args['people']) ? $args['people'] : array();
+	?>
+	<div class="mp-selection-card" style="background:#fff; border:1px solid #dcdcde; padding:20px;">
+		<div>
+			<h2 style="margin:0;"><?php echo esc_html($title); ?></h2>
+			<p style="margin:8px 0 0; color:#50575e; max-width:72ch;"><?php echo esc_html($description); ?></p>
+		</div>
+		<div class="mp-order-panel" style="margin-top:16px;">
+			<input
+				type="search"
+				class="widefat mp-order-search"
+				data-target="#<?php echo esc_attr($section_id); ?>"
+				placeholder="<?php echo esc_attr($search_placeholder); ?>"
+				aria-label="<?php echo esc_attr($search_placeholder); ?>"
+			/>
+			<div
+				id="<?php echo esc_attr($section_id); ?>"
+				class="mp-order-list"
+				style="margin-top:12px; max-height:420px; overflow:auto; border:1px solid #dcdcde; background:#fff;"
+			>
+				<?php if (empty($people)) : ?>
+					<p style="margin:0; padding:14px 16px; color:#50575e;"><?php echo esc_html($empty_list_label); ?></p>
+				<?php else : ?>
+					<?php foreach ($people as $person) : ?>
+						<?php
+						$is_visible = (bool) get_post_meta($person->ID, 'mp_show_on_team_page', true);
+						$role       = trim((string) get_post_meta($person->ID, 'mp_role', true));
+						$meta_parts = array();
+
+						if ($role !== '') {
+							$meta_parts[] = $role;
+						}
+
+						$meta_parts[] = $is_visible
+							? __('Shown on team page', 'medplatform-headless')
+							: __('Hidden from team page', 'medplatform-headless');
+						?>
+						<div
+							class="mp-order-item"
+							data-order-label="<?php echo esc_attr(function_exists('mb_strtolower') ? mb_strtolower($person->post_title) : strtolower($person->post_title)); ?>"
+							style="display:flex; gap:14px; align-items:flex-start; padding:12px 14px; border-top:1px solid #f0f0f1;"
+						>
+							<input type="hidden" name="mp_team_page_person_ids[]" value="<?php echo esc_attr($person->ID); ?>" />
+							<label style="display:flex; gap:12px; align-items:flex-start; flex:1; min-width:0;">
+								<input
+									type="checkbox"
+									name="mp_team_page_visible_person_ids[]"
+									value="<?php echo esc_attr($person->ID); ?>"
+									<?php checked($is_visible); ?>
+								/>
+								<span style="display:block; line-height:1.35;">
+									<strong style="display:block; font-weight:600;"><?php echo esc_html($person->post_title); ?></strong>
+									<span style="display:block; margin-top:2px; color:#646970; font-size:12px;"><?php echo esc_html(implode(' · ', $meta_parts)); ?></span>
+								</span>
+							</label>
+							<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+								<button type="button" class="button button-small" data-mp-order-up><?php esc_html_e('Move up', 'medplatform-headless'); ?></button>
+								<button type="button" class="button button-small" data-mp-order-down><?php esc_html_e('Move down', 'medplatform-headless'); ?></button>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</div>
+			<p class="mp-order-empty" hidden style="margin:10px 0 0; color:#646970;"><?php echo esc_html($empty_search_label); ?></p>
+		</div>
+	</div>
+	<?php
+}
+
 function mp_headless_render_project_settings_page() {
 	if (! current_user_can('edit_posts')) {
 		wp_die(esc_html__('You do not have permission to manage projects.', 'medplatform-headless'));
@@ -3613,7 +3783,7 @@ function mp_headless_render_project_settings_page() {
 
 	$is_editing            = $project instanceof WP_Post;
 	$updated               = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
-	$people                = get_posts(array('post_type' => 'mp_person', 'posts_per_page' => -1, 'orderby' => 'menu_order title', 'order' => 'ASC'));
+	$people                = mp_headless_get_people_for_admin_select();
 	$available_parent_projects = get_posts(
 		array(
 			'post_type'      => 'mp_project',
@@ -4419,6 +4589,7 @@ function mp_headless_render_site_settings_page() {
 	}
 
 	$site_settings                = mp_headless_get_site_settings_payload();
+	$team_page_people             = mp_headless_get_team_page_people();
 	$linkedin_url                 = (string) ($site_settings['socialLinks']['linkedin'] ?? '');
 	$researchgate_url             = (string) ($site_settings['socialLinks']['researchgate'] ?? '');
 	$youtube_url                  = (string) ($site_settings['socialLinks']['youtube'] ?? '');
@@ -4429,6 +4600,21 @@ function mp_headless_render_site_settings_page() {
 	$updated                      = isset($_GET['updated']) ? sanitize_text_field(wp_unslash($_GET['updated'])) : '';
 	?>
 	<div class="wrap">
+		<style>
+			.mp-order-list .mp-order-item:first-child {
+				border-top: 0;
+			}
+
+			.mp-order-list .mp-order-item:hover {
+				background: #f6f7f7;
+			}
+
+			.mp-order-list .mp-order-item:focus-within {
+				outline: 2px solid #2271b1;
+				outline-offset: -2px;
+				background: #f6f7f7;
+			}
+		</style>
 		<h1><?php esc_html_e('Site Settings', 'medplatform-headless'); ?></h1>
 		<p><?php esc_html_e('Control the shared frontend settings used across navigation, footer links, and publication download displays.', 'medplatform-headless'); ?></p>
 
@@ -4463,6 +4649,20 @@ function mp_headless_render_site_settings_page() {
 						</div>
 					</div>
 				</div>
+
+				<?php
+				mp_headless_render_team_page_order_list(
+					array(
+						'section_id'         => 'mp-team-page-order-list',
+						'title'              => __('Team Page', 'medplatform-headless'),
+						'description'        => __('Use the checkbox to choose who appears on the About team page, and move rows up or down to control the order. The per-person team-page toggle stays in sync with the checkbox here.', 'medplatform-headless'),
+						'search_placeholder' => __('Search team people...', 'medplatform-headless'),
+						'empty_search_label' => __('No team people match this search.', 'medplatform-headless'),
+						'empty_list_label'   => __('No people available yet.', 'medplatform-headless'),
+						'people'             => $team_page_people,
+					)
+				);
+				?>
 
 				<div style="background:#fff; border:1px solid #dcdcde; padding:20px;">
 					<h2 style="margin-top:0;"><?php esc_html_e('Download Visibility', 'medplatform-headless'); ?></h2>
@@ -4636,6 +4836,32 @@ function mp_headless_save_site_settings() {
 	update_option('mp_headless_default_meta_description', sanitize_textarea_field(wp_unslash($_POST['mp_default_meta_description'] ?? '')));
 	update_option('mp_headless_default_og_image', esc_url_raw(wp_unslash($_POST['mp_default_og_image'] ?? '')));
 	update_option('mp_headless_show_public_download_counts', ! empty($_POST['mp_show_public_download_counts']));
+
+	$available_person_ids = mp_headless_get_default_team_page_person_ids();
+	$valid_person_ids     = array_flip($available_person_ids);
+	$ordered_person_ids   = mp_headless_sanitize_int_array(wp_unslash($_POST['mp_team_page_person_ids'] ?? array()));
+	$visible_person_ids   = mp_headless_sanitize_int_array(wp_unslash($_POST['mp_team_page_visible_person_ids'] ?? array()));
+	$normalized_order     = array();
+
+	foreach ($ordered_person_ids as $person_id) {
+		if (isset($valid_person_ids[$person_id]) && ! in_array($person_id, $normalized_order, true)) {
+			$normalized_order[] = $person_id;
+		}
+	}
+
+	foreach ($available_person_ids as $person_id) {
+		if (! in_array($person_id, $normalized_order, true)) {
+			$normalized_order[] = $person_id;
+		}
+	}
+
+	update_option('mp_headless_team_page_person_ids', $normalized_order, false);
+
+	$visible_lookup = array_flip($visible_person_ids);
+	foreach ($available_person_ids as $person_id) {
+		update_post_meta($person_id, 'mp_show_on_team_page', isset($visible_lookup[$person_id]));
+		clean_post_cache($person_id);
+	}
 
 	mp_headless_trigger_build('site_settings_update');
 

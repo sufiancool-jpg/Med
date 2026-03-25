@@ -49,6 +49,74 @@
     $panel.find(".mp-selection-empty").prop("hidden", visibleCount !== 0);
   };
 
+  const filterOrderList = ($input) => {
+    const query = ($input.val() || "").toString().trim().toLowerCase();
+    const targetSelector = $input.data("target");
+    const $list = $(targetSelector);
+    const $panel = $input.closest(".mp-order-panel");
+    const $items = $list.find(".mp-order-item");
+    let visibleCount = 0;
+
+    $items.each(function () {
+      const $item = $(this);
+      const label = ($item.data("orderLabel") || "").toString().toLowerCase();
+      const isVisible = !query || label.includes(query);
+
+      $item.toggle(isVisible);
+      if (isVisible) {
+        visibleCount += 1;
+      }
+    });
+
+    $panel.find(".mp-order-empty").prop("hidden", visibleCount !== 0);
+  };
+
+  const syncOrderListButtons = (list) => {
+    if (!(list instanceof HTMLElement)) {
+      return;
+    }
+
+    const items = Array.from(list.querySelectorAll(".mp-order-item"));
+
+    items.forEach((item, index) => {
+      const upButton = item.querySelector("[data-mp-order-up]");
+      const downButton = item.querySelector("[data-mp-order-down]");
+
+      if (upButton instanceof HTMLButtonElement) {
+        upButton.disabled = index === 0;
+      }
+
+      if (downButton instanceof HTMLButtonElement) {
+        downButton.disabled = index === items.length - 1;
+      }
+    });
+  };
+
+  const moveOrderListItem = (button, direction) => {
+    const item = button.closest(".mp-order-item");
+    const list = item?.parentElement;
+
+    if (!(item instanceof HTMLElement) || !(list instanceof HTMLElement)) {
+      return;
+    }
+
+    const sibling =
+      direction === "up" ? item.previousElementSibling : item.nextElementSibling;
+
+    if (!(sibling instanceof HTMLElement)) {
+      syncOrderListButtons(list);
+      return;
+    }
+
+    if (direction === "up") {
+      list.insertBefore(item, sibling);
+    } else {
+      list.insertBefore(sibling, item);
+    }
+
+    syncOrderListButtons(list);
+  };
+
   const syncPublicationTypeUi = () => {
     const $select = $("[data-mp-output-type-select]").first();
     if (!$select.length) {
@@ -344,8 +412,22 @@
     filterSelectionList($(this));
   });
 
+  $(document).on("input", ".mp-order-search", function () {
+    filterOrderList($(this));
+  });
+
   $(document).on("change", ".mp-selection-checkbox", function () {
     updateSelectionCount($(this).closest(".mp-selection-panel"));
+  });
+
+  $(document).on("click", "[data-mp-order-up]", function (event) {
+    event.preventDefault();
+    moveOrderListItem(this, "up");
+  });
+
+  $(document).on("click", "[data-mp-order-down]", function (event) {
+    event.preventDefault();
+    moveOrderListItem(this, "down");
   });
 
   $(document).on("change", "[data-mp-output-type-select]", syncPublicationTypeUi);
@@ -371,6 +453,11 @@
     filterSelectionList($panel.find(".mp-selection-search").first());
   });
 
+  $(".mp-order-panel").each(function () {
+    const $panel = $(this);
+    filterOrderList($panel.find(".mp-order-search").first());
+  });
+
   $(".mp-donor-row").each(function () {
     syncDonorPreview($(this));
   });
@@ -382,6 +469,9 @@
   syncParentProjectOptions();
   syncAlignedProjectOptions();
   syncCustomFocusAreaOptions();
+  document.querySelectorAll(".mp-order-list").forEach((list) => {
+    syncOrderListButtons(list);
+  });
   document.querySelectorAll("[data-mp-color-field]").forEach((field) => {
     syncProjectColorField(field, "value");
   });
