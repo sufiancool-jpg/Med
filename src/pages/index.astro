@@ -118,7 +118,7 @@ const metadata = {
     <div class="flex h-full w-full min-h-0 flex-col overflow-hidden">
       <div
         data-hero-intro-panel
-        class="w-full shrink-0 overflow-hidden [transition-property:max-height,transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[max-height,transform,opacity]"
+        class="hidden w-full shrink-0 overflow-hidden md:block [transition-property:max-height,transform,opacity] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[max-height,transform,opacity]"
       >
         <div class="border-b border-black bg-white px-4 pt-3.5 pb-2.5 sm:px-6 md:pt-4 md:pb-2.5 lg:px-8">
           <div class="grid items-start gap-3.5 md:grid-cols-[62%_38%] md:gap-0">
@@ -173,7 +173,18 @@ const metadata = {
       <div data-hero-video-panel class="relative flex-1 min-h-0 overflow-hidden bg-black">
         <video
           data-landing-video
-          class="absolute inset-0 h-full w-full object-cover"
+          class="absolute inset-0 h-full w-full object-cover object-center md:hidden"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+        >
+          <source src="/webbg_phone.mp4" type="video/mp4" />
+        </video>
+        <video
+          data-landing-video
+          class="absolute inset-0 hidden h-full w-full object-cover md:block"
           autoplay
           muted
           loop

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.13
+ * Version: 0.1.26
  * Author: Codex
  */
 
@@ -145,6 +145,21 @@ function mp_headless_sanitize_secret_value($value) {
 	return trim(preg_replace('/[\r\n]+/', '', (string) wp_unslash($value)));
 }
 
+function mp_headless_sanitize_publication_date_value($value) {
+	$value = trim((string) wp_unslash($value));
+
+	if ($value === '') {
+		return '';
+	}
+
+	$parsed = date_create($value);
+	if (! $parsed) {
+		return '';
+	}
+
+	return $parsed->format('Y-m-d');
+}
+
 function mp_headless_sanitize_repo_path_value($value) {
 	$value = trim((string) wp_unslash($value));
 	$value = preg_replace('#/+#', '/', $value);
@@ -251,7 +266,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.13',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.26',
 	);
 }
 
@@ -1267,6 +1282,26 @@ function mp_headless_get_publication_output_type_slug($post_id) {
 	return (string) $terms[0];
 }
 
+function mp_headless_get_publication_date_value($post_id) {
+	$post_id = (int) $post_id;
+	$stored_date = mp_headless_sanitize_publication_date_value(get_post_meta($post_id, 'mp_publication_date', true));
+
+	if ($stored_date !== '') {
+		return $stored_date;
+	}
+
+	$post = get_post($post_id);
+	if (! $post instanceof WP_Post) {
+		return '';
+	}
+
+	$fallback_date = $post->post_date_gmt && $post->post_date_gmt !== '0000-00-00 00:00:00'
+		? get_date_from_gmt($post->post_date_gmt, 'Y-m-d')
+		: mysql2date('Y-m-d', $post->post_date, false);
+
+	return is_string($fallback_date) ? $fallback_date : '';
+}
+
 function mp_headless_publication_is_podcast($post_id) {
 	if (! $post_id) {
 		return false;
@@ -1448,6 +1483,20 @@ function mp_headless_register_meta() {
 	register_post_meta('mp_publication', 'mp_download_url', $rest_string);
 	register_post_meta('mp_publication', 'mp_has_download_file', $rest_boolean);
 	register_post_meta('mp_publication', 'mp_download_label', $rest_string);
+	register_post_meta(
+		'mp_publication',
+		'mp_publication_date',
+		array(
+			'single'            => true,
+			'type'              => 'string',
+			'default'           => '',
+			'sanitize_callback' => 'mp_headless_sanitize_publication_date_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
 	register_post_meta('mp_publication', 'mp_seo_title', $rest_string);
 	register_post_meta('mp_publication', 'mp_seo_description', $rest_string);
 	register_post_meta('mp_publication', 'mp_seo_og_image', $rest_string);
@@ -1997,6 +2046,22 @@ function mp_headless_register_meta() {
 	register_post_meta('mp_homepage', 'mp_announcement_text', $rest_string);
 	register_post_meta('mp_homepage', 'mp_announcement_link_url', $rest_string);
 	register_post_meta('mp_homepage', 'mp_announcement_link_label', $rest_string);
+
+	register_rest_field(
+		'mp_publication',
+		'publication_date',
+		array(
+			'get_callback' => function($post_arr) {
+				$post_id = isset($post_arr['id']) ? (int) $post_arr['id'] : 0;
+				return $post_id > 0 ? mp_headless_get_publication_date_value($post_id) : '';
+			},
+			'schema'       => array(
+				'description' => __('Resolved publication date used by the frontend.', 'medplatform-headless'),
+				'type'        => 'string',
+				'context'     => array('view', 'edit'),
+			),
+		)
+	);
 }
 add_action('init', 'mp_headless_register_meta');
 
@@ -2641,6 +2706,7 @@ function mp_headless_render_publication_meta_box($post) {
 	$references = is_array($references) ? $references : array();
 	$download_url = (string) get_post_meta($post->ID, 'mp_download_url', true);
 	$has_download_file = (bool) get_post_meta($post->ID, 'mp_has_download_file', true);
+	$publication_date = mp_headless_get_publication_date_value($post->ID);
 	if (! $has_download_file && $download_url !== '') {
 		$has_download_file = true;
 	}
@@ -2654,6 +2720,17 @@ function mp_headless_render_publication_meta_box($post) {
 	</select>
 	<span class="description" style="display:block; margin-top:6px;">
 		<?php esc_html_e('Choose the publication type here. Use Pod-Cast for audio releases so the homepage and the public page both use the audio player correctly.', 'medplatform-headless'); ?>
+	</span></p>
+	<p><label for="mp_publication_date"><strong><?php esc_html_e('Publication Date', 'medplatform-headless'); ?></strong></label><br />
+	<input
+		type="date"
+		class="regular-text"
+		id="mp_publication_date"
+		name="mp_publication_date"
+		value="<?php echo esc_attr($publication_date); ?>"
+	/>
+	<span class="description" style="display:block; margin-top:6px;">
+		<?php esc_html_e('Used as the publication date on the frontend and in REST output. Leave blank only if you want to fall back to the WordPress post date.', 'medplatform-headless'); ?>
 	</span></p>
 	<p><label><strong><?php esc_html_e('Main Authors', 'medplatform-headless'); ?></strong></label><br />
 	<select class="widefat" name="mp_author_person_ids[]" size="8" multiple style="min-height:220px;">
@@ -3174,6 +3251,7 @@ function mp_headless_save_meta_boxes($post_id) {
 		update_post_meta($post_id, 'mp_has_download_file', $has_download_file);
 		update_post_meta($post_id, 'mp_download_url', $download_url);
 		update_post_meta($post_id, 'mp_download_label', '');
+		update_post_meta($post_id, 'mp_publication_date', mp_headless_sanitize_publication_date_value($_POST['mp_publication_date'] ?? ''));
 		update_post_meta($post_id, 'mp_contributor_person_ids', $contributor_person_ids);
 		update_post_meta($post_id, 'mp_contributor_names', mp_headless_parse_lines($_POST['mp_contributor_names'] ?? ''));
 		update_post_meta($post_id, 'mp_related_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_related_project_ids'] ?? array())));

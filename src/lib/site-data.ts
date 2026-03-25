@@ -206,6 +206,7 @@ interface WordPressRecord {
   id: number;
   slug: string;
   date: string;
+  publication_date?: string;
   menu_order?: number;
   title: { rendered: string };
   excerpt: { rendered: string };
@@ -249,6 +250,18 @@ const decodeHtml = (value: string) =>
 
 const stripHtml = (value: string) =>
   decodeHtml(value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+
+const resolveWordPressPublicationDate = (record: WordPressRecord) => {
+  const publicationDate =
+    typeof record.publication_date === "string" && record.publication_date.trim() !== ""
+      ? record.publication_date.trim()
+      : typeof record.meta?.mp_publication_date === "string" &&
+          record.meta.mp_publication_date.trim() !== ""
+        ? record.meta.mp_publication_date.trim()
+        : record.date;
+
+  return new Date(publicationDate);
+};
 
 const PUBLICATION_PREVIEW_WORD_LIMIT = 12;
 const PROJECT_DESCRIPTION_WORD_LIMIT = 25;
@@ -823,7 +836,7 @@ const buildWordPressPublicationSummary = (
       record.content.rendered,
       record.title.rendered,
     ),
-    pubDate: new Date(record.date),
+    pubDate: resolveWordPressPublicationDate(record),
     author:
       authorPeople.length > 0
         ? authorPeople.map((person) => person.name).join(", ")
