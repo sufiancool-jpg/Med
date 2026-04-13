@@ -6,14 +6,28 @@ async function saveTraffic() {
     process.env.GITHUB_REPOSITORY || "devgelo-labs/astro-starter-pro";
   const filePath = "./.github/data/clones.json";
 
+  if (!token) {
+    throw new Error(
+      "Missing GRAPH_TOKEN secret. Add a token with access to repository traffic data.",
+    );
+  }
+
   const response = await fetch(
     `https://api.github.com/repos/${repo}/traffic/clones`,
     {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
     },
   );
 
-  if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(
+      `GitHub API error ${response.status}: ${response.statusText}. ${details}`,
+    );
+  }
 
   const apiData = await response.json();
 
