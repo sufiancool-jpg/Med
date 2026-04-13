@@ -45,7 +45,7 @@ export const projectStages = [
 export const projectPages: ProjectPage[] = [
   {
     slug: "libya-platform",
-    href: "/projects/libya-platform",
+    href: "/projects/libya-platform/",
     title: "Libya Platform",
     description:
       "Field-based research, capacity building, and dialogue support focused on governance processes, youth participation, and practical policy pathways.",
@@ -94,7 +94,7 @@ export const projectPages: ProjectPage[] = [
   },
   {
     slug: "africa-nexus",
-    href: "/projects/africa-nexus",
+    href: "/projects/africa-nexus/",
     title: "Africa Nexus",
     description:
       "Policy analyses, crossroads exchanges, and knowledge ecosystems linking African and European experts, researchers, and decision-makers.",
@@ -143,7 +143,7 @@ export const projectPages: ProjectPage[] = [
   },
   {
     slug: "gulf-platform",
-    href: "/projects/gulf-platform",
+    href: "/projects/gulf-platform/",
     title: "Gulf Platform",
     description:
       "Regional research and dialogue on Europe-Gulf relations, geopolitical shifts, sectoral cooperation, and long-term strategic trends.",

@@ -379,7 +379,7 @@ const formatLocalTagLabel = (value: string) =>
 const defaultAnnouncementBarSettings: AnnouncementBarSettings = {
   text: "Next talk: May 20 - African Talks: South African Foreign Policy",
   linkLabel: "Register",
-  linkHref: "/widgets",
+  linkHref: "/blog/",
 };
 
 const siteConfigOgImage =
@@ -827,7 +827,7 @@ const buildWordPressPublicationSummary = (
   return {
     id: record.id,
     slug: record.slug,
-    href: `/blog/${record.slug}`,
+    href: `/blog/${record.slug}/`,
     title: decodeHtml(record.title.rendered),
     description: stripHtml(record.excerpt.rendered),
     excerpt: stripHtml(record.excerpt.rendered),
@@ -1114,7 +1114,7 @@ const loadLocalPublications = async (): Promise<PublicationSummary[]> => {
           return {
             id: entry.id,
             slug: entry.id,
-            href: `/blog/${entry.id}`,
+            href: `/blog/${entry.id}/`,
             title: entry.data.title,
             description: entry.data.description,
             excerpt: entry.data.description,
@@ -1377,7 +1377,7 @@ export const getPublicationsForProject = async (projectSlug: string) => {
     .map((article, index) => ({
       id: `${projectSlug}-${index}`,
       slug: toRouteSlug(article.title),
-      href: "/blog",
+      href: "/blog/",
       title: article.title,
       description: article.summary,
       excerpt: article.summary,
