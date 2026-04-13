@@ -1,0 +1,5 @@
+RewriteEngine On
+
+# Canonicalize the public hostname to non-www.
+RewriteCond %{HTTP_HOST} ^www\.mediplatform\.org$ [NC]
+RewriteRule ^(.*)$ https://mediplatform.org/$1 [L,R=301]
