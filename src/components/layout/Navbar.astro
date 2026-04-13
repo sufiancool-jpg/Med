@@ -15,7 +15,14 @@ const mainMenuLinks = [
     ],
   },
   { text: "Projects", href: "/projects/", key: "nav.projects" },
-  { text: "Publications", href: "/blog/", key: "nav.publications" },
+  {
+    text: "Publications",
+    href: "/blog/",
+    key: "nav.publications",
+    children: [
+      { text: "Local Governance", href: "/blog/local-governance/", key: "nav.localGovernance" },
+    ],
+  },
   { text: "Contact", href: "/contact/", key: "nav.contact" },
 ];
 

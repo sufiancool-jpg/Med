@@ -1,0 +1,60 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
+import { getPublications } from "../../lib/site-data";
+
+const publications = await getPublications();
+const localGovernancePublications = publications.filter((publication) =>
+  publication.hashtags.some((tag) => tag.slug === "localgovernance"),
+);
+
+const publicationTypeOptions = [
+  "Policy Paper",
+  "Research Report",
+  "Policy Brief",
+  "E-Book",
+  "Pod-Cast",
+  "Insights",
+];
+
+const publicationArticles = localGovernancePublications.map((publication) => ({
+  title: publication.title,
+  summary: publication.previewText,
+  author: publication.author,
+  date: new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(publication.pubDate),
+  topic: publication.topics[0] ?? "General",
+  type: publication.outputType,
+  primaryLabel: "Publication",
+  typeLabel: publication.outputType,
+  hashtags: publication.hashtags.map((tag) => tag.label),
+  image: publication.image ?? "/blog/welcome.webp",
+  imageAlt: publication.title,
+  href: publication.href,
+}));
+
+const metadata = {
+  title: "Local Governance",
+  description:
+    "Publications and articles focused on local governance, institutional design, and subnational policymaking.",
+};
+---
+
+<BaseLayout metadata={metadata}>
+  <FilteredArticleArchive
+    items={publicationArticles}
+    containerClass="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 md:pt-12 md:pb-12 lg:px-8"
+    resultsId="local-governance-results"
+    hideSearch={true}
+    introTitle="Why Local Governance Matters"
+    introParagraphs={[
+      "Amid persistent institutional fragmentation, overlapping mandates, and sustained pressure on central decision-making structures, Libya faces significant challenges in aligning governance arrangements with its geographic diversity, evolving local priorities and demands for more equitable development.",
+    ]}
+    emptyMessage="No local governance publications match the current filter combination."
+    emptyMessageKey="archive.noPublicationsMatch"
+    typeOptions={publicationTypeOptions}
+  />
+</BaseLayout>

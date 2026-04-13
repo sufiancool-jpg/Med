@@ -19,6 +19,9 @@ interface Props {
   containerClass?: string;
   emptyMessage?: string;
   resultsId?: string;
+  hideSearch?: boolean;
+  introTitle?: string;
+  introParagraphs?: string[];
   searchPlaceholder?: string;
   searchPlaceholderKey?: string;
   searchPlaceholderValue?: string;
@@ -32,6 +35,9 @@ const {
   containerClass = "mx-auto max-w-7xl px-4 pt-0 pb-10 sm:px-6 md:pb-12 lg:px-8",
   emptyMessage = "No articles match the current search and filter combination.",
   resultsId = "archive-results",
+  hideSearch = false,
+  introTitle,
+  introParagraphs = [],
   searchPlaceholder = "Search articles",
   searchPlaceholderKey = "archive.searchArticles",
   searchPlaceholderValue,
@@ -46,27 +52,47 @@ const resolvedTypeOptions =
   typeOptions ??
   [...new Set(items.map((item) => item.type).filter((value): value is string => Boolean(value)))].sort();
 const hasTypeFilter = resolvedTypeOptions.length > 0;
-const filterGridClass = hasTypeFilter
-  ? "grid gap-4 border-y border-black/10 py-4 md:grid-cols-[minmax(0,1.8fr)_repeat(3,minmax(0,1fr))] md:gap-5"
-  : "grid gap-4 border-y border-black/10 py-4 md:grid-cols-[minmax(0,1.8fr)_repeat(2,minmax(0,1fr))] md:gap-5";
+const filterGridClass = hideSearch
+  ? hasTypeFilter
+    ? "grid gap-4 border-y border-black/10 py-4 md:grid-cols-3 md:gap-5"
+    : "grid gap-4 border-y border-black/10 py-4 md:grid-cols-2 md:gap-5"
+  : hasTypeFilter
+    ? "grid gap-4 border-y border-black/10 py-4 md:grid-cols-[minmax(0,1.8fr)_repeat(3,minmax(0,1fr))] md:gap-5"
+    : "grid gap-4 border-y border-black/10 py-4 md:grid-cols-[minmax(0,1.8fr)_repeat(2,minmax(0,1fr))] md:gap-5";
 ---
 
 <section class="bg-white">
   <div class={containerClass} data-filter-archive-root>
+    {(introTitle || introParagraphs.length > 0) && (
+      <div class="mb-6 max-w-4xl">
+        {introTitle && (
+          <h1 class="text-2xl font-semibold tracking-[0.01em] text-primary md:text-3xl">
+            {introTitle}
+          </h1>
+        )}
+        {introParagraphs.map((paragraph) => (
+          <p class="mt-4 text-[1rem] leading-7 text-primary/78 md:text-[1.03rem]">
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    )}
     <form class={filterGridClass}>
-      <label class="flex flex-col gap-2">
-        <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
-          <span data-ui-i18n="archive.search">Search</span>
-        </span>
-        <input
-          data-filter-search
-          type="search"
-          placeholder={searchPlaceholder}
-          data-ui-i18n-placeholder={searchPlaceholderKey}
-          data-ui-i18n-value={searchPlaceholderValue}
-          class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors placeholder:text-primary/35 focus:border-black"
-        />
-      </label>
+      {!hideSearch && (
+        <label class="flex flex-col gap-2">
+          <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
+            <span data-ui-i18n="archive.search">Search</span>
+          </span>
+          <input
+            data-filter-search
+            type="search"
+            placeholder={searchPlaceholder}
+            data-ui-i18n-placeholder={searchPlaceholderKey}
+            data-ui-i18n-value={searchPlaceholderValue}
+            class="h-12 border border-black/15 bg-white px-4 text-[0.95rem] text-primary outline-none transition-colors placeholder:text-primary/35 focus:border-black"
+          />
+        </label>
+      )}
 
       <label class="flex flex-col gap-2">
         <span class="text-[0.76rem] font-semibold uppercase tracking-[0.12em] text-primary/65">
