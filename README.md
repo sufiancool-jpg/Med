@@ -16,6 +16,7 @@
 <details open>
 <summary>Table of Contents</summary>
 
+- [Project Runbook](#project-runbook)
 - [Demo](#demo)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -28,6 +29,12 @@
 - [License](#license)
 
 </details>
+
+<br>
+
+## Project Runbook
+
+For the current operating model of this project, including frontend deploys, WordPress-triggered redeploys, live plugin caveats, and troubleshooting, see [DEPLOYMENT-DIRECTIONS.md](./DEPLOYMENT-DIRECTIONS.md).
 
 <br>
 
