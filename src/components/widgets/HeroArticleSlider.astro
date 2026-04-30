@@ -50,14 +50,14 @@ const getTitleSizeClass = (title: string) => {
   const length = title.trim().length;
 
   if (length > 130) {
-    return "text-[0.92rem] sm:text-[1.02rem] md:text-[1.04rem] lg:text-[1.12rem] xl:text-[1.28rem]";
+    return "text-[1.02rem] sm:text-[1.12rem] md:text-[1.04rem] lg:text-[1.12rem] xl:text-[1.28rem]";
   }
 
   if (length > 95) {
-    return "text-[1rem] sm:text-[1.1rem] md:text-[1.12rem] lg:text-[1.24rem] xl:text-[1.48rem]";
+    return "text-[1.12rem] sm:text-[1.22rem] md:text-[1.12rem] lg:text-[1.24rem] xl:text-[1.48rem]";
   }
 
-  return "text-[1.08rem] sm:text-[1.18rem] md:text-[1.22rem] lg:text-[1.38rem] xl:text-[1.72rem]";
+  return "text-[1.18rem] sm:text-[1.3rem] md:text-[1.22rem] lg:text-[1.38rem] xl:text-[1.72rem]";
 };
 ---
 
@@ -112,24 +112,24 @@ const getTitleSizeClass = (title: string) => {
                 class:list={[
                   "pointer-events-none absolute inset-0 z-30 flex justify-start",
                   contentPosition === "bottom"
-                    ? "items-end px-3 pt-3 pb-4 sm:px-5 sm:pt-5 sm:pb-7 md:px-6 md:pt-6 md:pb-8 lg:px-7 lg:pb-10"
+                    ? "items-start px-5 pt-6 pb-20 sm:px-6 sm:pt-7 sm:pb-22 md:items-end md:px-6 md:pt-6 md:pb-8 lg:px-7 lg:pb-10"
                     : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
                 ]}
               >
-                <div class="max-w-[92%] text-left sm:max-w-[80%] md:max-w-[68%] xl:max-w-[60%]">
+                <div class="max-w-[72%] text-left sm:max-w-[70%] md:max-w-[68%] xl:max-w-[60%]">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
-                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[8px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[10px] md:text-[11px]">
+                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[10px] md:text-[11px]">
                         {item.category}
                       </span>
                     )}
                     {item.hashtags && (
-                      <p class="line-clamp-1 text-[9px] font-sans font-semibold uppercase tracking-[0.08em] text-white sm:text-[10px] md:text-[11px] lg:text-[12px]">
+                      <p class="line-clamp-1 text-[10px] font-sans font-semibold uppercase tracking-[0.08em] text-white sm:text-[10px] md:text-[11px] lg:text-[12px]">
                         {item.hashtags}
                       </p>
                     )}
                   </div>
-                  <p class="mt-2 inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:text-[12px] md:text-[13px]">
+                  <p class="mt-2 inline-flex items-center gap-1.5 text-[12px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:text-[12px] md:text-[13px]">
                     <span data-ui-i18n="hero.by">By</span>
                     <span>{item.author}</span>
                   </p>
@@ -154,13 +154,13 @@ const getTitleSizeClass = (title: string) => {
             <button
               type="button"
               data-slider-prev
-              class="absolute left-1 top-1/2 z-40 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:left-2 sm:h-20 sm:w-20"
+              class="absolute bottom-4 left-4 z-40 inline-flex h-11 w-11 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:bottom-5 sm:left-5 sm:h-12 sm:w-12 md:top-1/2 md:bottom-auto md:left-1 md:h-20 md:w-20 md:-translate-y-1/2 lg:left-2"
               aria-label="Previous highlighted article"
               data-ui-i18n-aria-label="hero.prev"
             >
               <svg
                 viewBox="0 0 24 24"
-                class="h-7 w-7 sm:h-10 sm:w-10"
+                class="h-6 w-6 sm:h-7 sm:w-7 md:h-10 md:w-10"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="3.2"
@@ -174,13 +174,13 @@ const getTitleSizeClass = (title: string) => {
             <button
               type="button"
               data-slider-next
-              class="absolute right-1 top-1/2 z-40 inline-flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:right-2 sm:h-20 sm:w-20"
+              class="absolute bottom-4 right-4 z-40 inline-flex h-11 w-11 cursor-pointer items-center justify-center text-white transition-colors hover:text-white/80 sm:bottom-5 sm:right-5 sm:h-12 sm:w-12 md:top-1/2 md:bottom-auto md:right-1 md:h-20 md:w-20 md:-translate-y-1/2 lg:right-2"
               aria-label="Next highlighted article"
               data-ui-i18n-aria-label="hero.next"
             >
               <svg
                 viewBox="0 0 24 24"
-                class="h-7 w-7 sm:h-10 sm:w-10"
+                class="h-6 w-6 sm:h-7 sm:w-7 md:h-10 md:w-10"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="3.2"
