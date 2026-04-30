@@ -50,14 +50,14 @@ const getTitleSizeClass = (title: string) => {
   const length = title.trim().length;
 
   if (length > 130) {
-    return "text-[0.92rem] sm:text-[0.98rem] md:text-[0.92rem] lg:text-[1rem] xl:text-[1.1rem]";
+    return "text-[0.92rem] sm:text-[0.98rem] md:text-[0.84rem] lg:text-[0.94rem] xl:text-[1.1rem]";
   }
 
   if (length > 95) {
-    return "text-[0.98rem] sm:text-[1.04rem] md:text-[0.98rem] lg:text-[1.08rem] xl:text-[1.22rem]";
+    return "text-[0.98rem] sm:text-[1.04rem] md:text-[0.9rem] lg:text-[1rem] xl:text-[1.22rem]";
   }
 
-  return "text-[1.04rem] sm:text-[1.12rem] md:text-[1.05rem] lg:text-[1.18rem] xl:text-[1.36rem]";
+  return "text-[1.04rem] sm:text-[1.12rem] md:text-[0.96rem] lg:text-[1.1rem] xl:text-[1.36rem]";
 };
 ---
 
@@ -116,7 +116,7 @@ const getTitleSizeClass = (title: string) => {
                     : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
                 ]}
               >
-                <div class="max-w-[80%] text-left sm:max-w-[78%] md:max-w-[82%] lg:max-w-[74%] xl:max-w-[70%]">
+                <div class="max-w-[80%] text-left sm:max-w-[78%] md:max-w-[84%] lg:max-w-[76%] xl:max-w-[70%]">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
                       <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[10px] md:text-[11px]">
@@ -135,7 +135,7 @@ const getTitleSizeClass = (title: string) => {
                   </p>
                   <h3
                     class:list={[
-                      "mt-2 line-clamp-5 font-sans font-semibold uppercase leading-[1.05] tracking-[0.04em] text-white [overflow-wrap:anywhere]",
+                      "mt-2 line-clamp-6 lg:line-clamp-5 font-sans font-semibold uppercase leading-[1.05] tracking-[0.04em] text-white [overflow-wrap:anywhere]",
                       getTitleSizeClass(item.title),
                     ]}
                   >
@@ -226,11 +226,12 @@ const getTitleSizeClass = (title: string) => {
       let centerOffset = 0;
       let timerId = 0;
       let isTransitioning = false;
-      let isMobileSingle = false;
+      let isPhoneViewport = false;
+      let isSingleVisible = false;
 
       const setHighlight = () => {
         const centerIndex =
-          baseCount <= 1 || isMobileSingle ? index : index + 1;
+          baseCount <= 1 || isSingleVisible ? index : index + 1;
         slides.forEach((slide, currentIndex) => {
           const isCenter = currentIndex === centerIndex;
           slide.dataset.active = isCenter ? "true" : "false";
@@ -244,10 +245,11 @@ const getTitleSizeClass = (title: string) => {
           Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
         const sliderWidth = slider.clientWidth;
         if (sliderWidth <= 0) return false;
+        isPhoneViewport = window.matchMedia("(max-width: 767px)").matches;
+        isSingleVisible = window.matchMedia("(max-width: 1023px)").matches;
         const baseSlideWidth = ((sliderWidth - gap * 2) / 3) * 1.03;
-        isMobileSingle = window.matchMedia("(max-width: 767px)").matches;
 
-        if (baseCount <= 1 || isMobileSingle) {
+        if (baseCount <= 1 || isSingleVisible) {
           slideWidth = sliderWidth;
           slideStep = slideWidth;
           centerOffset = 0;
@@ -261,7 +263,7 @@ const getTitleSizeClass = (title: string) => {
         const slideHeight = (slideWidth * 9) / 16;
 
         if (fitParentHeight) {
-          if (isMobileSingle) {
+          if (isPhoneViewport) {
             slider.style.removeProperty("height");
           } else {
             slider.style.height = `${slideHeight}px`;
