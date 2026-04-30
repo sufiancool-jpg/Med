@@ -66,7 +66,7 @@ const getTitleSizeClass = (title: string) => {
     <section
       class:list={[
         fitParentHeight
-          ? "relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-transparent"
+          ? "relative flex min-h-0 w-full flex-col overflow-hidden bg-transparent"
           : "relative w-full overflow-hidden bg-background [--slide-h:242px] h-[var(--slide-h)]",
         className,
       ]}
@@ -104,7 +104,7 @@ const getTitleSizeClass = (title: string) => {
                 src={item.image}
                 alt={item.title}
                 class="absolute inset-0 h-full w-full scale-100 object-cover object-center md:scale-105 xl:scale-110"
-                loading="lazy"
+                loading={fitParentHeight ? "eager" : "lazy"}
               />
               <div class="absolute inset-0 bg-black/38"></div>
               <div class="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,15,30,0.18)_0%,rgba(8,15,30,0.42)_42%,rgba(8,15,30,0.82)_100%)]"></div>
@@ -243,6 +243,7 @@ const getTitleSizeClass = (title: string) => {
         const gap =
           Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
         const sliderWidth = slider.clientWidth;
+        if (sliderWidth <= 0) return false;
         const baseSlideWidth = ((sliderWidth - gap * 2) / 3) * 1.03;
         isMobileSingle = window.matchMedia("(max-width: 767px)").matches;
 
@@ -264,11 +265,19 @@ const getTitleSizeClass = (title: string) => {
         slides.forEach((slide) => {
           slide.style.width = `${slideWidth}px`;
         });
+        return true;
       };
 
       const render = (animate = true) => {
         track.style.transitionDuration = animate ? "500ms" : "0ms";
         track.style.transform = `translateX(-${index * slideStep + centerOffset}px)`;
+      };
+
+      const syncLayout = () => {
+        const hasDimensions = setDimensions();
+        if (!hasDimensions) return;
+        render(false);
+        setHighlight();
       };
 
       const stopAutoplay = () => {
@@ -346,14 +355,16 @@ const getTitleSizeClass = (title: string) => {
       });
 
       window.addEventListener("resize", () => {
-        setDimensions();
-        render(false);
-        setHighlight();
+        syncLayout();
       });
 
-      setDimensions();
-      render(false);
-      setHighlight();
+      const resizeObserver = new ResizeObserver(() => {
+        syncLayout();
+      });
+      resizeObserver.observe(slider);
+
+      syncLayout();
+      window.requestAnimationFrame(syncLayout);
       startAutoplay();
     });
   };
