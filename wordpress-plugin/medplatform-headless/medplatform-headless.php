@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.27
+ * Version: 0.1.28
  * Author: Codex
  */
 
@@ -266,7 +266,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.27',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.28',
 	);
 }
 
@@ -3220,14 +3220,12 @@ function mp_headless_enqueue_admin_assets($hook_suffix) {
 
 	if ($is_post_editor) {
 		$screen = get_current_screen();
-		if (! $screen || ! in_array($screen->post_type, array('mp_publication', 'mp_project', 'mp_person'), true)) {
+		if (! $screen || ! in_array($screen->post_type, array('mp_publication', 'mp_project', 'mp_person', 'mp_homepage'), true)) {
 			return;
 		}
 	}
 
-	if ($is_post_editor || $is_site_settings || $is_person_settings || $is_project_settings) {
-		wp_enqueue_media();
-	}
+	wp_enqueue_media();
 	wp_enqueue_script(
 		'mp-headless-admin-media',
 		plugins_url('assets/admin-media.js', __FILE__),

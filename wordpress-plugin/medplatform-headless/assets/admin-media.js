@@ -344,13 +344,21 @@
     syncDonorPreview($list.find(".mp-donor-row").last());
   };
 
-  const buildFrame = (libraryType) =>
-    wp.media({
+  const buildFrame = (libraryType) => {
+    if (!window.wp || typeof window.wp.media !== "function") {
+      window.alert(
+        "The WordPress media library did not load on this screen. Reload the page or re-upload the full plugin folder, including assets/admin-media.js."
+      );
+      return null;
+    }
+
+    return window.wp.media({
       title: "Select media",
       button: { text: "Use this file" },
       multiple: false,
       library: libraryType ? { type: libraryType } : undefined,
     });
+  };
 
   $(document).on("click", ".mp-media-upload", function (event) {
     event.preventDefault();
@@ -363,6 +371,10 @@
       .toString()
       .trim();
     const frame = buildFrame(libraryType);
+
+    if (!frame) {
+      return;
+    }
 
     frame.on("select", function () {
       const attachment = frame.state().get("selection").first()?.toJSON();
