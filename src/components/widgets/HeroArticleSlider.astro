@@ -258,8 +258,15 @@ const getTitleSizeClass = (title: string) => {
           centerOffset = (visibleTrackWidth - slider.clientWidth) / 2;
         }
 
-        if (!fitParentHeight) {
-          const slideHeight = (slideWidth * 9) / 16;
+        const slideHeight = (slideWidth * 9) / 16;
+
+        if (fitParentHeight) {
+          if (isMobileSingle) {
+            slider.style.removeProperty("height");
+          } else {
+            slider.style.height = `${slideHeight}px`;
+          }
+        } else {
           slider.style.setProperty("--slide-h", `${slideHeight}px`);
         }
         slides.forEach((slide) => {

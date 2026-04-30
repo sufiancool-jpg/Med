@@ -551,14 +551,14 @@ const metadata = {
   <section
     id="home-latest-slider"
     style="background-color:#d6e8e2;background-image:linear-gradient(180deg,#d6e8e2 0%,#d6e8e2 calc(100% - 120px),#e3f0eb calc(100% - 62px),#ffffff 100%);"
-    class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4 2xl:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] 2xl:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] 2xl:pb-[var(--announce-h,48px)]"
+    class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4"
   >
     {hasTopEditorialPanel && (
-      <div class="bg-[#d6e8e2] 2xl:min-h-0 2xl:flex-1 2xl:basis-0">
-        <div class="w-full px-4 py-4 sm:px-6 lg:px-8 2xl:h-full 2xl:overflow-hidden 2xl:py-5">
+      <div class="bg-[#d6e8e2]">
+        <div class="w-full px-4 py-4 sm:px-6 lg:px-8 xl:py-5">
           <div
             class:list={[
-              "grid grid-cols-1 gap-4 lg:gap-5 2xl:h-full 2xl:min-h-0 2xl:gap-0",
+              "grid grid-cols-1 gap-4 lg:gap-5 2xl:gap-0",
               topEditorialColumnsClass,
             ]}
           >
@@ -670,8 +670,8 @@ const metadata = {
       contentPosition="bottom"
       class={
         hasTopEditorialPanel
-          ? "mx-auto aspect-square w-full max-w-[32rem] shrink-0 self-center border-t border-primary/12 md:aspect-auto md:max-w-none md:self-auto md:h-[21.5rem] lg:h-[24rem] 2xl:min-h-0 2xl:flex-1 2xl:basis-0"
-          : "mx-auto aspect-square w-full max-w-[32rem] shrink-0 self-center md:aspect-auto md:max-w-none md:self-auto md:h-[23rem] lg:h-[25rem] 2xl:h-full 2xl:min-h-0 2xl:flex-1 2xl:basis-0"
+          ? "mx-auto aspect-square w-full max-w-[32rem] shrink-0 self-center border-t border-primary/12 md:mx-0 md:max-w-none md:self-auto md:aspect-[83/16]"
+          : "mx-auto aspect-square w-full max-w-[32rem] shrink-0 self-center md:mx-0 md:max-w-none md:self-auto md:aspect-[83/16]"
       }
     />
   </section>
