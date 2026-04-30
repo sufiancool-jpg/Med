@@ -50,14 +50,14 @@ const getTitleSizeClass = (title: string) => {
   const length = title.trim().length;
 
   if (length > 130) {
-    return "text-[0.92rem] sm:text-[0.94rem] md:text-[0.84rem] lg:text-[0.94rem] xl:text-[1.1rem]";
+    return "text-[0.92rem] sm:text-[0.94rem] md:text-[0.78rem] lg:text-[0.86rem] xl:text-[0.96rem]";
   }
 
   if (length > 95) {
-    return "text-[0.98rem] sm:text-[1rem] md:text-[0.9rem] lg:text-[1rem] xl:text-[1.22rem]";
+    return "text-[0.98rem] sm:text-[1rem] md:text-[0.84rem] lg:text-[0.92rem] xl:text-[1.06rem]";
   }
 
-  return "text-[1.04rem] sm:text-[1.06rem] md:text-[0.96rem] lg:text-[1.1rem] xl:text-[1.36rem]";
+  return "text-[1.04rem] sm:text-[1.06rem] md:text-[0.9rem] lg:text-[1rem] xl:text-[1.18rem]";
 };
 ---
 
@@ -116,7 +116,7 @@ const getTitleSizeClass = (title: string) => {
                     : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
                 ]}
               >
-                <div class="max-w-[82%] text-left sm:max-w-[80%] md:max-w-[84%] lg:max-w-[76%] xl:max-w-[70%]">
+                <div class="max-w-[82%] text-left sm:max-w-[80%] md:max-w-[88%] lg:max-w-[84%] xl:max-w-[78%]">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
                       <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[9px] md:text-[11px]">
@@ -135,7 +135,7 @@ const getTitleSizeClass = (title: string) => {
                   </p>
                   <h3
                     class:list={[
-                      "mt-2 line-clamp-5 md:line-clamp-6 lg:line-clamp-5 font-sans font-semibold uppercase leading-[1.06] tracking-[0.035em] text-white [overflow-wrap:anywhere]",
+                      "mt-2 line-clamp-5 md:line-clamp-none font-sans font-semibold uppercase leading-[1.04] tracking-[0.03em] text-white [overflow-wrap:anywhere]",
                       getTitleSizeClass(item.title),
                     ]}
                   >
@@ -247,7 +247,8 @@ const getTitleSizeClass = (title: string) => {
         if (sliderWidth <= 0) return false;
         isPhoneViewport = window.matchMedia("(max-width: 767px)").matches;
         isSingleVisible = window.matchMedia("(max-width: 1023px)").matches;
-        const baseSlideWidth = ((sliderWidth - gap * 2) / 3) * 1.03;
+        const widthBoost = window.matchMedia("(min-width: 1024px)").matches ? 1.1 : 1.03;
+        const baseSlideWidth = ((sliderWidth - gap * 2) / 3) * widthBoost;
 
         if (baseCount <= 1 || isSingleVisible) {
           slideWidth = sliderWidth;
