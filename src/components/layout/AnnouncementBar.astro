@@ -16,10 +16,26 @@ const resolvedLinkHref = announcement.linkHref?.trim() || "/";
   style="--announcement-bar-bg:#42b09a;background-color:var(--announcement-bar-bg);"
   class="fixed inset-x-0 bottom-0 z-40 h-12 text-white/90 transition-[background-color,opacity] duration-500 ease-out md:h-14"
 >
-  <div class="mx-auto flex h-full max-w-6xl items-center justify-center gap-3 px-4 text-center sm:px-6 md:gap-5 lg:px-8">
-    <p class="min-w-0 flex-1 truncate text-[0.9rem] font-bold leading-none md:text-[1rem]">
-      {resolvedText}
-    </p>
+  <div class="mx-auto flex h-full max-w-6xl items-center gap-2 px-3 sm:px-6 md:justify-center md:gap-5 lg:px-8">
+    <div data-announcement-marquee class="min-w-0 flex-1 overflow-hidden">
+      <div
+        data-announcement-marquee-track
+        data-marquee-active="false"
+        class="flex w-max items-center gap-6 whitespace-nowrap"
+      >
+        <p data-announcement-primary class="shrink-0 text-[0.82rem] font-bold leading-none md:text-[1rem]">
+          {resolvedText}
+        </p>
+        <p
+          data-announcement-clone
+          aria-hidden="true"
+          hidden
+          class="shrink-0 text-[0.82rem] font-bold leading-none md:text-[1rem]"
+        >
+          {resolvedText}
+        </p>
+      </div>
+    </div>
     <a
       href={resolvedLinkHref}
       data-announcement-cta
@@ -35,4 +51,109 @@ const resolvedLinkHref = announcement.linkHref?.trim() || "/";
   [data-announcement-cta]:focus-visible {
     color: var(--announcement-bar-bg);
   }
+
+  [data-announcement-marquee-track][data-marquee-active="true"] {
+    animation: mp-announcement-marquee var(--marquee-duration, 16s) linear infinite;
+  }
+
+  @keyframes mp-announcement-marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+
+    to {
+      transform: translate3d(calc(-1 * var(--marquee-distance, 0px)), 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-announcement-marquee-track][data-marquee-active="true"] {
+      animation: none;
+    }
+  }
 </style>
+
+<script is:inline>
+  (() => {
+    const runtime = window;
+
+    const syncAnnouncementMarquees = () => {
+      document.querySelectorAll("[data-announcement-bar]").forEach((bar) => {
+        if (!(bar instanceof HTMLElement)) {
+          return;
+        }
+
+        const marquee = bar.querySelector("[data-announcement-marquee]");
+        const track = bar.querySelector("[data-announcement-marquee-track]");
+        const primary = bar.querySelector("[data-announcement-primary]");
+        const clone = bar.querySelector("[data-announcement-clone]");
+
+        if (
+          !(marquee instanceof HTMLElement) ||
+          !(track instanceof HTMLElement) ||
+          !(primary instanceof HTMLElement) ||
+          !(clone instanceof HTMLElement)
+        ) {
+          return;
+        }
+
+        track.dataset.marqueeActive = "false";
+        track.style.removeProperty("--marquee-distance");
+        track.style.removeProperty("--marquee-duration");
+        clone.hidden = true;
+
+        if (!window.matchMedia("(max-width: 767px)").matches) {
+          return;
+        }
+
+        const availableWidth = marquee.clientWidth;
+        const textWidth = primary.scrollWidth;
+
+        if (textWidth <= availableWidth + 4) {
+          return;
+        }
+
+        clone.hidden = false;
+
+        const styles = window.getComputedStyle(track);
+        const gap =
+          Number.parseFloat(styles.columnGap || styles.gap || "24") || 24;
+        const distance = textWidth + gap;
+
+        track.dataset.marqueeActive = "true";
+        track.style.setProperty("--marquee-distance", `${distance}px`);
+        track.style.setProperty(
+          "--marquee-duration",
+          `${Math.max(12, Math.round(distance / 28))}s`,
+        );
+      });
+    };
+
+    runtime.__mpSyncAnnouncementMarquees = syncAnnouncementMarquees;
+
+    if (!runtime.__mpAnnouncementMarqueeBound) {
+      const deferredSync = () =>
+        window.requestAnimationFrame(syncAnnouncementMarquees);
+
+      window.addEventListener("resize", deferredSync);
+      window.visualViewport?.addEventListener("resize", deferredSync);
+      document.addEventListener("astro:page-load", deferredSync);
+      document.addEventListener("astro:after-swap", deferredSync);
+      document.addEventListener("mp:ui-language-change", deferredSync);
+
+      runtime.__mpAnnouncementMarqueeBound = true;
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          runtime.__mpSyncAnnouncementMarquees?.();
+        },
+        { once: true },
+      );
+    } else {
+      runtime.__mpSyncAnnouncementMarquees?.();
+    }
+  })();
+</script>

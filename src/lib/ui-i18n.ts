@@ -9,7 +9,7 @@ export type UiLanguage = (typeof uiLanguages)[number]["code"];
 
 export const defaultUiLanguage: UiLanguage = "en";
 
-export const uiTranslations = {
+export const uiTranslations: Record<UiLanguage, Record<string, string>> = {
   en: {
     "nav.home": "Home",
     "nav.about": "About",
@@ -17,6 +17,7 @@ export const uiTranslations = {
     "nav.team": "Team",
     "nav.projects": "Projects",
     "nav.publications": "Publications",
+    "nav.events": "Events",
     "nav.media": "Media",
     "nav.contact": "Contact",
     "nav.openMenu": "Open main menu",
@@ -112,12 +113,15 @@ export const uiTranslations = {
     "archive.articles": "articles",
     "archive.searchArticles": "Search articles",
     "archive.searchPublications": "Search publications",
+    "archive.searchEvents": "Search events",
     "archive.searchProjectArticlesGeneric": "Search project articles",
     "archive.searchProjectArticles": "Search {{value}} articles",
     "archive.noArticlesMatch":
       "No articles match the current search and filter combination.",
     "archive.noPublicationsMatch":
       "No publications match the current search and filter combination.",
+    "archive.noEventsMatch":
+      "No events match the current search and filter combination.",
     "archive.noProjectArticlesMatch":
       "No {{value}} articles match the current search and filter combination.",
   },
@@ -454,7 +458,7 @@ export const uiTranslations = {
     "archive.noProjectArticlesMatch":
       "لا توجد مقالات لـ {{value}} تطابق البحث والفلاتر الحالية.",
   },
-} as const;
+};
 
 export type UiTranslationKey = keyof (typeof uiTranslations)["en"];
 

@@ -65,7 +65,7 @@ const announcementFeature = featuredAnnouncementPublication
   : undefined;
 const hasTopEditorialPanel = Boolean(announcementFeature || audioRelease);
 const topEditorialColumnsClass =
-  announcementFeature && audioRelease ? "md:grid-cols-2" : "md:grid-cols-1";
+  announcementFeature && audioRelease ? "lg:grid-cols-2" : "lg:grid-cols-1";
 
 const featuredArticlePublication = homepageSelections.featuredArticle;
 const featuredArticle = {
@@ -551,19 +551,19 @@ const metadata = {
   <section
     id="home-latest-slider"
     style="background-color:#d6e8e2;background-image:linear-gradient(180deg,#d6e8e2 0%,#d6e8e2 calc(100% - 120px),#e3f0eb calc(100% - 62px),#ffffff 100%);"
-    class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4 md:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:pb-[var(--announce-h,48px)]"
+    class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4 2xl:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] 2xl:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] 2xl:pb-[var(--announce-h,48px)]"
   >
     {hasTopEditorialPanel && (
-      <div class="bg-[#d6e8e2] md:min-h-0 md:flex-1 md:basis-0">
-        <div class="w-full px-4 py-4 sm:px-6 md:h-full md:overflow-hidden md:py-5 lg:px-8">
+      <div class="bg-[#d6e8e2] 2xl:min-h-0 2xl:flex-1 2xl:basis-0">
+        <div class="w-full px-4 py-4 sm:px-6 lg:px-8 2xl:h-full 2xl:overflow-hidden 2xl:py-5">
           <div
             class:list={[
-              "grid grid-cols-1 gap-4 md:h-full md:min-h-0 md:gap-0",
+              "grid grid-cols-1 gap-4 lg:gap-5 2xl:h-full 2xl:min-h-0 2xl:gap-0",
               topEditorialColumnsClass,
             ]}
           >
             {announcementFeature && (
-              <article class="flex h-full min-h-0 flex-col justify-between border border-primary/12 bg-[#f4efe7] p-5 md:p-6">
+              <article class="flex h-full min-h-0 flex-col justify-between gap-6 border border-primary/12 bg-[#f4efe7] p-5 md:p-6 lg:p-7 2xl:p-6">
                 <div>
                   <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
@@ -573,15 +573,15 @@ const metadata = {
                       {announcementFeature.date}
                     </p>
                   </div>
-                  <h3 class="mt-3 max-w-3xl text-left text-[1.45rem] font-bold leading-[0.96] tracking-tight text-primary sm:text-[1.65rem] md:text-[2rem]">
+                  <h3 class="mt-3 max-w-3xl text-left text-[1.45rem] font-bold leading-[0.96] tracking-tight text-primary sm:text-[1.65rem] lg:text-[1.8rem] xl:text-[2rem]">
                     {announcementFeature.title}
                   </h3>
-                  <p class="mt-3 max-w-2xl text-left text-[0.92rem] leading-[1.6] text-primary/76 md:text-[0.98rem]">
+                  <p class="mt-4 max-w-2xl text-left text-[0.92rem] leading-[1.6] text-primary/76 md:text-[0.98rem]">
                     {announcementFeature.excerpt}
                   </p>
                 </div>
 
-                <div class="mt-5">
+                <div class="lg:pt-1">
                   <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-primary/58">
                     <span>{announcementFeature.authors}</span>
                     {announcementFeature.tags.map((tag) => (
@@ -612,7 +612,7 @@ const metadata = {
             )}
 
             {audioRelease && (
-              <article class="flex h-full min-h-0 flex-col border border-primary/12 bg-[#dfece8] p-5 md:p-6">
+              <article class="flex h-full min-h-0 flex-col justify-between gap-5 border border-primary/12 bg-[#dfece8] p-5 md:p-6 lg:p-7 2xl:p-6">
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
                     Featured Podcast
@@ -622,18 +622,18 @@ const metadata = {
                   </p>
                 </div>
 
-                <div class="mt-3 flex min-h-0 flex-1 flex-col justify-center">
+                <div class="flex min-h-0 flex-1 flex-col justify-center py-1 lg:py-2">
                   <AudioPreviewPlayer
                     audioSrc={audioRelease.audioSrc}
                     title={audioRelease.title}
                     series={audioRelease.series}
                     initialDuration={audioRelease.duration}
                     compact={true}
-                    containerClass="w-full max-w-[32rem]"
+                    containerClass="w-full max-w-[34rem]"
                   />
                 </div>
 
-                <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-2.5 pt-1 lg:pt-2">
                   <a
                     href={audioRelease.href}
                     class="inline-flex cursor-pointer items-center gap-2 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover sm:text-sm"
@@ -670,8 +670,8 @@ const metadata = {
       contentPosition="bottom"
       class={
         hasTopEditorialPanel
-          ? "h-[21.5rem] shrink-0 border-t border-primary/12 sm:h-[24rem] md:min-h-0 md:flex-1 md:basis-0"
-          : "h-[23rem] shrink-0 sm:h-[25rem] md:h-full md:min-h-0 md:flex-1 md:basis-0"
+          ? "h-[min(100vw,32rem)] shrink-0 border-t border-primary/12 md:h-[24rem] lg:h-[26rem] 2xl:min-h-0 2xl:flex-1 2xl:basis-0"
+          : "h-[min(100vw,32rem)] shrink-0 md:h-[25rem] lg:h-[27rem] 2xl:h-full 2xl:min-h-0 2xl:flex-1 2xl:basis-0"
       }
     />
   </section>

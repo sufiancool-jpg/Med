@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import FilteredArticleArchive from "../components/widgets/FilteredArticleArchive.astro";
+import { getPublicationsByOutputTypeSlug } from "../lib/site-data";
+
+const publications = await getPublicationsByOutputTypeSlug("announcement");
+
+const eventArticles = publications.map((publication) => ({
+  title: publication.title,
+  summary: publication.previewText,
+  author: publication.author,
+  date: new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(publication.pubDate),
+  topic: publication.topics[0] ?? "General",
+  type: publication.outputType,
+  primaryLabel: "Event",
+  typeLabel: publication.outputType,
+  hashtags: publication.hashtags.map((tag) => tag.label),
+  image: publication.image ?? "/blog/welcome.webp",
+  imageAlt: publication.title,
+  href: publication.href,
+}));
+
+const metadata = {
+  title: "Events",
+  description: "Announcements, calls, and event-related updates from the Mediterranean Platform.",
+};
+---
+
+<BaseLayout metadata={metadata}>
+  <FilteredArticleArchive
+    items={eventArticles}
+    typeOptions={[]}
+    containerClass="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 md:pt-12 md:pb-12 lg:px-8"
+    resultsId="events-results"
+    searchPlaceholder="Search events"
+    emptyMessage="No events match the current search and filter combination."
+    searchPlaceholderKey="archive.searchEvents"
+    emptyMessageKey="archive.noEventsMatch"
+  />
+</BaseLayout>
