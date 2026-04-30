@@ -5,15 +5,6 @@ import { getPublications } from "../../lib/site-data";
 
 const publications = await getPublications();
 
-const publicationTypeOptions = [
-  "Policy Paper",
-  "Research Report",
-  "Policy Brief",
-  "E-Book",
-  "Pod-Cast",
-  "Insights",
-];
-
 const publicationArticles = publications.map((publication) => ({
   title: publication.title,
   summary: publication.previewText,
@@ -48,6 +39,5 @@ const metadata = {
     emptyMessage="No publications match the current search and filter combination."
     searchPlaceholderKey="archive.searchPublications"
     emptyMessageKey="archive.noPublicationsMatch"
-    typeOptions={publicationTypeOptions}
   />
 </BaseLayout>

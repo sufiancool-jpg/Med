@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.26
+ * Version: 0.1.27
  * Author: Codex
  */
 
@@ -266,7 +266,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.26',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.27',
 	);
 }
 
@@ -1203,6 +1203,10 @@ function mp_headless_default_output_types() {
 			'slug'  => 'insights',
 		),
 		array(
+			'label' => 'Announcement',
+			'slug'  => 'announcement',
+		),
+		array(
 			'label' => 'Pod-Cast',
 			'slug'  => 'pod-cast',
 		),
@@ -1247,23 +1251,45 @@ function mp_headless_ensure_output_type_terms() {
 
 function mp_headless_get_output_type_options() {
 	mp_headless_ensure_output_type_terms();
-	$options = array();
+	$terms = get_terms(
+		array(
+			'taxonomy'   => 'mp_output_type',
+			'hide_empty' => false,
+		)
+	);
 
-	foreach (mp_headless_default_output_types() as $output_type) {
-		$term = get_term_by('slug', $output_type['slug'], 'mp_output_type');
-		if (! $term) {
-			$term = get_term_by('name', $output_type['label'], 'mp_output_type');
+	if (is_wp_error($terms) || empty($terms)) {
+		return array();
+	}
+
+	$default_order = array();
+	foreach (mp_headless_default_output_types() as $index => $output_type) {
+		$default_order[$output_type['slug']] = $index;
+	}
+
+	usort(
+		$terms,
+		function($a, $b) use ($default_order) {
+			$a_order = isset($default_order[$a->slug]) ? (int) $default_order[$a->slug] : 999;
+			$b_order = isset($default_order[$b->slug]) ? (int) $default_order[$b->slug] : 999;
+
+			if ($a_order !== $b_order) {
+				return $a_order - $b_order;
+			}
+
+			return strcasecmp($a->name, $b->name);
 		}
+	);
 
-		if ($term && ! is_wp_error($term)) {
-			$options[] = array(
+	return array_map(
+		function($term) {
+			return array(
 				'label' => $term->name,
 				'slug'  => $term->slug,
 			);
-		}
-	}
-
-	return $options;
+		},
+		$terms
+	);
 }
 
 function mp_headless_get_publication_output_type_slug($post_id) {
@@ -1307,10 +1333,23 @@ function mp_headless_publication_is_podcast($post_id) {
 		return false;
 	}
 
-	return mp_headless_get_publication_output_type_slug($post_id) === 'pod-cast';
+	return mp_headless_publication_has_output_type($post_id, 'pod-cast');
 }
 
-function mp_headless_get_podcast_publications() {
+function mp_headless_publication_has_output_type($post_id, $output_type_slug) {
+	if (! $post_id) {
+		return false;
+	}
+
+	return mp_headless_get_publication_output_type_slug($post_id) === sanitize_title((string) $output_type_slug);
+}
+
+function mp_headless_get_publications_by_output_type($output_type_slug) {
+	$output_type_slug = sanitize_title((string) $output_type_slug);
+	if ($output_type_slug === '') {
+		return array();
+	}
+
 	mp_headless_ensure_output_type_terms();
 
 	return get_posts(
@@ -1323,11 +1362,19 @@ function mp_headless_get_podcast_publications() {
 				array(
 					'taxonomy' => 'mp_output_type',
 					'field'    => 'slug',
-					'terms'    => array('pod-cast'),
+					'terms'    => array($output_type_slug),
 				),
 			),
 		)
 	);
+}
+
+function mp_headless_get_podcast_publications() {
+	return mp_headless_get_publications_by_output_type('pod-cast');
+}
+
+function mp_headless_get_announcement_publications() {
+	return mp_headless_get_publications_by_output_type('announcement');
 }
 
 function mp_headless_register_content_types() {
@@ -1960,6 +2007,20 @@ function mp_headless_register_meta() {
 	);
 	register_post_meta(
 		'mp_homepage',
+		'mp_featured_announcement_id',
+		array(
+			'single'            => true,
+			'type'              => 'integer',
+			'default'           => 0,
+			'sanitize_callback' => 'mp_headless_sanitize_int_value',
+			'show_in_rest'      => true,
+			'auth_callback'     => function() {
+				return current_user_can('edit_posts');
+			},
+		)
+	);
+	register_post_meta(
+		'mp_homepage',
 		'mp_featured_article_id',
 		array(
 			'single'            => true,
@@ -2157,10 +2218,9 @@ function mp_headless_import_bundled_seed_content() {
 	$homepage     = $seed_payload['homepage'];
 	$publications = $seed_payload['publications'];
 
-	$output_types = array('Policy Paper', 'Research Report', 'Policy Brief', 'E-Book', 'Insights', 'Pod-Cast');
-	foreach ($output_types as $term_name) {
-		if (! term_exists($term_name, 'mp_output_type')) {
-			wp_insert_term($term_name, 'mp_output_type');
+	foreach (mp_headless_default_output_types() as $output_type) {
+		if (! term_exists($output_type['slug'], 'mp_output_type')) {
+			wp_insert_term($output_type['label'], 'mp_output_type', array('slug' => $output_type['slug']));
 		}
 	}
 
@@ -2416,6 +2476,7 @@ function mp_headless_import_bundled_seed_content() {
 
 	if ($homepage_id > 0) {
 		$featured_podcast_slug = (string) ($homepage['featuredPodcastSlug'] ?? '');
+		$featured_announcement_slug = (string) ($homepage['featuredAnnouncementSlug'] ?? '');
 		$featured_article_slug = (string) ($homepage['featuredArticleSlug'] ?? '');
 		$project_selection_ids = array_values($project_ids);
 		$slider_ids            = array();
@@ -2434,6 +2495,13 @@ function mp_headless_import_bundled_seed_content() {
 		}
 
 		update_post_meta($homepage_id, 'mp_featured_podcast_id', isset($publication_ids[$featured_podcast_slug]) ? (int) $publication_ids[$featured_podcast_slug] : 0);
+		update_post_meta(
+			$homepage_id,
+			'mp_featured_announcement_id',
+			isset($publication_ids[$featured_announcement_slug]) && mp_headless_publication_has_output_type((int) $publication_ids[$featured_announcement_slug], 'announcement')
+				? (int) $publication_ids[$featured_announcement_slug]
+				: 0
+		);
 		update_post_meta($homepage_id, 'mp_featured_article_id', isset($publication_ids[$featured_article_slug]) ? (int) $publication_ids[$featured_article_slug] : 0);
 		update_post_meta($homepage_id, 'mp_homepage_project_count', 0);
 		update_post_meta($homepage_id, 'mp_homepage_project_ids', $project_selection_ids);
@@ -4487,7 +4555,9 @@ function mp_headless_render_homepage_settings_page() {
 	$publications             = get_posts(array('post_type' => 'mp_publication', 'posts_per_page' => -1, 'orderby' => 'date', 'order' => 'DESC'));
 	$projects                 = get_posts(array('post_type' => 'mp_project', 'posts_per_page' => -1, 'orderby' => 'title', 'order' => 'ASC'));
 	$podcast_publications     = mp_headless_get_podcast_publications();
+	$announcement_publications = mp_headless_get_announcement_publications();
 	$featured_podcast_id      = (int) get_post_meta($homepage_id, 'mp_featured_podcast_id', true);
+	$featured_announcement_id = (int) get_post_meta($homepage_id, 'mp_featured_announcement_id', true);
 	$featured_article_id      = (int) get_post_meta($homepage_id, 'mp_featured_article_id', true);
 	$homepage_project_count   = max(0, (int) get_post_meta($homepage_id, 'mp_homepage_project_count', true));
 	$homepage_project_ids     = get_post_meta($homepage_id, 'mp_homepage_project_ids', true);
@@ -4550,6 +4620,16 @@ function mp_headless_render_homepage_settings_page() {
 									<option value="<?php echo esc_attr($publication->ID); ?>" <?php selected($featured_article_id, (int) $publication->ID); ?>><?php echo esc_html($publication->post_title); ?></option>
 								<?php endforeach; ?>
 							</select>
+						</div>
+						<div>
+							<label for="mp_featured_announcement_id"><strong><?php esc_html_e('Featured Announcement', 'medplatform-headless'); ?></strong></label>
+							<select class="widefat" id="mp_featured_announcement_id" name="mp_featured_announcement_id" style="margin-top:8px;">
+								<option value="0"><?php esc_html_e('Use the latest announcement automatically', 'medplatform-headless'); ?></option>
+								<?php foreach ($announcement_publications as $publication) : ?>
+									<option value="<?php echo esc_attr($publication->ID); ?>" <?php selected($featured_announcement_id, (int) $publication->ID); ?>><?php echo esc_html($publication->post_title); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p style="margin:8px 0 0; color:#646970;"><?php esc_html_e('Only publications tagged with the Announcement output type appear here. Leave this blank to let the homepage use the latest Announcement automatically.', 'medplatform-headless'); ?></p>
 						</div>
 						<div>
 							<label for="mp_homepage_project_count"><strong><?php esc_html_e('Homepage Project Count', 'medplatform-headless'); ?></strong></label>
@@ -4882,7 +4962,9 @@ function mp_headless_save_homepage_settings() {
 	}
 
 	$featured_podcast_id = intval($_POST['mp_featured_podcast_id'] ?? 0);
+	$featured_announcement_id = intval($_POST['mp_featured_announcement_id'] ?? 0);
 	update_post_meta($homepage_id, 'mp_featured_podcast_id', mp_headless_publication_is_podcast($featured_podcast_id) ? $featured_podcast_id : 0);
+	update_post_meta($homepage_id, 'mp_featured_announcement_id', mp_headless_publication_has_output_type($featured_announcement_id, 'announcement') ? $featured_announcement_id : 0);
 	update_post_meta($homepage_id, 'mp_featured_article_id', intval($_POST['mp_featured_article_id'] ?? 0));
 	update_post_meta($homepage_id, 'mp_homepage_project_count', mp_headless_sanitize_nonnegative_int_value($_POST['mp_homepage_project_count'] ?? 0));
 	update_post_meta($homepage_id, 'mp_homepage_project_ids', mp_headless_sanitize_int_array(wp_unslash($_POST['mp_homepage_project_ids'] ?? array())));

@@ -6,6 +6,7 @@ interface Props {
   initialDuration?: string;
   containerClass?: string;
   id?: string;
+  compact?: boolean;
 }
 
 const {
@@ -15,6 +16,7 @@ const {
   initialDuration = "00:24",
   containerClass = "",
   id,
+  compact = false,
 } = Astro.props;
 
 const waveHeights = [
@@ -49,13 +51,40 @@ const waveHeights = [
 ];
 
 const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
+const shellClass = compact
+  ? "rounded-[1.1rem] border border-primary/10 bg-[#e8f1f0] px-3.5 py-3.5 text-primary shadow-[0_10px_24px_rgba(10,18,32,0.06)] sm:px-4 md:px-5 md:py-4"
+  : "rounded-[1.35rem] border border-primary/10 bg-[#e8f1f0] px-4 py-4 text-primary shadow-[0_10px_24px_rgba(10,18,32,0.06)] sm:px-5 md:px-6 md:py-5";
+const bodyClass = compact
+  ? "flex h-full min-h-0 flex-col justify-center gap-4"
+  : "flex h-full min-h-0 flex-col justify-center gap-5";
+const buttonClass = compact
+  ? "inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(10,18,32,0.16)] transition-colors hover:bg-hover sm:h-11 sm:w-11"
+  : "inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(10,18,32,0.16)] transition-colors hover:bg-hover sm:h-14 sm:w-14";
+const iconClass = compact
+  ? "h-4 w-4 translate-x-px sm:h-[1.05rem] sm:w-[1.05rem]"
+  : "h-[1.125rem] w-[1.125rem] translate-x-px sm:h-5 sm:w-5";
+const pauseIconClass = compact
+  ? "hidden h-4 w-4 sm:h-[1.05rem] sm:w-[1.05rem]"
+  : "hidden h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5";
+const metaClass = compact
+  ? "text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-primary/52 sm:text-[0.66rem]"
+  : "text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-primary/52 sm:text-[0.7rem]";
+const titleClass = compact
+  ? "mt-1 line-clamp-2 text-[0.94rem] font-semibold leading-snug text-primary md:text-[1rem]"
+  : "mt-1 line-clamp-2 text-[1rem] font-semibold leading-snug text-primary md:text-[1.08rem]";
+const waveClass = compact
+  ? "flex h-[2.8rem] items-end gap-[4px] sm:h-[3.1rem] md:h-[3.35rem]"
+  : "flex h-[3.2rem] items-end gap-[4px] sm:h-[3.7rem] md:h-[4.1rem]";
+const durationClass = compact
+  ? "flex items-center justify-between text-[0.68rem] font-semibold uppercase tracking-[0.1em] text-primary/48 sm:text-[0.72rem]"
+  : "flex items-center justify-between text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-primary/48 sm:text-[0.76rem]";
 ---
 
 <div
   data-audio-preview
   id={id}
   class:list={[
-    "rounded-[1.35rem] border border-primary/10 bg-[#e8f1f0] px-4 py-4 text-primary shadow-[0_10px_24px_rgba(10,18,32,0.06)] sm:px-5 md:px-6 md:py-5",
+    shellClass,
     containerClass,
   ]}
 >
@@ -63,18 +92,18 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
     <source src={audioSrc} type="audio/mpeg" />
     Your browser does not support the audio element.
   </audio>
-  <div class="flex h-full min-h-0 flex-col justify-center gap-5">
+  <div class={bodyClass}>
     <div class="flex min-w-0 items-start gap-3 sm:gap-4">
       <button
         type="button"
         data-audio-toggle
-        class="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-[0_10px_24px_rgba(10,18,32,0.16)] transition-colors hover:bg-hover sm:h-14 sm:w-14"
+        class={buttonClass}
         aria-label="Play audio preview"
       >
         <svg
           data-audio-icon-play
           viewBox="0 0 20 20"
-          class="h-[1.125rem] w-[1.125rem] translate-x-px sm:h-5 sm:w-5"
+          class={iconClass}
           fill="currentColor"
           aria-hidden="true"
         >
@@ -83,7 +112,7 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
         <svg
           data-audio-icon-pause
           viewBox="0 0 20 20"
-          class="hidden h-[1.125rem] w-[1.125rem] sm:h-5 sm:w-5"
+          class={pauseIconClass}
           fill="currentColor"
           aria-hidden="true"
         >
@@ -92,16 +121,16 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
       </button>
 
       <div class="min-w-0 flex-1">
-        <p class="text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-primary/52 sm:text-[0.7rem]">
+        <p class={metaClass}>
           {series}
         </p>
-        <p class="mt-1 line-clamp-2 text-[1rem] font-semibold leading-snug text-primary md:text-[1.08rem]">
+        <p class={titleClass}>
           {title}
         </p>
       </div>
     </div>
 
-    <div class="flex h-[3.2rem] items-end gap-[4px] sm:h-[3.7rem] md:h-[4.1rem]">
+    <div class={waveClass}>
       {waveHeights.map((height, index) => (
         <span
           data-audio-wave-bar
@@ -129,7 +158,7 @@ const accentWaveIndexes = new Set([1, 4, 7, 10, 13, 16, 19, 22, 25]);
       </span>
     </button>
 
-    <div class="flex items-center justify-between text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-primary/48 sm:text-[0.76rem]">
+    <div class={durationClass}>
       <span data-audio-current>00:00</span>
       <span data-audio-duration>{initialDuration}</span>
     </div>

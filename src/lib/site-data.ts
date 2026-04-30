@@ -164,6 +164,7 @@ export interface ProjectSummary {
 
 export interface HomepageSelections {
   featuredPodcast?: PublicationSummary;
+  featuredAnnouncement?: PublicationSummary;
   featuredArticle?: PublicationDetail;
   sliderPublications: PublicationSummary[];
   latestPublications: PublicationSummary[];
@@ -418,6 +419,9 @@ const isPublicationSummary = (
 
 const isPodcastPublication = (publication: PublicationSummary | undefined) =>
   Boolean(publication && publication.outputTypeSlug === "pod-cast");
+
+const isAnnouncementPublication = (publication: PublicationSummary | undefined) =>
+  Boolean(publication && publication.outputTypeSlug === "announcement");
 
 const localPeopleSummaries: PersonSummary[] = localPeople.map((person) => ({
   id: person.slug,
@@ -1033,6 +1037,13 @@ const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | n
         featuredPodcastCandidate && isPodcastPublication(featuredPodcastCandidate)
           ? featuredPodcastCandidate
           : undefined;
+      const featuredAnnouncementCandidate = publicationById.get(
+        Number(homepage.meta?.mp_featured_announcement_id),
+      );
+      const featuredAnnouncement =
+        featuredAnnouncementCandidate && isAnnouncementPublication(featuredAnnouncementCandidate)
+          ? featuredAnnouncementCandidate
+          : publications.find((publication) => isAnnouncementPublication(publication));
       const featuredArticleSummary = publicationById.get(
         Number(homepage.meta?.mp_featured_article_id),
       );
@@ -1042,6 +1053,7 @@ const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | n
 
       return {
         featuredPodcast,
+        featuredAnnouncement,
         featuredArticle,
         sliderPublications: sliderPublications.length > 0 ? sliderPublications : publications.slice(0, 4),
         latestPublications,
@@ -1430,6 +1442,7 @@ export const getHomepageSelections = async (): Promise<HomepageSelections> => {
     (
       wordpressSelections.sliderPublications.length > 0 ||
       wordpressSelections.latestPublications.length > 0 ||
+      Boolean(wordpressSelections.featuredAnnouncement) ||
       Boolean(wordpressSelections.featuredArticle) ||
       Boolean(wordpressSelections.featuredPodcast)
     )
@@ -1440,12 +1453,16 @@ export const getHomepageSelections = async (): Promise<HomepageSelections> => {
   const publications = await getPublications();
   const featuredPodcast =
     publications.find((publication) => isPodcastPublication(publication)) ?? publications[0];
+  const featuredAnnouncement = publications.find((publication) =>
+    isAnnouncementPublication(publication),
+  );
   const featuredArticle =
     (await getPublicationBySlug("markdown-features")) ??
     (publications[1] ? await getPublicationBySlug(publications[1].slug) : undefined);
 
   return {
     featuredPodcast,
+    featuredAnnouncement,
     featuredArticle,
     sliderPublications: publications.slice(0, 4),
     latestPublications: publications.slice(0, 5),

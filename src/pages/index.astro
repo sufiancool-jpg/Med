@@ -41,14 +41,31 @@ const audioRelease = audioPublication && audioReleaseSource
       type: audioPublication.outputType,
       series: "Mediterranean Platform Audio Brief",
       title: audioPublication.title,
-      summary: audioPublication.description,
       duration: "00:24",
       date: getPublicationCardDate(audioPublication),
       href: audioPublication.href,
-      ctaText: "Open release page",
       audioSrc: audioReleaseSource,
     }
   : undefined;
+const featuredAnnouncementPublication = homepageSelections.featuredAnnouncement;
+const announcementFeature = featuredAnnouncementPublication
+  ? {
+      type: featuredAnnouncementPublication.outputType,
+      title: featuredAnnouncementPublication.title,
+      authors: featuredAnnouncementPublication.author,
+      date: getPublicationCardDate(featuredAnnouncementPublication),
+      excerpt:
+        featuredAnnouncementPublication.previewText ||
+        featuredAnnouncementPublication.description,
+      href: featuredAnnouncementPublication.href,
+      tags: featuredAnnouncementPublication.hashtags
+        .slice(0, 3)
+        .map((tag) => `#${tag.label}`),
+    }
+  : undefined;
+const hasTopEditorialPanel = Boolean(announcementFeature || audioRelease);
+const topEditorialColumnsClass =
+  announcementFeature && audioRelease ? "md:grid-cols-2" : "md:grid-cols-1";
 
 const featuredArticlePublication = homepageSelections.featuredArticle;
 const featuredArticle = {
@@ -536,62 +553,113 @@ const metadata = {
     style="background-color:#d6e8e2;background-image:linear-gradient(180deg,#d6e8e2 0%,#d6e8e2 calc(100% - 120px),#e3f0eb calc(100% - 62px),#ffffff 100%);"
     class="flex flex-col overflow-hidden bg-[#d6e8e2] pb-4 md:h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:min-h-[calc(var(--viewport-h,100svh)-var(--nav-h,72px))] md:pb-[var(--announce-h,48px)]"
   >
-    {audioRelease && (
+    {hasTopEditorialPanel && (
       <div class="bg-[#d6e8e2] md:min-h-0 md:flex-1 md:basis-0">
         <div class="w-full px-4 py-4 sm:px-6 md:h-full md:overflow-hidden md:py-5 lg:px-8">
-          <article class="grid grid-cols-1 gap-5 md:h-full md:min-h-0 md:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)] md:items-center md:gap-8">
-            <div class="flex min-h-0 flex-col justify-start md:justify-center md:pr-4">
-              <div>
+          <div
+            class:list={[
+              "grid grid-cols-1 gap-4 md:h-full md:min-h-0 md:gap-0",
+              topEditorialColumnsClass,
+            ]}
+          >
+            {announcementFeature && (
+              <article class="flex h-full min-h-0 flex-col justify-between border border-primary/12 bg-[#f4efe7] p-5 md:p-6">
+                <div>
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
+                      {announcementFeature.type}
+                    </p>
+                    <p class="text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/48">
+                      {announcementFeature.date}
+                    </p>
+                  </div>
+                  <h3 class="mt-3 max-w-3xl text-left text-[1.45rem] font-bold leading-[0.96] tracking-tight text-primary sm:text-[1.65rem] md:text-[2rem]">
+                    {announcementFeature.title}
+                  </h3>
+                  <p class="mt-3 max-w-2xl text-left text-[0.92rem] leading-[1.6] text-primary/76 md:text-[0.98rem]">
+                    {announcementFeature.excerpt}
+                  </p>
+                </div>
+
+                <div class="mt-5">
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-primary/58">
+                    <span>{announcementFeature.authors}</span>
+                    {announcementFeature.tags.map((tag) => (
+                      <span>{tag}</span>
+                    ))}
+                  </div>
+                  <a
+                    href={announcementFeature.href}
+                    class="mt-4 inline-flex cursor-pointer items-center gap-2 border border-black px-5 py-2 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:bg-black hover:text-white sm:text-[0.82rem]"
+                  >
+                    <span>Read announcement</span>
+                    <svg
+                      viewBox="0 0 20 12"
+                      class="h-3 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M1 6h14"></path>
+                      <path d="m11 2 4 4-4 4"></path>
+                    </svg>
+                  </a>
+                </div>
+              </article>
+            )}
+
+            {audioRelease && (
+              <article class="flex h-full min-h-0 flex-col justify-between border border-primary/12 bg-[#dfece8] p-5 md:p-6">
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
                   <p class="text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-primary/68">
-                    {audioRelease.type}
+                    Featured Podcast
                   </p>
                   <p class="text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/48">
                     {audioRelease.date}
                   </p>
                 </div>
-                <h3 class="mt-2 max-w-3xl text-left text-[1.5rem] font-bold leading-[0.96] tracking-tight text-primary sm:text-[1.7rem] md:text-[2.1rem] lg:text-[2.45rem]">
-                  {audioRelease.title}
-                </h3>
-                <p class="mt-2.5 max-w-2xl text-left text-[0.9rem] font-semibold leading-[1.5] text-primary/76 md:mt-3 md:text-[1rem]">
-                  {audioRelease.summary}
-                </p>
-              </div>
 
-              <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5 md:mt-5">
-                <a
-                  href={audioRelease.href}
-                  class="inline-flex cursor-pointer items-center gap-2 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover sm:text-sm"
-                >
-                  <span data-ui-i18n="home.openReleasePage">Open release page</span>
-                  <svg
-                    viewBox="0 0 20 12"
-                    class="h-3 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
+                <div class="mt-4 flex min-h-0 flex-1 flex-col justify-center">
+                  <AudioPreviewPlayer
+                    audioSrc={audioRelease.audioSrc}
+                    title={audioRelease.title}
+                    series={audioRelease.series}
+                    initialDuration={audioRelease.duration}
+                    compact={true}
+                    containerClass="w-full max-w-md"
+                  />
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                  <a
+                    href={audioRelease.href}
+                    class="inline-flex cursor-pointer items-center gap-2 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary transition-colors hover:text-hover sm:text-sm"
                   >
-                    <path d="M1 6h14"></path>
-                    <path d="m11 2 4 4-4 4"></path>
-                  </svg>
-                </a>
-                <p data-ui-i18n="home.audioReleaseHint" class="text-[0.82rem] font-semibold text-primary/58 sm:text-sm">
-                  Opens the full audio release page.
-                </p>
-              </div>
-            </div>
-
-            <AudioPreviewPlayer
-              audioSrc={audioRelease.audioSrc}
-              title={audioRelease.title}
-              series={audioRelease.series}
-              initialDuration={audioRelease.duration}
-              containerClass="w-full"
-            />
-          </article>
+                    <span data-ui-i18n="home.openReleasePage">Open release page</span>
+                    <svg
+                      viewBox="0 0 20 12"
+                      class="h-3 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M1 6h14"></path>
+                      <path d="m11 2 4 4-4 4"></path>
+                    </svg>
+                  </a>
+                  <p data-ui-i18n="home.audioReleaseHint" class="text-[0.82rem] font-semibold text-primary/58 sm:text-sm">
+                    Opens the full audio release page.
+                  </p>
+                </div>
+              </article>
+            )}
+          </div>
         </div>
       </div>
     )}
@@ -601,7 +669,7 @@ const metadata = {
       fitParentHeight={true}
       contentPosition="bottom"
       class={
-        audioRelease
+        hasTopEditorialPanel
           ? "h-[21.5rem] shrink-0 border-t border-primary/12 sm:h-[24rem] md:min-h-0 md:flex-1 md:basis-0"
           : "h-[23rem] shrink-0 sm:h-[25rem] md:h-full md:min-h-0 md:flex-1 md:basis-0"
       }

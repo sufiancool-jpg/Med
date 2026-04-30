@@ -8,15 +8,6 @@ const localGovernancePublications = publications.filter((publication) =>
   publication.hashtags.some((tag) => tag.slug === "localgovernance"),
 );
 
-const publicationTypeOptions = [
-  "Policy Paper",
-  "Research Report",
-  "Policy Brief",
-  "E-Book",
-  "Pod-Cast",
-  "Insights",
-];
-
 const publicationArticles = localGovernancePublications.map((publication) => ({
   title: publication.title,
   summary: publication.previewText,
@@ -57,6 +48,5 @@ const metadata = {
     ]}
     emptyMessage="No local governance publications match the current filter combination."
     emptyMessageKey="archive.noPublicationsMatch"
-    typeOptions={publicationTypeOptions}
   />
 </BaseLayout>
