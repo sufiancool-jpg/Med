@@ -50,14 +50,14 @@ const getTitleSizeClass = (title: string) => {
   const length = title.trim().length;
 
   if (length > 130) {
-    return "text-[0.92rem] sm:text-[0.98rem] md:text-[0.84rem] lg:text-[0.94rem] xl:text-[1.1rem]";
+    return "text-[0.92rem] sm:text-[0.94rem] md:text-[0.84rem] lg:text-[0.94rem] xl:text-[1.1rem]";
   }
 
   if (length > 95) {
-    return "text-[0.98rem] sm:text-[1.04rem] md:text-[0.9rem] lg:text-[1rem] xl:text-[1.22rem]";
+    return "text-[0.98rem] sm:text-[1rem] md:text-[0.9rem] lg:text-[1rem] xl:text-[1.22rem]";
   }
 
-  return "text-[1.04rem] sm:text-[1.12rem] md:text-[0.96rem] lg:text-[1.1rem] xl:text-[1.36rem]";
+  return "text-[1.04rem] sm:text-[1.06rem] md:text-[0.96rem] lg:text-[1.1rem] xl:text-[1.36rem]";
 };
 ---
 
@@ -112,30 +112,30 @@ const getTitleSizeClass = (title: string) => {
                 class:list={[
                   "pointer-events-none absolute inset-0 z-30 flex justify-start",
                   contentPosition === "bottom"
-                    ? "items-start px-5 pt-6 pb-20 sm:px-6 sm:pt-7 sm:pb-22 md:items-end md:px-6 md:pt-6 md:pb-8 lg:px-7 lg:pb-10"
+                    ? "items-center px-5 py-6 sm:px-6 sm:py-7 md:items-end md:px-6 md:pt-6 md:pb-8 lg:px-7 lg:pb-10"
                     : "items-center px-3 py-3 sm:px-4 sm:py-4 md:px-5 md:py-5",
                 ]}
               >
-                <div class="max-w-[80%] text-left sm:max-w-[78%] md:max-w-[84%] lg:max-w-[76%] xl:max-w-[70%]">
+                <div class="max-w-[82%] text-left sm:max-w-[80%] md:max-w-[84%] lg:max-w-[76%] xl:max-w-[70%]">
                   <div class="flex flex-wrap items-center gap-2">
                     {item.category && (
-                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[10px] md:text-[11px]">
+                      <span class="inline-flex items-center border border-white/90 bg-white/10 px-2 py-0.5 text-[9px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:px-2.5 sm:py-1 sm:text-[9px] md:text-[11px]">
                         {item.category}
                       </span>
                     )}
                     {item.hashtags && (
-                      <p class="line-clamp-1 text-[10px] font-sans font-semibold uppercase tracking-[0.08em] text-white sm:text-[10px] md:text-[11px] lg:text-[12px]">
+                      <p class="line-clamp-1 text-[9px] font-sans font-semibold uppercase tracking-[0.08em] text-white sm:text-[9px] md:text-[11px] lg:text-[12px]">
                         {item.hashtags}
                       </p>
                     )}
                   </div>
-                  <p class="mt-2 inline-flex items-center gap-1.5 text-[12px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:text-[12px] md:text-[13px]">
+                  <p class="mt-2 inline-flex items-center gap-1.5 text-[11px] font-sans font-semibold uppercase leading-none tracking-[0.08em] text-white sm:text-[11px] md:text-[13px]">
                     <span data-ui-i18n="hero.by">By</span>
                     <span>{item.author}</span>
                   </p>
                   <h3
                     class:list={[
-                      "mt-2 line-clamp-6 lg:line-clamp-5 font-sans font-semibold uppercase leading-[1.05] tracking-[0.04em] text-white [overflow-wrap:anywhere]",
+                      "mt-2 line-clamp-5 md:line-clamp-6 lg:line-clamp-5 font-sans font-semibold uppercase leading-[1.06] tracking-[0.035em] text-white [overflow-wrap:anywhere]",
                       getTitleSizeClass(item.title),
                     ]}
                   >
