@@ -7,6 +7,8 @@ const newsletterSection = {
   ctaText: "Join mailing list",
   ctaHref: "/contact",
 };
+const wordpressApiUrl = (import.meta.env.WORDPRESS_API_URL ?? process.env.WORDPRESS_API_URL ?? "").replace(/\/$/, "");
+const newsletterEndpoint = wordpressApiUrl ? `${wordpressApiUrl}/mp-headless/v1/newsletter-signup` : "";
 ---
 
 <section class="border-t border-black/10 bg-white">
@@ -23,7 +25,12 @@ const newsletterSection = {
           {newsletterSection.body}
         </p>
       </div>
-      <form data-newsletter-signup class="w-full max-w-xl" novalidate>
+      <form
+        data-newsletter-signup
+        data-newsletter-endpoint={newsletterEndpoint}
+        class="w-full max-w-xl"
+        novalidate
+      >
         <label
           for="global-newsletter-email"
           class="text-xs font-semibold uppercase tracking-[0.08em] text-primary/65"
@@ -36,6 +43,7 @@ const newsletterSection = {
             name="email"
             data-newsletter-email
             type="email"
+            autocomplete="email"
             required
             placeholder="Your email address"
             class="min-w-0 flex-1 border border-black bg-white px-4 py-2.5 text-sm text-primary outline-none transition-colors placeholder:text-primary/45 focus:border-hover"
@@ -53,6 +61,15 @@ const newsletterSection = {
           class="mt-1.5 min-h-[1.25rem] text-xs leading-5 text-primary/60"
           aria-live="polite"
         ></p>
+        <label for="newsletter-website" class="sr-only">Website</label>
+        <input
+          id="newsletter-website"
+          name="website"
+          type="text"
+          tabindex="-1"
+          autocomplete="off"
+          class="hidden"
+        />
       </form>
     </div>
   </div>
@@ -75,6 +92,7 @@ const newsletterSection = {
     const emailInput = form.querySelector("[data-newsletter-email]");
     const submitButton = form.querySelector("[data-newsletter-submit]");
     const statusText = form.querySelector("[data-newsletter-status]");
+    const endpoint = form.dataset.newsletterEndpoint || "";
 
     if (
       !(emailInput instanceof HTMLInputElement) ||
@@ -143,9 +161,40 @@ const newsletterSection = {
       statusText.classList.remove("text-red-700", "text-[#2e7d68]");
       setPendingState();
 
-      await new Promise((resolve) => window.setTimeout(resolve, 450));
-      window.localStorage.setItem(NEWSLETTER_STORAGE_KEY, email);
-      setSuccessState(email);
+      if (!endpoint) {
+        setErrorState("Newsletter signup is not configured yet.");
+        return;
+      }
+
+      try {
+        const formData = new FormData(form);
+        formData.set("email", email);
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+          mode: "cors",
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            typeof payload?.message === "string"
+              ? payload.message
+              : `Newsletter request failed with status ${response.status}`,
+          );
+        }
+
+        window.localStorage.setItem(NEWSLETTER_STORAGE_KEY, email);
+        setSuccessState(email);
+      } catch (error) {
+        console.error(error);
+        setErrorState(
+          error instanceof Error && error.message
+            ? error.message
+            : "We could not save your email right now.",
+        );
+      }
     });
   });
 </script>

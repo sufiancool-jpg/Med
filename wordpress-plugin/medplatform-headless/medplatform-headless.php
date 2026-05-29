@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.28
+ * Version: 0.1.30
  * Author: Codex
  */
 
@@ -266,7 +266,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.28',
+		'User-Agent'           => 'Med-Platform-Headless/0.1.30',
 	);
 }
 
@@ -603,6 +603,80 @@ function mp_headless_get_request_ip_address() {
 	}
 
 	return '';
+}
+
+function mp_headless_get_newsletter_signups_dir() {
+	return trailingslashit(WP_CONTENT_DIR) . 'medplatform-headless';
+}
+
+function mp_headless_get_newsletter_signups_file_path() {
+	return trailingslashit(mp_headless_get_newsletter_signups_dir()) . 'newsletter-signups.txt';
+}
+
+function mp_headless_prepare_newsletter_signups_file() {
+	$directory = mp_headless_get_newsletter_signups_dir();
+
+	if (! wp_mkdir_p($directory)) {
+		return new WP_Error('mp_headless_newsletter_directory_failed', __('The newsletter signup directory could not be created.', 'medplatform-headless'));
+	}
+
+	$index_file = trailingslashit($directory) . 'index.php';
+	if (! file_exists($index_file)) {
+		file_put_contents($index_file, "<?php\n// Silence is golden.\n", LOCK_EX);
+	}
+
+	$htaccess_file = trailingslashit($directory) . '.htaccess';
+	if (! file_exists($htaccess_file)) {
+		file_put_contents(
+			$htaccess_file,
+			"Options -Indexes\n<Files \"newsletter-signups.txt\">\nRequire all denied\nDeny from all\n</Files>\n",
+			LOCK_EX
+		);
+	}
+
+	return mp_headless_get_newsletter_signups_file_path();
+}
+
+function mp_headless_append_newsletter_signup($email) {
+	$file_path = mp_headless_prepare_newsletter_signups_file();
+
+	if (is_wp_error($file_path)) {
+		return $file_path;
+	}
+
+	$handle = fopen($file_path, 'c+');
+	if (! $handle) {
+		return new WP_Error('mp_headless_newsletter_file_failed', __('The newsletter signup file could not be opened.', 'medplatform-headless'));
+	}
+
+	if (! flock($handle, LOCK_EX)) {
+		fclose($handle);
+		return new WP_Error('mp_headless_newsletter_file_locked', __('The newsletter signup file could not be locked.', 'medplatform-headless'));
+	}
+
+	rewind($handle);
+	$contents     = stream_get_contents($handle);
+	$entry_number = 1;
+
+	if (is_string($contents) && preg_match_all('/^(\d+)\.\s/m', $contents, $matches)) {
+		$entry_number = max(array_map('intval', $matches[1])) + 1;
+	}
+
+	fseek($handle, 0, SEEK_END);
+	$line    = sprintf("%d. %s | %s\n", $entry_number, sanitize_email($email), gmdate('c'));
+	$written = fwrite($handle, $line);
+	fflush($handle);
+	flock($handle, LOCK_UN);
+	fclose($handle);
+
+	if ($written === false) {
+		return new WP_Error('mp_headless_newsletter_write_failed', __('The newsletter signup could not be saved.', 'medplatform-headless'));
+	}
+
+	return array(
+		'entryNumber' => $entry_number,
+		'filePath'    => $file_path,
+	);
 }
 
 function mp_headless_trim_words($value, $limit) {
@@ -5614,6 +5688,16 @@ function mp_headless_register_rest_routes() {
 
 	register_rest_route(
 		'mp-headless/v1',
+		'/newsletter-signup',
+		array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => 'mp_headless_submit_newsletter_signup',
+			'permission_callback' => '__return_true',
+		)
+	);
+
+	register_rest_route(
+		'mp-headless/v1',
 		'/publications/(?P<id>\d+)/download-stats',
 		array(
 			'methods'             => WP_REST_Server::READABLE,
@@ -5633,8 +5717,10 @@ function mp_headless_register_rest_routes() {
 }
 add_action('rest_api_init', 'mp_headless_register_rest_routes');
 
-function mp_headless_rest_contact_cors_headers($served, $result, $request, $server) {
-	if (! $request instanceof WP_REST_Request || $request->get_route() !== '/mp-headless/v1/contact') {
+function mp_headless_rest_public_form_cors_headers($served, $result, $request, $server) {
+	$public_form_routes = array('/mp-headless/v1/contact', '/mp-headless/v1/newsletter-signup');
+
+	if (! $request instanceof WP_REST_Request || ! in_array($request->get_route(), $public_form_routes, true)) {
 		return $served;
 	}
 
@@ -5656,7 +5742,52 @@ function mp_headless_rest_contact_cors_headers($served, $result, $request, $serv
 
 	return $served;
 }
-add_filter('rest_pre_serve_request', 'mp_headless_rest_contact_cors_headers', 10, 4);
+add_filter('rest_pre_serve_request', 'mp_headless_rest_public_form_cors_headers', 10, 4);
+
+function mp_headless_submit_newsletter_signup(WP_REST_Request $request) {
+	$honeypot = trim((string) $request->get_param('website'));
+	if ($honeypot !== '') {
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __('You are subscribed to the newsletter.', 'medplatform-headless'),
+			)
+		);
+	}
+
+	$email = sanitize_email((string) $request->get_param('email'));
+
+	if ($email === '' || ! is_email($email)) {
+		return new WP_Error('mp_headless_newsletter_invalid_email', __('Please enter a valid email address.', 'medplatform-headless'), array('status' => 400));
+	}
+
+	$rate_limit_key = '';
+	$request_ip     = mp_headless_get_request_ip_address();
+	if ($request_ip !== '') {
+		$rate_limit_key = 'mp_headless_newsletter_rate_' . md5($request_ip);
+		if (get_transient($rate_limit_key)) {
+			return new WP_Error('mp_headless_newsletter_rate_limited', __('Please wait a minute before joining again.', 'medplatform-headless'), array('status' => 429));
+		}
+	}
+
+	$result = mp_headless_append_newsletter_signup($email);
+
+	if (is_wp_error($result)) {
+		return new WP_Error('mp_headless_newsletter_failed', $result->get_error_message(), array('status' => 500));
+	}
+
+	if (! empty($rate_limit_key)) {
+		set_transient($rate_limit_key, 1, MINUTE_IN_SECONDS);
+	}
+
+	return rest_ensure_response(
+		array(
+			'success'     => true,
+			'message'     => __('You are subscribed to the newsletter.', 'medplatform-headless'),
+			'entryNumber' => (int) ($result['entryNumber'] ?? 0),
+		)
+	);
+}
 
 function mp_headless_submit_contact_message(WP_REST_Request $request) {
 	$honeypot = trim((string) $request->get_param('website'));
