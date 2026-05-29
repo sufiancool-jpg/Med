@@ -19,8 +19,7 @@ if (-not $versionLine) {
 }
 
 $version = $versionLine.Matches[0].Groups[1].Value.Trim()
-$zipVersion = $version -replace '[^0-9A-Za-z]+', ''
-$destination = Join-Path $pluginRoot "medplatform-headless-clean-install-v$zipVersion.zip"
+$destination = Join-Path $pluginRoot "$LiveFolder.zip"
 $stagingRoot = Join-Path $pluginRoot ".plugin-package-staging"
 $stagingPluginDir = Join-Path $stagingRoot $LiveFolder
 
