@@ -161,18 +161,18 @@ const filterGridClass = hideSearch
           data-topic={item.topic.toLowerCase()}
           data-type={(item.type ?? "").toLowerCase()}
           data-tags={item.hashtags.join("|").toLowerCase()}
-          class="relative flex h-full flex-col border border-black/15 bg-white p-4 transition-colors hover:border-black/30 md:p-5"
+          class="relative flex h-full min-w-0 flex-col overflow-hidden border border-black/15 bg-white p-4 transition-colors hover:border-black/30 md:p-5"
         >
           {item.href && (
             <a href={item.href} class="absolute inset-0 z-10" aria-label={`Open ${item.title}`}></a>
           )}
 
-          <div class="overflow-hidden bg-[#f5f6f2]">
+          <div class="h-40 overflow-hidden bg-[#f5f6f2] sm:h-48 md:h-56">
             <img
               src={item.image}
               alt={item.imageAlt}
               loading="lazy"
-              class="h-56 w-full object-contain p-2"
+              class="h-full w-full object-contain p-2"
             />
           </div>
 
@@ -182,7 +182,7 @@ const filterGridClass = hideSearch
             <span>{item.topic}</span>
           </div>
 
-          <h2 class="mt-3 text-[1.05rem] font-semibold leading-tight text-primary md:text-[1.1rem]">
+          <h2 class="mt-3 break-words text-[1.05rem] font-semibold leading-tight text-primary md:text-[1.1rem]">
             {item.title}
           </h2>
 
@@ -198,14 +198,14 @@ const filterGridClass = hideSearch
             ))}
           </div>
 
-          <div class="mt-auto flex items-end justify-between gap-4 pt-6">
-            <div>
+          <div class="mt-auto flex flex-col gap-3 pt-6 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+            <div class="min-w-0">
               <p class="text-[0.78rem] uppercase tracking-[0.08em] text-primary/45">
                 {item.author}
               </p>
               <p class="mt-1 text-[0.85rem] text-primary/65">{item.date}</p>
             </div>
-            <span class="text-[0.82rem] font-semibold uppercase tracking-[0.1em] text-primary/65">
+            <span class="text-[0.82rem] font-semibold uppercase tracking-[0.1em] text-primary/65 sm:text-right">
               {item.typeLabel ?? "Article"}
             </span>
           </div>
