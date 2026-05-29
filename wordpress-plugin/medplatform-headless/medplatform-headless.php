@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Med Platform Headless
  * Description: Registers the headless WordPress schema used by the Astro frontend.
- * Version: 0.1.30
+ * Version: 1.31
  * Author: Codex
  */
 
@@ -266,7 +266,7 @@ function mp_headless_get_github_api_headers($token) {
 		'Accept'               => 'application/vnd.github+json',
 		'Authorization'        => 'Bearer ' . $token,
 		'X-GitHub-Api-Version' => '2022-11-28',
-		'User-Agent'           => 'Med-Platform-Headless/0.1.30',
+		'User-Agent'           => 'Med-Platform-Headless/1.31',
 	);
 }
 
@@ -1087,9 +1087,20 @@ function mp_headless_save_post_seo_meta($post_id, $request = null) {
 	$values = array(
 		'mp_seo_title'         => sanitize_text_field(wp_unslash($request['mp_seo_title'] ?? '')),
 		'mp_seo_description'   => sanitize_textarea_field(wp_unslash($request['mp_seo_description'] ?? '')),
-		'mp_seo_og_image'      => esc_url_raw(wp_unslash($request['mp_seo_og_image'] ?? '')),
 		'mp_seo_canonical_url' => esc_url_raw(wp_unslash($request['mp_seo_canonical_url'] ?? '')),
 	);
+
+	$seo_og_image = mp_headless_resolve_media_field_value(
+		'mp_seo_og_image',
+		get_post_meta($post_id, 'mp_seo_og_image', true),
+		$post_id
+	);
+
+	if (is_wp_error($seo_og_image)) {
+		wp_die(esc_html($seo_og_image->get_error_message()));
+	}
+
+	$values['mp_seo_og_image'] = $seo_og_image;
 
 	foreach ($values as $meta_key => $meta_value) {
 		if ($meta_value === '') {
@@ -2751,15 +2762,164 @@ function mp_headless_resolve_focus_area_objects($selected_slugs) {
 	return $resolved;
 }
 
+function mp_headless_get_media_upload_input_name($field_name) {
+	return sanitize_key((string) $field_name) . '_direct_upload';
+}
+
+function mp_headless_get_media_upload_accept($library_type) {
+	$library_type = trim((string) $library_type);
+
+	if ($library_type === 'image') {
+		return 'image/*';
+	}
+
+	if ($library_type === 'audio') {
+		return 'audio/*';
+	}
+
+	if ($library_type === 'application/pdf') {
+		return '.pdf,application/pdf';
+	}
+
+	return '';
+}
+
+function mp_headless_get_upload_error_message($error_code) {
+	switch ((int) $error_code) {
+		case UPLOAD_ERR_INI_SIZE:
+		case UPLOAD_ERR_FORM_SIZE:
+			return __('The selected file is larger than the server allows.', 'medplatform-headless');
+		case UPLOAD_ERR_PARTIAL:
+			return __('The selected file was only partially uploaded. Please try again.', 'medplatform-headless');
+		case UPLOAD_ERR_NO_TMP_DIR:
+			return __('The server is missing a temporary upload folder.', 'medplatform-headless');
+		case UPLOAD_ERR_CANT_WRITE:
+			return __('The server could not write the uploaded file.', 'medplatform-headless');
+		case UPLOAD_ERR_EXTENSION:
+			return __('A server extension stopped the upload.', 'medplatform-headless');
+		default:
+			return __('The selected file could not be uploaded.', 'medplatform-headless');
+	}
+}
+
+function mp_headless_upload_media_file($upload_field_name, $post_id = 0) {
+	$upload = $_FILES[$upload_field_name] ?? null;
+
+	if (! is_array($upload)) {
+		return '';
+	}
+
+	$upload_error = isset($upload['error']) ? (int) $upload['error'] : UPLOAD_ERR_NO_FILE;
+
+	if ($upload_error === UPLOAD_ERR_NO_FILE) {
+		return '';
+	}
+
+	if ($upload_error !== UPLOAD_ERR_OK) {
+		return new WP_Error(
+			'mp_headless_media_upload_failed',
+			mp_headless_get_upload_error_message($upload_error)
+		);
+	}
+
+	if (empty($upload['tmp_name'])) {
+		return '';
+	}
+
+	if (! function_exists('media_handle_upload')) {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+	}
+
+	$attachment_id = media_handle_upload($upload_field_name, (int) $post_id);
+
+	if (is_wp_error($attachment_id)) {
+		return $attachment_id;
+	}
+
+	$attachment_url = wp_get_attachment_url($attachment_id);
+
+	if (! $attachment_url) {
+		return new WP_Error(
+			'mp_headless_media_upload_missing_url',
+			__('The uploaded file was saved, but WordPress did not return a usable URL.', 'medplatform-headless')
+		);
+	}
+
+	return esc_url_raw($attachment_url);
+}
+
+function mp_headless_resolve_media_field_value($field_name, $current_value = '', $post_id = 0) {
+	$resolved_value = esc_url_raw(wp_unslash($_POST[$field_name] ?? $current_value));
+	$uploaded_value = mp_headless_upload_media_file(mp_headless_get_media_upload_input_name($field_name), $post_id);
+
+	if (is_wp_error($uploaded_value)) {
+		return $uploaded_value;
+	}
+
+	if ($uploaded_value !== '') {
+		return $uploaded_value;
+	}
+
+	return $resolved_value;
+}
+
+function mp_headless_upload_media_file_list($upload_field_name, $post_id = 0) {
+	$upload = $_FILES[$upload_field_name] ?? null;
+
+	if (
+		! is_array($upload) ||
+		! isset($upload['name']) ||
+		! is_array($upload['name'])
+	) {
+		return array();
+	}
+
+	$resolved_urls = array();
+
+	foreach ($upload['name'] as $index => $file_name) {
+		$single_upload_key = sanitize_key((string) $upload_field_name) . '_' . (int) $index;
+		$single_upload     = array(
+			'name'     => $upload['name'][$index] ?? '',
+			'type'     => $upload['type'][$index] ?? '',
+			'tmp_name' => $upload['tmp_name'][$index] ?? '',
+			'error'    => $upload['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+			'size'     => $upload['size'][$index] ?? 0,
+		);
+
+		if ((int) $single_upload['error'] === UPLOAD_ERR_NO_FILE || $single_upload['name'] === '') {
+			continue;
+		}
+
+		$_FILES[$single_upload_key] = $single_upload;
+		$uploaded_url               = mp_headless_upload_media_file($single_upload_key, $post_id);
+		unset($_FILES[$single_upload_key]);
+
+		if (is_wp_error($uploaded_url)) {
+			return $uploaded_url;
+		}
+
+		if ($uploaded_url !== '') {
+			$resolved_urls[(int) $index] = $uploaded_url;
+		}
+	}
+
+	return $resolved_urls;
+}
+
 function mp_headless_render_media_field($args) {
-	$label         = $args['label'] ?? '';
-	$name          = $args['name'] ?? '';
-	$value         = $args['value'] ?? '';
-	$button_label  = $args['button_label'] ?? __('Select file', 'medplatform-headless');
-	$library_type  = $args['library_type'] ?? '';
-	$placeholder   = $args['placeholder'] ?? '/Team/example.jpg or https://example.com/file.jpg';
-	$description   = $args['description'] ?? __('Use either a WordPress media upload or a local public path like /Team/name.jpg.', 'medplatform-headless');
-	$max_size_mb   = isset($args['max_size_mb']) ? (float) $args['max_size_mb'] : 0;
+	$label                = $args['label'] ?? '';
+	$name                 = $args['name'] ?? '';
+	$value                = $args['value'] ?? '';
+	$button_label         = $args['button_label'] ?? __('Select file', 'medplatform-headless');
+	$library_type         = $args['library_type'] ?? '';
+	$placeholder          = $args['placeholder'] ?? '/Team/example.jpg or https://example.com/file.jpg';
+	$description          = $args['description'] ?? __('Use the WordPress media picker, upload a file directly below, or paste a local public path like /Team/name.jpg.', 'medplatform-headless');
+	$max_size_mb          = isset($args['max_size_mb']) ? (float) $args['max_size_mb'] : 0;
+	$direct_upload_id     = wp_unique_id('mp-media-direct-upload-');
+	$direct_upload_name   = mp_headless_get_media_upload_input_name($name);
+	$direct_upload_accept = mp_headless_get_media_upload_accept($library_type);
 	$max_size_bytes = $max_size_mb > 0 ? (int) round($max_size_mb * 1024 * 1024) : 0;
 	?>
 	<p>
@@ -2785,6 +2945,19 @@ function mp_headless_render_media_field($args) {
 				<button type="button" class="button-link-delete mp-media-clear">
 					<?php esc_html_e('Clear', 'medplatform-headless'); ?>
 				</button>
+			</div>
+			<div style="margin-top:10px;">
+				<label for="<?php echo esc_attr($direct_upload_id); ?>"><strong><?php esc_html_e('Direct Upload Fallback', 'medplatform-headless'); ?></strong></label><br />
+				<input
+					type="file"
+					id="<?php echo esc_attr($direct_upload_id); ?>"
+					class="mp-media-direct-upload"
+					name="<?php echo esc_attr($direct_upload_name); ?>"
+					<?php echo $direct_upload_accept !== '' ? 'accept="' . esc_attr($direct_upload_accept) . '"' : ''; ?>
+				/>
+				<p style="margin:6px 0 0; color:#646970;">
+					<?php esc_html_e('If the upload button does not open the media library on this screen, choose a file here and then save.', 'medplatform-headless'); ?>
+				</p>
 			</div>
 			<p style="margin:8px 0 0; color:#646970;">
 				<?php echo esc_html($description); ?>
@@ -3372,12 +3545,39 @@ function mp_headless_save_meta_boxes($post_id) {
 			$selected_output_type = 'insights';
 		}
 
+		$cover_image = mp_headless_resolve_media_field_value(
+			'mp_cover_image',
+			get_post_meta($post_id, 'mp_cover_image', true),
+			$post_id
+		);
+		$slider_thumbnail = mp_headless_resolve_media_field_value(
+			'mp_slider_thumbnail',
+			get_post_meta($post_id, 'mp_slider_thumbnail', true),
+			$post_id
+		);
+		$audio_url = mp_headless_resolve_media_field_value(
+			'mp_audio_url',
+			get_post_meta($post_id, 'mp_audio_url', true),
+			$post_id
+		);
+		$download_url = mp_headless_resolve_media_field_value(
+			'mp_download_url',
+			get_post_meta($post_id, 'mp_download_url', true),
+			$post_id
+		);
+
+		foreach (array($cover_image, $slider_thumbnail, $audio_url, $download_url) as $media_value) {
+			if (is_wp_error($media_value)) {
+				wp_die(esc_html($media_value->get_error_message()));
+			}
+		}
+
 		$has_download_file = $selected_output_type === 'pod-cast'
 			? false
 			: ! empty($_POST['mp_has_download_file']);
 		$download_url = ($selected_output_type === 'pod-cast' || ! $has_download_file)
 			? ''
-			: esc_url_raw(wp_unslash($_POST['mp_download_url'] ?? ''));
+			: $download_url;
 
 		wp_set_object_terms($post_id, array($selected_output_type), 'mp_output_type', false);
 		update_post_meta($post_id, 'mp_author_name', sanitize_text_field($author_name));
@@ -3385,9 +3585,9 @@ function mp_headless_save_meta_boxes($post_id) {
 		update_post_meta($post_id, 'mp_author_person_ids', $author_person_ids);
 		update_post_meta($post_id, 'mp_author_role', sanitize_text_field(wp_unslash($_POST['mp_author_role'] ?? '')));
 		update_post_meta($post_id, 'mp_author_image', esc_url_raw($author_image));
-		update_post_meta($post_id, 'mp_cover_image', esc_url_raw(wp_unslash($_POST['mp_cover_image'] ?? '')));
-		update_post_meta($post_id, 'mp_slider_thumbnail', esc_url_raw(wp_unslash($_POST['mp_slider_thumbnail'] ?? '')));
-		update_post_meta($post_id, 'mp_audio_url', esc_url_raw(wp_unslash($_POST['mp_audio_url'] ?? '')));
+		update_post_meta($post_id, 'mp_cover_image', $cover_image);
+		update_post_meta($post_id, 'mp_slider_thumbnail', $slider_thumbnail);
+		update_post_meta($post_id, 'mp_audio_url', $audio_url);
 		update_post_meta($post_id, 'mp_has_download_file', $has_download_file);
 		update_post_meta($post_id, 'mp_download_url', $download_url);
 		update_post_meta($post_id, 'mp_download_label', '');
@@ -3400,11 +3600,20 @@ function mp_headless_save_meta_boxes($post_id) {
 	}
 
 	if ($post_type === 'mp_person') {
+		$photo = mp_headless_resolve_media_field_value(
+			'mp_photo',
+			get_post_meta($post_id, 'mp_photo', true),
+			$post_id
+		);
+		if (is_wp_error($photo)) {
+			wp_die(esc_html($photo->get_error_message()));
+		}
+
 		update_post_meta($post_id, 'mp_role', sanitize_text_field(wp_unslash($_POST['mp_role'] ?? '')));
 		update_post_meta($post_id, 'mp_email', sanitize_email(wp_unslash($_POST['mp_email'] ?? '')));
 		update_post_meta($post_id, 'mp_linkedin_url', esc_url_raw(wp_unslash($_POST['mp_linkedin_url'] ?? '')));
 		update_post_meta($post_id, 'mp_website_url', esc_url_raw(wp_unslash($_POST['mp_website_url'] ?? '')));
-		update_post_meta($post_id, 'mp_photo', esc_url_raw(wp_unslash($_POST['mp_photo'] ?? '')));
+		update_post_meta($post_id, 'mp_photo', $photo);
 		update_post_meta($post_id, 'mp_short_bio', sanitize_textarea_field(wp_unslash($_POST['mp_short_bio'] ?? '')));
 		update_post_meta($post_id, 'mp_profile_bio', sanitize_textarea_field(wp_unslash($_POST['mp_profile_bio'] ?? '')));
 		update_post_meta($post_id, 'mp_show_on_team_page', ! empty($_POST['mp_show_on_team_page']));
@@ -3690,6 +3899,18 @@ function mp_headless_render_project_donor_logo_row($logo = '') {
 					<?php esc_html_e('Remove row', 'medplatform-headless'); ?>
 				</button>
 			</div>
+			<div style="margin-top:10px;">
+				<label><strong><?php esc_html_e('Direct Upload Fallback', 'medplatform-headless'); ?></strong></label><br />
+				<input
+					type="file"
+					class="mp-media-direct-upload"
+					name="mp_donor_logo_uploads[]"
+					accept="image/*"
+				/>
+				<p style="margin:6px 0 0; color:#646970;">
+					<?php esc_html_e('If the upload button does not open the media library on this screen, choose a file here and then save.', 'medplatform-headless'); ?>
+				</p>
+			</div>
 			<p style="margin:8px 0 0; color:#646970;">
 				<?php esc_html_e('Upload only the donor logo image. The frontend handles layout, sizing, and fit automatically.', 'medplatform-headless'); ?>
 			</p>
@@ -3745,7 +3966,7 @@ function mp_headless_render_person_settings_page() {
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e('Person profile updated.', 'medplatform-headless'); ?></p></div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field('mp_headless_save_person_settings', 'mp_headless_person_nonce'); ?>
 			<input type="hidden" name="action" value="mp_headless_save_person_settings" />
 			<input type="hidden" name="person_id" value="<?php echo esc_attr($is_editing ? (string) $person->ID : '0'); ?>" />
@@ -3848,7 +4069,6 @@ function mp_headless_save_person_settings() {
 	$email       = sanitize_email(wp_unslash($_POST['mp_email'] ?? ''));
 	$linkedin    = esc_url_raw(wp_unslash($_POST['mp_linkedin_url'] ?? ''));
 	$website     = esc_url_raw(wp_unslash($_POST['mp_website_url'] ?? ''));
-	$photo       = esc_url_raw(wp_unslash($_POST['mp_photo'] ?? ''));
 	$short_bio   = sanitize_textarea_field(wp_unslash($_POST['mp_short_bio'] ?? ''));
 	$profile_bio = sanitize_textarea_field(wp_unslash($_POST['mp_profile_bio'] ?? ''));
 
@@ -3884,6 +4104,15 @@ function mp_headless_save_person_settings() {
 	}
 
 	$person_id = (int) $result;
+	$photo     = mp_headless_resolve_media_field_value(
+		'mp_photo',
+		$existing_person instanceof WP_Post ? (string) get_post_meta($existing_person->ID, 'mp_photo', true) : '',
+		$person_id
+	);
+
+	if (is_wp_error($photo)) {
+		wp_die(esc_html($photo->get_error_message()));
+	}
 
 	update_post_meta($person_id, 'mp_role', $role);
 	update_post_meta($person_id, 'mp_email', $email);
@@ -4167,7 +4396,7 @@ function mp_headless_render_project_settings_page() {
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e('Project updated.', 'medplatform-headless'); ?></p></div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field('mp_headless_save_project_settings', 'mp_headless_project_nonce'); ?>
 			<input type="hidden" name="action" value="mp_headless_save_project_settings" />
 			<input type="hidden" name="project_id" value="<?php echo esc_attr($is_editing ? (string) $project->ID : '0'); ?>" />
@@ -4540,19 +4769,8 @@ function mp_headless_save_project_settings() {
 		);
 	}
 
-	$donors = array();
-	if (is_array($donor_logo_values)) {
-		foreach (array_values($donor_logo_values) as $index => $logo_value) {
-			$logo = esc_url_raw((string) $logo_value);
-			if ($logo === '') {
-				continue;
-			}
-
-			$donors[] = array(
-				'name' => mp_headless_generate_logo_label_from_url($logo, $index),
-				'logo' => $logo,
-			);
-		}
+	if (! is_array($donor_logo_values)) {
+		$donor_logo_values = array();
 	}
 
 	$GLOBALS['mp_headless_suspend_build_trigger'] = true;
@@ -4576,7 +4794,30 @@ function mp_headless_save_project_settings() {
 		wp_die(esc_html($result->get_error_message()));
 	}
 
-	$project_id = (int) $result;
+	$project_id            = (int) $result;
+	$uploaded_donor_logos = mp_headless_upload_media_file_list('mp_donor_logo_uploads', $project_id);
+
+	if (is_wp_error($uploaded_donor_logos)) {
+		wp_die(esc_html($uploaded_donor_logos->get_error_message()));
+	}
+
+	$donors      = array();
+	$row_count   = max(count($donor_logo_values), empty($uploaded_donor_logos) ? 0 : (max(array_keys($uploaded_donor_logos)) + 1));
+
+	for ($index = 0; $index < $row_count; $index++) {
+		$logo = isset($uploaded_donor_logos[$index])
+			? $uploaded_donor_logos[$index]
+			: esc_url_raw((string) ($donor_logo_values[$index] ?? ''));
+
+		if ($logo === '') {
+			continue;
+		}
+
+		$donors[] = array(
+			'name' => mp_headless_generate_logo_label_from_url($logo, $index),
+			'logo' => $logo,
+		);
+	}
 
 	update_post_meta($project_id, 'mp_color', $color);
 	update_post_meta($project_id, 'mp_progress_color', $progress_color);
@@ -4666,7 +4907,7 @@ function mp_headless_render_homepage_settings_page() {
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e('Homepage settings updated.', 'medplatform-headless'); ?></p></div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field('mp_headless_save_homepage_settings', 'mp_headless_homepage_nonce'); ?>
 			<input type="hidden" name="action" value="mp_headless_save_homepage_settings" />
 
@@ -4852,7 +5093,7 @@ function mp_headless_render_site_settings_page() {
 			<div class="notice notice-success is-dismissible"><p><?php esc_html_e('Site settings updated.', 'medplatform-headless'); ?></p></div>
 		<?php endif; ?>
 
-		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+		<form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
 			<?php wp_nonce_field('mp_headless_save_site_settings', 'mp_headless_site_settings_nonce'); ?>
 			<input type="hidden" name="action" value="mp_headless_save_site_settings" />
 
@@ -5066,7 +5307,17 @@ function mp_headless_save_site_settings() {
 	update_option('mp_headless_site_youtube_url', esc_url_raw(wp_unslash($_POST['mp_site_youtube_url'] ?? '')));
 	update_option('mp_headless_site_instagram_url', esc_url_raw(wp_unslash($_POST['mp_site_instagram_url'] ?? '')));
 	update_option('mp_headless_default_meta_description', sanitize_textarea_field(wp_unslash($_POST['mp_default_meta_description'] ?? '')));
-	update_option('mp_headless_default_og_image', esc_url_raw(wp_unslash($_POST['mp_default_og_image'] ?? '')));
+	$default_og_image = mp_headless_resolve_media_field_value(
+		'mp_default_og_image',
+		(string) get_option('mp_headless_default_og_image', ''),
+		0
+	);
+
+	if (is_wp_error($default_og_image)) {
+		wp_die(esc_html($default_og_image->get_error_message()));
+	}
+
+	update_option('mp_headless_default_og_image', $default_og_image);
 	update_option('mp_headless_show_public_download_counts', ! empty($_POST['mp_show_public_download_counts']));
 
 	$available_person_ids = mp_headless_get_default_team_page_person_ids();

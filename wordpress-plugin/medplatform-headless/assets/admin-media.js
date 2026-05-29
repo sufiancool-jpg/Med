@@ -346,9 +346,6 @@
 
   const buildFrame = (libraryType) => {
     if (!window.wp || typeof window.wp.media !== "function") {
-      window.alert(
-        "The WordPress media library did not load on this screen. Reload the page or re-upload the full plugin folder, including assets/admin-media.js."
-      );
       return null;
     }
 
@@ -365,6 +362,7 @@
 
     const $field = $(this).closest(".mp-media-field");
     const $input = $field.find(".mp-media-input").first();
+    const directUploadInput = $field.find(".mp-media-direct-upload").get(0);
     const libraryType = $(this).data("library-type");
     const maxSizeBytes = Number($(this).data("max-size-bytes") || 0);
     const maxSizeLabel = ($(this).data("max-size-label") || "")
@@ -373,6 +371,14 @@
     const frame = buildFrame(libraryType);
 
     if (!frame) {
+      if (directUploadInput instanceof HTMLInputElement) {
+        directUploadInput.click();
+        return;
+      }
+
+      window.alert(
+        "The WordPress media library did not load on this screen. Reload the page or re-upload the full plugin folder."
+      );
       return;
     }
 
