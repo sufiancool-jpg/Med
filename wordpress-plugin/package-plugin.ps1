@@ -20,6 +20,7 @@ if (-not $versionLine) {
 
 $version = $versionLine.Matches[0].Groups[1].Value.Trim()
 $destination = Join-Path $pluginRoot "$LiveFolder.zip"
+$manualDestination = Join-Path $pluginRoot "$LiveFolder-manual-overwrite.zip"
 $stagingRoot = Join-Path $pluginRoot ".plugin-package-staging"
 $stagingPluginDir = Join-Path $stagingRoot $LiveFolder
 
@@ -33,16 +34,21 @@ try {
 	if (Test-Path -LiteralPath $destination) {
 		Remove-Item -LiteralPath $destination -Force
 	}
+	if (Test-Path -LiteralPath $manualDestination) {
+		Remove-Item -LiteralPath $manualDestination -Force
+	}
 
 	tar.exe -a -cf $destination -C $stagingRoot $LiveFolder
+	tar.exe -a -cf $manualDestination -C $stagingPluginDir medplatform-headless.php assets seed
 
-	$entries = tar.exe -tf $destination
+	$entries = @(tar.exe -tf $destination) + @(tar.exe -tf $manualDestination)
 	$invalidEntries = $entries | Where-Object { $_ -match '\\' }
 	if ($invalidEntries) {
 		throw "Package contains Windows path separators: $($invalidEntries -join ', ')"
 	}
 
 	Write-Output $destination
+	Write-Output $manualDestination
 } finally {
 	if (Test-Path -LiteralPath $stagingRoot) {
 		Remove-Item -LiteralPath $stagingRoot -Recurse -Force
