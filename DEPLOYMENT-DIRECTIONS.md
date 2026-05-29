@@ -168,44 +168,53 @@ Token expectation:
 
 Plugin deployment is separate from frontend deployment.
 
+Detailed upgrade and troubleshooting steps are now tracked here:
+
+- [directions/WORDPRESS-PLUGIN-UPGRADE.md](/e:/Web_Dev/Med/directions/WORDPRESS-PLUGIN-UPGRADE.md:1)
+
 Tracked plugin source in this repo:
 
 - [wordpress-plugin/medplatform-headless/medplatform-headless.php](/e:/Web_Dev/Med/wordpress-plugin/medplatform-headless/medplatform-headless.php:1)
+- [wordpress-plugin/package-plugin.ps1](/e:/Web_Dev/Med/wordpress-plugin/package-plugin.ps1:1)
 
 Important rule:
 
 - pushing plugin code to GitHub does not guarantee the live WordPress plugin file changed on Hostinger
+- the active WordPress plugin folder is the source of truth for upgrade packaging
 
 ### Known Hostinger Plugin Issue
 
-Prior handoff notes confirmed that ZIP upload attempts did not reliably replace the live plugin main file.
+Prior handoff notes confirmed that ZIP upload attempts did not reliably replace the live plugin main file. On 2026-05-29, version `1.31` also showed that if the ZIP/folder identity changes, WordPress creates duplicate plugin rows and shows `Activate` instead of the replacement flow.
 
 Observed symptoms:
 
 - WordPress still showed plugin version `0.1.13`
 - the live main plugin file stayed unchanged
 - the plugin could become confused or temporarily deactivated
+- duplicate `Med Platform Headless` rows appeared in WordPress
+- activating a bad duplicate showed `Plugin file does not exist.`
 
 Operational meaning:
 
 - frontend redeploys can succeed while the live WordPress plugin remains stale
 - if a live CMS feature is missing, verify the actual server file before assuming Git or deploy is wrong
+- if WordPress shows `Activate` after upload, stop; that is not the upgrade path
 
 ### Safe Plugin Update Rule
 
 After any live plugin update attempt:
 
 1. verify the plugin version shown in WordPress
-2. verify the actual contents of `wp-content/plugins/medplatform-headless/medplatform-headless.php`
+2. verify the active folder under `wp-content/plugins/`
 3. verify the expected field or behavior exists in wp-admin
 
 ### Fallback Plugin Recovery
 
 If Hostinger upload/update fails again:
 
-1. open `wp-content/plugins/medplatform-headless/medplatform-headless.php` in Hostinger
-2. replace it with the intended plugin file contents
-3. save
+1. follow [directions/WORDPRESS-PLUGIN-UPGRADE.md](/e:/Web_Dev/Med/directions/WORDPRESS-PLUGIN-UPGRADE.md:1)
+2. delete inactive duplicate plugin rows only after confirming they are not the active folder
+3. if WordPress upload keeps showing `Activate`, use the manual-overwrite ZIP inside the active Hostinger plugin folder
 4. refresh the Plugins page in WordPress
 5. confirm the version changed
 6. confirm the target behavior appears
