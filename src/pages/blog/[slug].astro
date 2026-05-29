@@ -193,11 +193,11 @@ const metadata = {
     }}
   />
 
-  <section class="bg-white">
+  <section class="overflow-x-hidden bg-white">
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10 lg:px-8">
-      <div class="grid gap-10 xl:grid-cols-[minmax(0,1.55fr)_21rem] xl:items-start">
-        <article>
-          <div class="max-w-5xl">
+      <div class="grid min-w-0 gap-10 xl:grid-cols-[minmax(0,1.55fr)_21rem] xl:items-start">
+        <article class="min-w-0 overflow-hidden">
+          <div class="min-w-0 max-w-5xl">
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold uppercase tracking-[0.12em] text-primary/60">
               <a
                 href={`/blog/category/${encodeURIComponent(publication.outputTypeSlug)}`}
@@ -215,12 +215,12 @@ const metadata = {
               )}
             </div>
 
-            <h1 class="mt-4 text-[clamp(1.14rem,2.7vw,2.25rem)] font-bold leading-[0.98] tracking-[-0.032em] text-primary">
+            <h1 class="mt-4 break-words text-[clamp(1.14rem,2.7vw,2.25rem)] font-bold leading-[0.98] tracking-[-0.032em] text-primary [overflow-wrap:anywhere]">
               {publication.title}
             </h1>
 
             {showLeadPreview && (
-              <p class="mt-5 max-w-4xl text-[1.05rem] italic leading-8 text-primary/74 md:text-[1.18rem]">
+              <p class="mt-5 max-w-4xl break-words text-[1.05rem] italic leading-8 text-primary/74 [overflow-wrap:anywhere] md:text-[1.18rem]">
                 {publication.previewText}
               </p>
             )}
@@ -278,7 +278,7 @@ const metadata = {
 
           <div
             id="publication-body"
-            class="publication-prose mt-10 max-w-none text-[1rem] leading-8 text-primary/78"
+            class="publication-prose mt-10 min-w-0 max-w-full overflow-hidden text-[1rem] leading-8 text-primary/78"
           >
             {publication.source === "wordpress" ? (
               <Fragment set:html={publication.contentHtml}></Fragment>
@@ -314,7 +314,7 @@ const metadata = {
           )}
         </article>
 
-        <aside class="xl:sticky xl:top-[calc(var(--nav-h,72px)+2rem)] xl:border-l xl:border-black/10 xl:pl-8">
+        <aside class="min-w-0 overflow-hidden xl:sticky xl:top-[calc(var(--nav-h,72px)+2rem)] xl:border-l xl:border-black/10 xl:pl-8">
           <div class="space-y-8">
             <section>
               <h2 class="text-[0.92rem] font-semibold uppercase tracking-[0.08em] text-primary">
@@ -567,6 +567,12 @@ const metadata = {
     display: none;
   }
 
+  .publication-prose {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
   .publication-prose :is(h2, h3, h4) {
     margin-top: 2.5rem;
     color: #0a1220;
@@ -578,6 +584,17 @@ const metadata = {
 
   .publication-prose p {
     margin-top: 1.1rem;
+  }
+
+  .publication-prose :is(p, li, a, strong, em, span) {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .publication-prose p > a {
+    display: inline-block;
+    max-width: 100%;
   }
 
   .publication-prose ul,
@@ -595,5 +612,20 @@ const metadata = {
     text-decoration: underline;
     text-decoration-color: rgba(21, 36, 58, 0.24);
     text-underline-offset: 0.22em;
+  }
+
+  .publication-prose :is(figure, table, pre, blockquote) {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .publication-prose :is(img, video, canvas, svg, iframe, embed, object) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .publication-prose iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
   }
 </style>
