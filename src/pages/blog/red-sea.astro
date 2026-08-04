@@ -1,0 +1,61 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import FilteredArticleArchive from "../../components/widgets/FilteredArticleArchive.astro";
+import { getPublications } from "../../lib/site-data";
+
+const publications = await getPublications();
+const redSeaPublications = publications.filter((publication) => {
+  const tagText = publication.hashtags
+    .map((tag) => `${tag.slug} ${tag.name} ${tag.label}`.toLowerCase())
+    .join(" ");
+
+  return (
+    tagText.includes("red sea") ||
+    tagText.includes("redsea") ||
+    tagText.includes("red-sea") ||
+    tagText.includes("red-sea-arena")
+  );
+});
+
+const publicationArticles = redSeaPublications.map((publication) => ({
+  title: publication.title,
+  summary: publication.previewText,
+  author: publication.author,
+  date: new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(publication.pubDate),
+  topic: publication.topics[0] ?? "General",
+  type: publication.outputType,
+  primaryLabel: "Publication",
+  typeLabel: publication.outputType,
+  hashtags: publication.hashtags.map((tag) => tag.label),
+  image: publication.image ?? "/blog/welcome.webp",
+  imageAlt: publication.title,
+  href: publication.href,
+}));
+
+const metadata = {
+  title: "Red Sea",
+  description:
+    "Publications and articles focused on the Red Sea, regional security, and the evolving politics of the Red Sea and Horn of Africa.",
+};
+---
+
+<BaseLayout metadata={metadata}>
+  <FilteredArticleArchive
+    items={publicationArticles}
+    containerClass="mx-auto max-w-7xl px-4 pt-10 pb-10 sm:px-6 md:pt-12 md:pb-12 lg:px-8"
+    resultsId="red-sea-results"
+    hideSearch={true}
+    introTitle="Red Sea"
+    introParagraphs={[
+      "The Red Sea is back. But the old rules that governed this vital global waterway are gone, replaced by a volatile and crowded landscape of both old and new actors. The region’s future is no longer being decided by the distant chess moves of great powers; it is being shaped, right now, by the assertive and competing interests of regional middle powers. Middle Eastern countries (MECs), such as the United Arab Emirates, Saudi Arabia, Türkiye, and Qatar are not waiting for permission. They are actively rewriting the security and political map of the Red Sea and the Horn of Africa (HoA) with a mix of money, diplomacy, and direct military and other forms of intervention. At the same time, the HoA is no longer a passive recipient of MECs’ engagement. Its governments, elites, and local actors have learned to navigate and exploit MECs’ ambitions, using external competition to bolster domestic legitimacy, attract investment, and diversify partnerships.",
+      "To understand this critical corridor, we must discard the old, one-sided analytical lens. The project aims to break down the silos between MECs and the HoA. It brings perspectives from the Gulf into direct conversation with those from the Horn, with a view to align visions and identify concrete steps toward realizing the vision of a Red Sea that, though divided by waters, is united by opportunities.",
+    ]}
+    introHtml='<p class="mt-4 text-[1rem] leading-7 text-primary/78 md:text-[1.03rem]">To know more about our project <a href="https://mediplatform.org/projects/red-sea-arena/" class="font-semibold text-primary underline underline-offset-4 transition-colors hover:text-hover" target="_blank" rel="noreferrer">Red Sea Arena</a>, click here.</p>'
+    emptyMessage="No Red Sea publications match the current filter combination."
+    emptyMessageKey="archive.noPublicationsMatch"
+  />
+</BaseLayout>
