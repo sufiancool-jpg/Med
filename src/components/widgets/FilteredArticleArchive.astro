@@ -229,7 +229,7 @@ const filterGridClass = hideSearch
 
 <script>
   const runtime = window as Window & {
-    __mpTranslateUi?: (key: string, language?: string, value?: string) => string;
+    __mpTranslateUi?: (_key: string, _language?: string, _value?: string) => string;
     __mpGetUiLanguage?: () => string;
   };
   const archiveRoots = Array.from(

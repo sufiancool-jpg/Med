@@ -115,6 +115,8 @@ export type PublicationDetail =
       minutesRead?: string;
     });
 
+type WordPressPublicationDetail = Extract<PublicationDetail, { source: "wordpress" }>;
+
 export interface ProjectSummary {
   id: number | string;
   slug: string;
@@ -406,16 +408,16 @@ const defaultSiteSettings: SiteSettings = {
 
 let wordpressProjectCache: Promise<ProjectSummary[] | null> | undefined;
 let wordpressPeopleCache: Promise<PersonSummary[] | null> | undefined;
-let wordpressPublicationCache: Promise<PublicationSummary[] | null> | undefined;
+let wordpressPublicationCache: Promise<WordPressPublicationDetail[] | null> | undefined;
 let wordpressHomepageRecordCache: Promise<WordPressRecord | null> | undefined;
 let wordpressHomepageCache: Promise<HomepageSelections | null> | undefined;
 let wordpressSiteSettingsCache: Promise<SiteSettings | null> | undefined;
 let localPublicationCache: Promise<PublicationSummary[]> | undefined;
 let localDetailCache: Promise<Map<string, PublicationDetail>> | undefined;
 
-const isPublicationSummary = (
-  value: PublicationSummary | undefined,
-): value is PublicationSummary => Boolean(value);
+const isPublicationSummary = <T extends PublicationSummary>(
+  value: T | undefined,
+): value is T => Boolean(value);
 
 const isPodcastPublication = (publication: PublicationSummary | undefined) =>
   Boolean(publication && publication.outputTypeSlug === "pod-cast");
@@ -771,7 +773,7 @@ const buildWordPressPublicationSummary = (
   record: WordPressRecord,
   projectLookup: Map<number, ProjectSummary>,
   peopleLookup: Map<number, PersonSummary>,
-): PublicationSummary => {
+): WordPressPublicationDetail => {
   const topicTerms = getTermsByTaxonomy(record, "mp_topic");
   const hashtagTerms = getTermsByTaxonomy(record, "mp_hashtag");
   const outputTypeTerm = getTermsByTaxonomy(record, "mp_output_type")[0];
@@ -885,10 +887,11 @@ const buildWordPressPublicationSummary = (
     downloadLabel: String(record.meta?.mp_download_label ?? ""),
     seo: normalizeSeoFields(record.meta),
     source: "wordpress",
+    contentHtml: record.content.rendered,
   };
 };
 
-const loadWordPressPublications = async (): Promise<PublicationSummary[] | null> => {
+const loadWordPressPublications = async (): Promise<WordPressPublicationDetail[] | null> => {
   if (!cacheWordPressResults) {
     wordpressPublicationCache = undefined;
   }
@@ -1047,9 +1050,20 @@ const loadWordPressHomepageSelections = async (): Promise<HomepageSelections | n
       const featuredArticleSummary = publicationById.get(
         Number(homepage.meta?.mp_featured_article_id),
       );
-      const featuredArticle = featuredArticleSummary
-        ? await getPublicationBySlug(featuredArticleSummary.slug)
-        : undefined;
+      const featuredArticle =
+        featuredArticleSummary ??
+        sliderPublications.find(
+          (publication) =>
+            !isPodcastPublication(publication) && !isAnnouncementPublication(publication),
+        ) ??
+        latestPublications.find(
+          (publication) =>
+            !isPodcastPublication(publication) && !isAnnouncementPublication(publication),
+        ) ??
+        publications.find(
+          (publication) =>
+            !isPodcastPublication(publication) && !isAnnouncementPublication(publication),
+        );
 
       return {
         featuredPodcast,
@@ -1542,10 +1556,17 @@ export const getFeaturedArticleParagraphs = (publication?: PublicationDetail) =>
   }
 
   if (publication.source === "wordpress") {
-    return extractParagraphs(publication.contentHtml, 3);
+    const paragraphs = extractParagraphs(publication.contentHtml, 3);
+
+    if (paragraphs.length > 0) {
+      return paragraphs;
+    }
+
+    const fallbackText = publication.description || publication.previewText;
+    return fallbackText ? [fallbackText] : [];
   }
 
-  return [publication.description];
+  return publication.description ? [publication.description] : [];
 };
 
 export const getPublicationCardDate = (publication: PublicationSummary) =>

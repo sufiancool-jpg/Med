@@ -65,8 +65,8 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
     <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-6QBQKC5RCQ"></script>
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
+      function gtag(...args) {
+        dataLayer.push(args);
       }
       gtag("js", new Date());
 
@@ -114,7 +114,9 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
             if (isUiLanguage(storedLanguage)) {
               return storedLanguage;
             }
-          } catch {}
+          } catch {
+            // Continue with the language cookie when local storage is unavailable.
+          }
 
           const cookieLanguage = readLanguageCookie();
           return isUiLanguage(cookieLanguage) ? cookieLanguage : defaultUiLanguage;
@@ -215,7 +217,9 @@ const announcementSettings = hideAnnouncementBar ? undefined : await getAnnounce
 
           try {
             runtime.localStorage?.setItem(storageKey, language);
-          } catch {}
+          } catch {
+            // The cookie below still persists the language when local storage is unavailable.
+          }
 
           document.cookie = `${cookieKey}=${encodeURIComponent(language)}; path=/; max-age=31536000; SameSite=Lax`;
           applyUiLanguage();

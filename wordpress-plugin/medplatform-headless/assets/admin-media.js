@@ -1,3 +1,5 @@
+/* global jQuery */
+
 (function ($) {
   const updateSelectionCount = ($panel) => {
     const $count = $panel.closest(".mp-selection-card").find(".mp-selection-count").first();
