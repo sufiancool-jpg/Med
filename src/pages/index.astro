@@ -720,8 +720,13 @@ const metadata = {
       <p class="mt-4 text-left text-sm font-semibold leading-relaxed text-foreground md:text-base">
         {featuredArticle.editors}
       </p>
-      <div class="mt-8 text-left text-base font-medium leading-relaxed text-foreground [text-rendering:optimizeLegibility] md:text-lg">
-        <figure class="float-none mx-auto mb-6 w-[min(78vw,18rem)] sm:w-64 md:float-right md:ml-6 md:mb-4 md:mt-1 md:w-56 lg:w-60">
+      <div class="mt-8 grid gap-8 text-left text-base font-medium leading-relaxed text-foreground [text-rendering:optimizeLegibility] md:text-lg lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div class="space-y-6">
+          {featuredArticle.paragraphs.map((paragraph) => (
+            <p data-reading-paragraph class="mb-0">{paragraph}</p>
+          ))}
+        </div>
+        <figure class="mx-auto max-w-[18rem] lg:mx-0">
           <img
             src={featuredArticle.image}
             alt={featuredArticle.imageAlt}
@@ -729,9 +734,6 @@ const metadata = {
             class="h-auto w-full border border-black/20"
           />
         </figure>
-        {featuredArticle.paragraphs.map((paragraph) => (
-          <p data-reading-paragraph class="mb-6 last:mb-0">{paragraph}</p>
-        ))}
       </div>
       <a
         href={featuredArticle.href}
