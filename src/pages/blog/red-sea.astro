@@ -5,6 +5,10 @@ import { getPublications } from "../../lib/site-data";
 
 const publications = await getPublications();
 const redSeaPublications = publications.filter((publication) => {
+  if (publication.outputTypeSlug === "announcement") {
+    return false;
+  }
+
   const tagText = publication.hashtags
     .map((tag) => `${tag.slug} ${tag.name} ${tag.label}`.toLowerCase())
     .join(" ");

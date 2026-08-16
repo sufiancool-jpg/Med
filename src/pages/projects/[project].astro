@@ -25,6 +25,34 @@ if (!project) {
   return Astro.redirect("/404");
 }
 
+const cultureAndArtsFocusArea = {
+  title: "Creation and outreach",
+  description:
+    "Supporting the development and sharing of artistic and cultural projects that reach new audiences, foster engagement and encourage a deeper understanding of the region’s diverse cultures and common experiences.",
+};
+const cultureAndArtsApproachPattern =
+  /<p>\s*We seek initiatives that:\s*<\/p>\s*<p>[\s\S]*?younger generations\.\s*<\/p>/i;
+const cultureAndArtsApproachHtml = `<h2>Our approach</h2>
+<p>We seek initiatives that:</p>
+<ul>
+<li>are rooted in the cultures, histories and realities of the Wider Mediterranean and Africa;</li>
+<li>connect people and communities across borders, generations and disciplines;</li>
+<li>strengthen the visibility and capacity of artists and cultural organisations;</li>
+<li>use artistic expression as a means of dialogue, reflection and mutual understanding;</li>
+<li>engage with contemporary regional challenges, particularly those affecting younger generations.</li>
+</ul>`;
+const isCultureAndArtsProject = project.slug === "culture-and-arts";
+const projectFocusAreas =
+  isCultureAndArtsProject &&
+  !project.focusAreas.some(
+    (area) => area.title.trim().toLowerCase() === cultureAndArtsFocusArea.title.toLowerCase(),
+  )
+    ? [...project.focusAreas, cultureAndArtsFocusArea]
+    : project.focusAreas;
+const projectContentHtml = isCultureAndArtsProject
+  ? project.contentHtml.replace(cultureAndArtsApproachPattern, cultureAndArtsApproachHtml)
+  : project.contentHtml;
+
 const currentStageIndex = Math.max(project.stagePoints.indexOf(project.currentStage), 0);
 const timelineProgress =
   project.stagePoints.length > 1 ? (currentStageIndex / (project.stagePoints.length - 1)) * 100 : 0;
@@ -297,7 +325,7 @@ const metadata = {
         <div class="order-1 lg:col-start-3 lg:order-none">
           <div
             class="project-prose max-w-4xl text-[0.96rem] leading-7 text-primary/74 md:text-[1rem] md:leading-8"
-            set:html={project.contentHtml}
+            set:html={projectContentHtml}
           ></div>
 
           {project.updates.length > 0 && (
@@ -324,7 +352,7 @@ const metadata = {
               <span data-ui-i18n="project.workstreams">Workstreams</span>
             </p>
             <div class="mt-4 grid gap-4 md:grid-cols-3 md:gap-5">
-              {project.focusAreas.map((area) => (
+              {projectFocusAreas.map((area) => (
                 <article class="border border-black/10 bg-white p-4 md:p-5">
                   <h2 class="text-[1.02rem] font-semibold leading-tight text-primary">
                     {area.title}
@@ -359,5 +387,21 @@ const metadata = {
 <style is:inline>
   .project-prose > * + * {
     margin-top: 1.15rem;
+  }
+
+  .project-prose h2 {
+    color: var(--color-primary);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .project-prose ul {
+    list-style: disc;
+    padding-left: 1.4rem;
+  }
+
+  .project-prose li + li {
+    margin-top: 0.45rem;
   }
 </style>

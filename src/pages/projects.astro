@@ -7,19 +7,38 @@ import { getProjects, getPublications } from "../lib/site-data";
 const projects = await getProjects();
 const publications = await getPublications();
 
-const topProjects = projects.map((project) => ({
-  slug: project.slug,
-  cardIcon: project.cardIcon,
-  title: project.title,
-  description: project.description,
-  meta: "Project",
-  hoverBg: project.color,
-  hoverTitle: "#ffffff",
-  hoverMeta: "rgba(255,255,255,0.76)",
-  hoverBody: "rgba(255,255,255,0.88)",
-  hoverIcon: "rgba(255,255,255,0.94)",
-  href: project.href,
-}));
+const projectDisplayOrder = [
+  "red-sea-arena",
+  "libya-platform",
+  "mediterranean-connectivity",
+  "culture-and-arts",
+  "gulf-platform",
+  "africa-nexus",
+];
+const projectOrderBySlug = new Map(
+  projectDisplayOrder.map((slug, index) => [slug, index]),
+);
+
+const topProjects = projects
+  .toSorted((a, b) => {
+    const aOrder = projectOrderBySlug.get(a.slug) ?? projectDisplayOrder.length;
+    const bOrder = projectOrderBySlug.get(b.slug) ?? projectDisplayOrder.length;
+
+    return aOrder - bOrder;
+  })
+  .map((project) => ({
+    slug: project.slug,
+    cardIcon: project.cardIcon,
+    title: project.title,
+    description: project.description,
+    meta: "Project",
+    hoverBg: project.color,
+    hoverTitle: "#ffffff",
+    hoverMeta: "rgba(255,255,255,0.76)",
+    hoverBody: "rgba(255,255,255,0.88)",
+    hoverIcon: "rgba(255,255,255,0.94)",
+    href: project.href,
+  }));
 
 const archiveArticles = publications
   .filter((publication) => publication.relatedProjectSlugs.length > 0)
